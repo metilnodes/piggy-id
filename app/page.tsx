@@ -127,9 +127,21 @@ const PiggyIdGenerator = () => {
     const canvas = canvasRef.current
     if (!canvas) return
 
+    // Создаем новый canvas для уменьшенной версии
+    const smallCanvas = document.createElement("canvas")
+    const smallCtx = smallCanvas.getContext("2d")
+    if (!smallCtx) return
+
+    // Устанавливаем размер в два раза меньше
+    smallCanvas.width = canvas.width / 2
+    smallCanvas.height = canvas.height / 2
+
+    // Рисуем уменьшенную версию
+    smallCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, smallCanvas.width, smallCanvas.height)
+
     const link = document.createElement("a")
     link.download = `piggy-id-${firstName}-${surname}.png`
-    link.href = canvas.toDataURL()
+    link.href = smallCanvas.toDataURL()
     link.click()
   }
 
