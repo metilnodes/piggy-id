@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add custom font */
+@font-face {
+  font-family: "TT Rounds Neue Trl Cmd";
+  src: url("/fonts/tt-rounds-neue-trl-cmd.woff2") format("woff2"), url("/fonts/tt-rounds-neue-trl-cmd.woff")
+    format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: "TT Rounds Neue Trl Cmd", "Courier New", monospace;
+  background: #000000;
+  color: #ff1493;
+}
+
+/* Cyberpunk grid background */
+.cyber-grid {
+  background-image: linear-gradient(rgba(255, 20, 147, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 20, 147, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  position: relative;
+}
+
+.cyber-grid::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+/* Glitch effect for titles */
+.glitch {
+  position: relative;
+  color: #ff1493;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch::before {
+  animation: glitch-1 0.5s infinite;
+  color: #ff0080;
+  z-index: -1;
+}
+
+.glitch::after {
+  animation: glitch-2 0.5s infinite;
+  color: #8000ff;
+  z-index: -2;
+}
+
+@keyframes glitch-1 {
+  0%,
+  14%,
+  15%,
+  49%,
+  50%,
+  99%,
+  100% {
+    transform: translate(0);
+  }
+  15%,
+  49% {
+    transform: translate(-2px, 1px);
+  }
+}
+
+@keyframes glitch-2 {
+  0%,
+  20%,
+  21%,
+  62%,
+  63%,
+  99%,
+  100% {
+    transform: translate(0);
+  }
+  21%,
+  62% {
+    transform: translate(2px, -1px);
+  }
+}
+
+/* Neon glow effect */
+.neon-glow {
+  box-shadow: 0 0 2px #ff1493, 0 0 4px #ff1493;
+}
+
+.neon-text {
+  text-shadow: 0 0 2px #ff1493, 0 0 4px #ff1493;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff1493;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff0080;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 328 100% 54%;
+    --card: 0 0% 5%;
+    --card-foreground: 328 100% 54%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 328 100% 54%;
+    --primary: 328 100% 54%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 328 100% 54%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 328 50% 70%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 328 100% 54%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 328 100% 54%;
+    --input: 0 0% 10%;
+    --ring: 328 100% 54%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom input styles */
+.cyber-input {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #ff1493;
+  color: #ff1493;
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cyber-input:focus {
+  outline: none;
+  box-shadow: 0 0 4px #ff1493;
+  border-color: #ff0080;
+}
+
+.cyber-input::placeholder {
+  color: rgba(255, 20, 147, 0.5);
+}
+
+/* Custom button styles */
+.cyber-button {
+  background: transparent;
+  border: 2px solid #ff1493;
+  color: #ff1493;
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-button:hover {
+  background: rgba(255, 20, 147, 0.1);
+  box-shadow: 0 0 8px #ff1493;
+  transform: translateY(-2px);
+}
+
+.cyber-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cyber-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 20, 147, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.cyber-button:hover::before {
+  left: 100%;
+}
+
+/* Card styles */
+.cyber-card {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid #ff1493;
+  box-shadow: 0 0 8px rgba(255, 20, 147, 0.2);
+}
