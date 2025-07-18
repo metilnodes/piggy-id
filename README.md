@@ -1,30 +1,10 @@
-# Custom image website
+## PIGGY IDENTITY CREATED 🐽
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+Not KYC’d. Not doxxed.
+Just 100% OINK-verified.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/rgtscorp-yarus-projects/v0-piggy-id)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/LE8SGaL5TYV)
+🪪 Want your own OINKDENTITY?
+Upload your snoutshot & create it here:
+→ https://id.piggyworld.xyz
 
-## Overview
-
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
-
-## Deployment
-
-Your project is live at:
-
-**[https://vercel.com/rgtscorp-yarus-projects/v0-piggy-id](https://vercel.com/rgtscorp-yarus-projects/v0-piggy-id)**
-
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/LE8SGaL5TYV](https://v0.dev/chat/projects/LE8SGaL5TYV)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+![Piggy ID](https://github.com/metilnodes/piggy-id/blob/6d79cf8e0b9abec6184eb068290793f5e1af3912/public/piggy-id-preview.jpg)
