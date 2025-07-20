@@ -321,20 +321,20 @@ const PiggyIdGenerator = () => {
 
       // First location - Main card area (based on first image)
       if (surname) {
-        ctx.fillText(surname.toUpperCase(), 3755, 2180) // Ser-name position
+        ctx.fillText(surname.toUpperCase(), 1055, 1080) // Ser-name position
       }
 
       if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 3755, 2720) // First Name position
+        ctx.fillText(firstName.toUpperCase(), 1055, 1220) // First Name position
       }
 
       // Add Passport Number (P<XXX...)
       ctx.font = "196px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 6938, 1600)
+      ctx.fillText(`P<${passportNumber}`, 1938, 800)
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 3755, 5050)
+      ctx.fillText(formattedDate, 1055, 1550)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "205px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 3270)
+        ctx.fillText(bottomText, startX, 2270)
       }
 
       // Draw avatar if uploaded
@@ -380,10 +380,10 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 900
-          const avatarY = 1408
-          const avatarWidth = 1450
-          const avatarHeight = 1450
+          const avatarX = 700
+          const avatarY = 1008
+          const avatarWidth = 1050
+          const avatarHeight = 1050
 
           // Create rectangular clipping path
           ctx.save()
