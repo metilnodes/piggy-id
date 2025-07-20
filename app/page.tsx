@@ -316,28 +316,28 @@ const PiggyIdGenerator = () => {
 
       // Set text properties with custom font
       ctx.fillStyle = "#000000"
-      ctx.font = "156px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "126px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.textAlign = "left"
 
       // First location - Main card area (based on first image)
       if (surname) {
-        ctx.fillText(surname.toUpperCase(), 1355, 1080) // Ser-name position
+        ctx.fillText(surname.toUpperCase(), 1355, 880) // Ser-name position
       }
 
       if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 1355, 1220) // First Name position
+        ctx.fillText(firstName.toUpperCase(), 1355, 1000) // First Name position
       }
 
       // Add Passport Number (P<XXX...)
-      ctx.font = "156px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 2538, 650)
+      ctx.font = "126px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.fillText(`P<${passportNumber}`, 2545, 620)
 
       // Add current date (replacing hardcoded Nov 24 2024)
-      ctx.font = "156px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "126px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.fillText(formattedDate, 1355, 2050)
 
       // Second location - Bottom section (based on second image)
-      ctx.font = "165px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
