@@ -316,32 +316,32 @@ const PiggyIdGenerator = () => {
 
       // Set text properties with custom font
       ctx.fillStyle = "#000000"
-      ctx.font = "288px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "156px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.textAlign = "left"
 
       // First location - Main card area (based on first image)
       if (surname) {
-        ctx.fillText(surname.toUpperCase(), 1055, 1080) // Ser-name position
+        ctx.fillText(surname.toUpperCase(), 1355, 1080) // Ser-name position
       }
 
       if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 1055, 1220) // First Name position
+        ctx.fillText(firstName.toUpperCase(), 1355, 1220) // First Name position
       }
 
       // Add Passport Number (P<XXX...)
-      ctx.font = "196px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 1938, 800)
+      ctx.font = "156px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.fillText(`P<${passportNumber}`, 2538, 650)
 
       // Add current date (replacing hardcoded Nov 24 2024)
-      ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 1055, 1550)
+      ctx.font = "156px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.fillText(formattedDate, 1355, 2050)
 
       // Second location - Bottom section (based on second image)
-      ctx.font = "205px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "165px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 705
+        const startX = 505
         const maxX = canvas.width - 430 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 2270)
+        ctx.fillText(bottomText, startX, 2370)
       }
 
       // Draw avatar if uploaded
