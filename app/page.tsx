@@ -820,8 +820,8 @@ const PiggyIdGenerator = () => {
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <div className="w-20 h-20 border-2 border-pink-500 rounded-2xl flex items-center justify-center neon-glow">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 border-2 border-pink-500 rounded-2xl flex items-center justify-center neon-glow mx-auto">
               <img src="/piggy-logo.png" alt="Piggy Logo" className="w-12 h-12 object-contain" />
             </div>
           </div>
