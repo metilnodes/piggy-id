@@ -330,7 +330,7 @@ const PiggyIdGenerator = () => {
 
       // Add Passport Number (P<XXX...)
       ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 6950, 1600)
+      ctx.fillText(`P<${passportNumber}`, 6930, 1600)
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 6190)
+        ctx.fillText(bottomText, startX, 6210)
       }
 
       // Draw avatar if uploaded
@@ -380,7 +380,7 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 1550
+          const avatarX = 1455
           const avatarY = 2108
           const avatarWidth = 2150
           const avatarHeight = 2150
