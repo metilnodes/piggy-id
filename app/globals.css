@@ -2,129 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add custom font */
-@font-face {
-  font-family: "TT Rounds Neue Trl Cmd";
-  src: url("/fonts/tt-rounds-neue-trl-cmd.woff2") format("woff2"), url("/fonts/tt-rounds-neue-trl-cmd.woff")
-    format("woff");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 body {
-  font-family: "TT Rounds Neue Trl Cmd", "Courier New", monospace;
-  background: #000000;
-  color: #ff1493;
-}
-
-/* Cyberpunk grid background */
-.cyber-grid {
-  background-image: linear-gradient(rgba(255, 20, 147, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 20, 147, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  position: relative;
-}
-
-.cyber-grid::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
-  pointer-events: none;
-}
-
-/* Glitch effect for titles */
-.glitch {
-  position: relative;
-  color: #ff1493;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.glitch::before {
-  animation: glitch-1 0.5s infinite;
-  color: #ff0080;
-  z-index: -1;
-}
-
-.glitch::after {
-  animation: glitch-2 0.5s infinite;
-  color: #8000ff;
-  z-index: -2;
-}
-
-@keyframes glitch-1 {
-  0%,
-  14%,
-  15%,
-  49%,
-  50%,
-  99%,
-  100% {
-    transform: translate(0);
-  }
-  15%,
-  49% {
-    transform: translate(-2px, 1px);
-  }
-}
-
-@keyframes glitch-2 {
-  0%,
-  20%,
-  21%,
-  62%,
-  63%,
-  99%,
-  100% {
-    transform: translate(0);
-  }
-  21%,
-  62% {
-    transform: translate(2px, -1px);
-  }
-}
-
-/* Neon glow effect */
-.neon-glow {
-  box-shadow: 0 0 2px #ff1493, 0 0 4px #ff1493;
-}
-
-.neon-text {
-  text-shadow: 0 0 2px #ff1493, 0 0 4px #ff1493;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #000;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #ff1493;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #ff0080;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 @layer utilities {
@@ -135,26 +14,73 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 328 100% 54%;
-    --card: 0 0% 5%;
-    --card-foreground: 328 100% 54%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 328 100% 54%;
-    --primary: 328 100% 54%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 328 100% 54%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 328 50% 70%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 328 100% 54%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 328 100% 54%;
-    --input: 0 0% 10%;
-    --ring: 328 100% 54%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -167,69 +93,36 @@ body {
   }
 }
 
-/* Custom input styles */
-.cyber-input {
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid #ff1493;
-  color: #ff1493;
-  font-family: "Courier New", monospace;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+/* RainbowKit styles */
+[data-rk] {
+  --rk-fonts-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", sans-serif;
 }
 
-.cyber-input:focus {
-  outline: none;
-  box-shadow: 0 0 4px #ff1493;
-  border-color: #ff0080;
+[data-rk] * {
+  box-sizing: border-box;
 }
 
-.cyber-input::placeholder {
-  color: rgba(255, 20, 147, 0.5);
+[data-rk] button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
 }
 
-/* Custom button styles */
-.cyber-button {
-  background: transparent;
-  border: 2px solid #ff1493;
-  color: #ff1493;
-  font-family: "Courier New", monospace;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+/* Basic RainbowKit button styles */
+[data-rk] .rk-button {
+  background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
-.cyber-button:hover {
-  background: rgba(255, 20, 147, 0.1);
-  box-shadow: 0 0 8px #ff1493;
-  transform: translateY(-2px);
-}
-
-.cyber-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cyber-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 20, 147, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.cyber-button:hover::before {
-  left: 100%;
-}
-
-/* Card styles */
-.cyber-card {
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid #ff1493;
-  box-shadow: 0 0 8px rgba(255, 20, 147, 0.2);
+[data-rk] .rk-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
