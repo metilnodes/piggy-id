@@ -342,7 +342,7 @@ const PiggyIdGenerator = () => {
       if (surname && firstName) {
         // Very strict position limits
         const startX = 340
-        const maxX = canvas.width - 380 // Very strict boundary
+        const maxX = canvas.width - 320 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
         // Names are already limited to 12 characters during input
