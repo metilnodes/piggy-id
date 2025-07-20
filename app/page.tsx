@@ -321,20 +321,20 @@ const PiggyIdGenerator = () => {
 
       // First location - Main card area (based on first image)
       if (surname) {
-        ctx.fillText(surname.toUpperCase(), 3245, 1900) // Ser-name position
+        ctx.fillText(surname.toUpperCase(), 3545, 2100) // Ser-name position
       }
 
       if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 3245, 2540) // First Name position
+        ctx.fillText(firstName.toUpperCase(), 3545, 2640) // First Name position
       }
 
       // Add Passport Number (P<XXX...)
       ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 7120, 1600)
+      ctx.fillText(`P<${passportNumber}`, 6920, 1600)
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 3245, 5050)
+      ctx.fillText(formattedDate, 3545, 5050)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "231px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
