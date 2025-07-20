@@ -334,7 +334,7 @@ const PiggyIdGenerator = () => {
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "160px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 2745, 2800)
+      ctx.fillText(formattedDate, 2745, 3300)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "231px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
