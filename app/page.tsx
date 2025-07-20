@@ -334,7 +334,7 @@ const PiggyIdGenerator = () => {
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 1375, 1820)
+      ctx.fillText(formattedDate, 1375, 1880)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
@@ -342,7 +342,7 @@ const PiggyIdGenerator = () => {
       if (surname && firstName) {
         // Very strict position limits
         const startX = 340
-        const maxX = canvas.width - 430 // Very strict boundary
+        const maxX = canvas.width - 380 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
         // Names are already limited to 12 characters during input
