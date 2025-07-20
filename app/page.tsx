@@ -325,7 +325,7 @@ const PiggyIdGenerator = () => {
       }
 
       if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 3755, 2820) // First Name position
+        ctx.fillText(firstName.toUpperCase(), 3755, 2720) // First Name position
       }
 
       // Add Passport Number (P<XXX...)
