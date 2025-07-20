@@ -321,7 +321,7 @@ const PiggyIdGenerator = () => {
 
       // First location - Main card area (based on first image)
       if (surname) {
-        ctx.fillText(surname.toUpperCase(), 1375, 800) // Ser-name position
+        ctx.fillText(surname.toUpperCase(), 1375, 815) // Ser-name position
       }
 
       if (firstName) {
@@ -334,14 +334,14 @@ const PiggyIdGenerator = () => {
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 1375, 1750)
+      ctx.fillText(formattedDate, 1375, 1820)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 325
+        const startX = 340
         const maxX = canvas.width - 430 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 2250)
+        ctx.fillText(bottomText, startX, 2320)
       }
 
       // Draw avatar if uploaded
