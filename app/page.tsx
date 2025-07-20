@@ -330,11 +330,11 @@ const PiggyIdGenerator = () => {
 
       // Add Passport Number (P<XXX...)
       ctx.font = "196px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 2745, 1300)
+      ctx.fillText(`P<${passportNumber}`, 5120, 1200)
 
       // Add current date (replacing hardcoded Nov 24 2024)
-      ctx.font = "160px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 2745, 2400)
+      ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.fillText(formattedDate, 2745, 3750)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "231px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
