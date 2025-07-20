@@ -330,18 +330,18 @@ const PiggyIdGenerator = () => {
 
       // Add Passport Number (P<XXX...)
       ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 6930, 1600)
+      ctx.fillText(`P<${passportNumber}`, 6970, 1600)
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.fillText(formattedDate, 3755, 5050)
 
       // Second location - Bottom section (based on second image)
-      ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "338px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 930
+        const startX = 950
         const maxX = canvas.width - 390 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 6210)
+        ctx.fillText(bottomText, startX, 6230)
       }
 
       // Draw avatar if uploaded
