@@ -337,7 +337,7 @@ const PiggyIdGenerator = () => {
       ctx.fillText(formattedDate, 3945, 5050)
 
       // Second location - Bottom section (based on second image)
-      ctx.font = "231px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
@@ -380,10 +380,10 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 880
-          const avatarY = 1538
-          const avatarWidth = 1650
-          const avatarHeight = 1650
+          const avatarX = 1080
+          const avatarY = 1838
+          const avatarWidth = 1850
+          const avatarHeight = 1850
 
           // Create rectangular clipping path
           ctx.save()
