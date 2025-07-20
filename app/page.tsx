@@ -329,19 +329,19 @@ const PiggyIdGenerator = () => {
       }
 
       // Add Passport Number (P<XXX...)
-      ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "196px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.fillText(`P<${passportNumber}`, 6938, 1600)
 
       // Add current date (replacing hardcoded Nov 24 2024)
-      ctx.font = "298px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.fillText(formattedDate, 3755, 5050)
 
       // Second location - Bottom section (based on second image)
-      ctx.font = "325px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "205px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 965
+        const startX = 705
         const maxX = canvas.width - 430 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 6270)
+        ctx.fillText(bottomText, startX, 3270)
       }
 
       // Draw avatar if uploaded
@@ -380,10 +380,10 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 1300
-          const avatarY = 2108
-          const avatarWidth = 2150
-          const avatarHeight = 2150
+          const avatarX = 900
+          const avatarY = 1408
+          const avatarWidth = 1450
+          const avatarHeight = 1450
 
           // Create rectangular clipping path
           ctx.save()
