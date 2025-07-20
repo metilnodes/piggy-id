@@ -380,7 +380,7 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 1280
+          const avatarX = 1400
           const avatarY = 2108
           const avatarWidth = 1850
           const avatarHeight = 1850
