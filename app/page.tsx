@@ -380,10 +380,10 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 1400
+          const avatarX = 1550
           const avatarY = 2108
-          const avatarWidth = 1850
-          const avatarHeight = 1850
+          const avatarWidth = 2150
+          const avatarHeight = 2150
 
           // Create rectangular clipping path
           ctx.save()
