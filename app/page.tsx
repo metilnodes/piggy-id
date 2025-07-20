@@ -341,7 +341,7 @@ const PiggyIdGenerator = () => {
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 820
+        const startX = 920
         const maxX = canvas.width - 390 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 6590)
+        ctx.fillText(bottomText, startX, 6090)
       }
 
       // Draw avatar if uploaded
