@@ -334,14 +334,14 @@ const PiggyIdGenerator = () => {
 
       // Add current date (replacing hardcoded Nov 24 2024)
       ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 1375, 2050)
+      ctx.fillText(formattedDate, 1375, 1750)
 
       // Second location - Bottom section (based on second image)
       ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 305
+        const startX = 325
         const maxX = canvas.width - 430 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 2100)
+        ctx.fillText(bottomText, startX, 2250)
       }
 
       // Draw avatar if uploaded
@@ -380,8 +380,8 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 500
-          const avatarY = 708
+          const avatarX = 420
+          const avatarY = 748
           const avatarWidth = 850
           const avatarHeight = 850
 
