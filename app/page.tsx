@@ -183,8 +183,8 @@ const PiggyIdGenerator = () => {
   const [passportNumber, setPassportNumber] = useState("")
   const [isMinting, setIsMinting] = useState(false)
   const [mintingStep, setMintingStep] = useState<MintingStep>('idle')
-  const [mintStatus, setMintStatus] = useState<MintStatus | null>(null)
   const [mintButtonText, setMintButtonText] = useState<string>('MINT AS NFT')
+  const [mintStatus, setMintStatus] = useState<MintStatus | null>(null)
   const [uploadedMetadata, setUploadedMetadata] = useState<{
     metadataUrl: string;
     imageUrl: string;
@@ -881,17 +881,17 @@ const PiggyIdGenerator = () => {
                 <Label htmlFor="passportNumber" className="text-pink-500 font-mono uppercase tracking-wider">
                   {">"} PASSPORT NUMBER
                 </Label>
-                <div className="flex gap-2">
+                <div>
                   <Input
                     id="passportNumber"
                     value={passportNumber}
-                    onChange={(e) => setPassportNumber(e.target.value)}
-                    placeholder="7-CHAR ALPHANUMERIC"
+                    onChange={handlePassportNumberChange}
+                    placeholder="PASSPORT ID (7 CHARS)"
+                    className="cyber-input"
                     maxLength={7}
-                    className="bg-black/30 border-pink-500 text-pink-500 font-mono"
                   />
                 </div>
-                <p className="text-xs text-pink-400 font-mono">{passportNumber.length}/7 CHARACTERS</p>
+                <div className="text-xs text-pink-400 font-mono">{passportNumber.length}/7 CHARACTERS</div>
               </div>
 
               <div className="space-y-2">
@@ -956,18 +956,18 @@ const PiggyIdGenerator = () => {
 
               {/* Mint Status Display */}
               {mintStatus && (
-                <div className={`mt-4 p-4 border ${mintStatus.success ? 'border-green-500' : 'border-red-500'} rounded-md bg-black/50 text-center`}>
-                  <div className="flex flex-col items-center justify-center">
-                    <p className="text-lg font-bold font-mono">
+                <div className={`mt-4 p-4 border ${mintStatus.success ? 'border-green-500' : 'border-red-500'} rounded-md bg-black/50`}>
+                  <div className="mt-4">
+                    <p className="text-lg font-bold font-mono text-center">
                     {">"} {mintStatus.pending ? 'MINTING IN PROGRESS...' : (mintStatus.success ? 'MINTING SUCCESSFUL' : 'MINTING FAILED')}
                     </p>
                     {mintStatus.txHash && (
-                      <p className="text-sm text-pink-400 font-mono mt-2">
+                      <p className="text-sm text-center text-pink-400 font-mono mt-2">
                         TX: <a href={`https://basescan.org/tx/${mintStatus.txHash}`} target="_blank" rel="noopener noreferrer" className="text-pink-300 hover:text-pink-200 underline">{mintStatus.txHash.slice(0,10)}...{mintStatus.txHash.slice(-8)}</a>
                       </p>
                     )}
                     {mintStatus.ipfsHash && (
-                      <p className="text-sm text-pink-400 font-mono mt-2">
+                      <p className="text-sm text-center text-pink-400 font-mono mt-2">
                         METADATA: <a href={`${pinataGatewayUrl}/ipfs/${mintStatus.ipfsHash}`} target="_blank" rel="noopener noreferrer" className="text-pink-300 hover:text-pink-200 underline">IPFS Link</a>
                       </p>
                     )}
