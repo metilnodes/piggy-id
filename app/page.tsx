@@ -316,33 +316,33 @@ const PiggyIdGenerator = () => {
 
       // Set text properties with custom font
       ctx.fillStyle = "#000000"
-      ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
       ctx.textAlign = "left"
 
       // First location - Main card area (based on first image)
       if (surname) {
-        ctx.fillText(surname.toUpperCase(), 2745, 1660) // Ser-name position
+        ctx.fillText(surname.toUpperCase(), 1375, 815) // Ser-name position
       }
 
       if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 2745, 2040) // First Name position
+        ctx.fillText(firstName.toUpperCase(), 1375, 1015) // First Name position
       }
 
       // Add Passport Number (P<XXX...)
-      ctx.font = "196px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 5120, 1200)
+      ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.fillText(`P<${passportNumber}`, 2555, 590)
 
       // Add current date (replacing hardcoded Nov 24 2024)
-      ctx.font = "258px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 2745, 3750)
+      ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.fillText(formattedDate, 1375, 1880)
 
       // Second location - Bottom section (based on second image)
-      ctx.font = "231px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+      ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
 
       if (surname && firstName) {
         // Very strict position limits
-        const startX = 750
-        const maxX = canvas.width - 390 // Very strict boundary
+        const startX = 358
+        const maxX = canvas.width - 200 // Very strict boundary
         const maxWidth = maxX - startX // Maximum text width
 
         // Names are already limited to 12 characters during input
@@ -371,7 +371,7 @@ const PiggyIdGenerator = () => {
           bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
         }
 
-        ctx.fillText(bottomText, startX, 4590)
+        ctx.fillText(bottomText, startX, 2310)
       }
 
       // Draw avatar if uploaded
@@ -380,10 +380,10 @@ const PiggyIdGenerator = () => {
         avatarImg.crossOrigin = "anonymous"
         avatarImg.onload = () => {
           // Avatar position and size (rectangular)
-          const avatarX = 880
-          const avatarY = 1538
-          const avatarWidth = 1650
-          const avatarHeight = 1650
+          const avatarX = 420
+          const avatarY = 748
+          const avatarWidth = 850
+          const avatarHeight = 850
 
           // Create rectangular clipping path
           ctx.save()
@@ -820,8 +820,8 @@ const PiggyIdGenerator = () => {
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <div className="w-20 h-20 border-2 border-pink-500 rounded-2xl flex items-center justify-center neon-glow">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 border-2 border-pink-500 rounded-2xl flex items-center justify-center neon-glow mx-auto">
               <img src="/piggy-logo.png" alt="Piggy Logo" className="w-12 h-12 object-contain" />
             </div>
           </div>
