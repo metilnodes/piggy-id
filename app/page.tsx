@@ -101,7 +101,7 @@ const PiggyIdGenerator = () => {
 
   // Header component with wallet connection
   const Header = () => (
-    <header className="fixed top-0 right-0 p-4 z-50 md:relative md:top-auto md:right-auto md:p-0 md:mb-4">
+    <header className="fixed top-0 right-0 p-4 z-50 md:absolute md:top-4 md:right-4 md:p-0 md:mb-0">
       <div className="cyber-button">
         <ConnectButton.Custom>
           {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
