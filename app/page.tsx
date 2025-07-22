@@ -540,9 +540,8 @@ const PiggyIdGenerator = () => {
 
       // Step 1: Upload to Pinata
       // Convert canvas to blob
-      const resizedCanvas = downscaleCanvas(canvasRef.current, 0.5)
-      const blob = await canvasToBlob(resizedCanvas)
-
+      const blob = await canvasToBlob(canvasRef.current)
+  
       // Create a File object from the blob
       const file = new File([blob], `piggy-id-${passportNumber}.png`, { type: "image/png" })
 
