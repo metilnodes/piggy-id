@@ -207,3 +207,14 @@ export async function mintPiggyIDNFT(
     };
   }
 }
+/**
+ * Downscale canvas before converting to blob (for upload optimization)
+ */
+export function downscaleCanvas(originalCanvas: HTMLCanvasElement, scale = 0.5): HTMLCanvasElement {
+  const scaledCanvas = document.createElement('canvas');
+  const ctx = scaledCanvas.getContext('2d');
+  scaledCanvas.width = originalCanvas.width * scale;
+  scaledCanvas.height = originalCanvas.height * scale;
+  ctx?.drawImage(originalCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+  return scaledCanvas;
+}
