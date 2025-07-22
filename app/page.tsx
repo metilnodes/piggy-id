@@ -10,6 +10,7 @@ import { Download, Upload, Zap, Wallet } from "lucide-react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 import { canvasToBlob } from "@/utils/nft-utils"
+import { canvasToBlob, downscaleCanvas } from "@/utils/nft-utils"
 
 // Type definitions
 type MintingStep = "idle" | "uploading" | "wallet_required" | "approval_required" | "minting" | "complete"
@@ -539,7 +540,8 @@ const PiggyIdGenerator = () => {
 
       // Step 1: Upload to Pinata
       // Convert canvas to blob
-      const blob = await canvasToBlob(canvasRef.current)
+      const resizedCanvas = downscaleCanvas(canvasRef.current, 0.5)
+      const blob = await canvasToBlob(resizedCanvas)
 
       // Create a File object from the blob
       const file = new File([blob], `piggy-id-${passportNumber}.png`, { type: "image/png" })
