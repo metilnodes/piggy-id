@@ -50,7 +50,7 @@ export async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
       resolve(blob as Blob);
-    }, 'image/png');
+    }, 'image/jpeg');
   });
 }
 
