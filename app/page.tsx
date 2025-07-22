@@ -546,7 +546,7 @@ const PiggyIdGenerator = () => {
       const blob = await canvasToBlob(canvasRef.current);
 
       // Create a File object from the blob
-      const file = new File([blob], `piggy-id-${passportNumber}.jpg`, { type: 'image/jpeg' });
+      const file = new File([blob], `piggy-id-${passportNumber}.png`, { type: 'image/png' });
 
       // Create form data for upload
       const formData = new FormData();
