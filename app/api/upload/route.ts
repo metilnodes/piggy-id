@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const nftMetadata = {
       name: `Piggy ID: ${metadata.firstName} ${metadata.surname}`,
       description: `Official Piggy ID for ${metadata.firstName} ${metadata.surname}. Passport: ${metadata.passportNumber}. Minted on ${metadata.mintDate}.`,
-      image: imageGatewayUrl, // Use gateway URL instead of ipfs:// protocol
+      image: imageUrl, // Use gateway URL instead of ipfs:// protocol
       attributes: [
         { trait_type: "First Name", value: metadata.firstName },
         { trait_type: "Surname", value: metadata.surname },
