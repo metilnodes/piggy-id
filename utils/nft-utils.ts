@@ -47,10 +47,15 @@ export interface PiggyIDMetadata {
  * Converts a canvas to a Blob
  */
 export async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve(blob as Blob);
-    }, 'image/jpeg');
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Failed to convert canvas to blob"));
+      },
+      'image/jpeg', // 💥 ← поменяли с PNG на JPEG
+      0.9            // качество — можно 0.8 если нужно меньше
+    );
   });
 }
 
