@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download, Upload, Zap, Wallet } from "lucide-react"
+import { Download, Upload, Zap, Wallet, ExternalLink } from "lucide-react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 import { canvasToBlob } from "@/utils/nft-utils"
@@ -540,7 +540,7 @@ const PiggyIdGenerator = () => {
       // Step 1: Upload to Pinata
       // Convert canvas to blob
       const blob = await canvasToBlob(canvasRef.current)
-  
+
       // Create a File object from the blob
       const file = new File([blob], `piggy-id-${passportNumber}.jpg`, { type: "image/jpeg" })
 
@@ -950,7 +950,7 @@ const PiggyIdGenerator = () => {
                   className="flex-1 flex items-center justify-center gap-2 cyber-button glow-button"
                   disabled={!firstName || !surname || isMinting}
                 >
-                  <Wallet className="w-4 h-4" />
+                  <Wallet className="w-4 w-4" />
                   {isMinting ? "PROCESSING..." : "MINT AS NFT"}
                 </Button>
               </div>
@@ -1042,6 +1042,18 @@ const PiggyIdGenerator = () => {
               <p className="text-pink-400 font-mono text-sm text-center mt-2">
                 {">"} ENTER YOUR NAME TO SPAWN OINKDENTITY
               </p>
+
+              {/* Check ID Collection Button */}
+              <div className="flex justify-center mt-4">
+                <Button
+                  onClick={() => window.open("https://opensea.io/collection/piggy-id", "_blank")}
+                  className="flex items-center justify-center gap-2 cyber-button glow-button-sm"
+                  variant="outline"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  CHECK ID COLLECTION
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
