@@ -11,7 +11,6 @@ import { Download, Upload, Zap, Wallet } from "lucide-react"
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
 import { canvasToBlob, createPiggyIDMetadata } from '@/utils/nft-utils'
-import { Download, Upload, Zap, Wallet, ExternalLink } from 'lucide-react'
 
 // Type definitions
 type MintingStep = 'idle' | 'uploading' | 'wallet_required' | 'approval_required' | 'minting' | 'complete'
@@ -1005,17 +1004,6 @@ const PiggyIdGenerator = () => {
               <p className="text-pink-400 font-mono text-sm text-center mt-2">
                 {">"} ENTER YOUR NAME TO SPAWN OINKDENTITY
               </p>
-              {/* Check ID Collection Button */}
-              <div className="flex justify-center mt-4">
-                <Button
-                  onClick={() => window.open("https://opensea.io/collection/piggy-id", "_blank")}
-                  className="flex items-center justify-center gap-2 cyber-button glow-button-sm"
-                  variant="outline"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  CHECK ID COLLECTION
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>
