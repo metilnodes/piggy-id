@@ -1,19 +1,18 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download, Upload, Zap, Wallet } from "lucide-react"
-import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
-import { canvasToBlob, createPiggyIDMetadata } from '@/utils/nft-utils'
+import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
+import { canvasToBlob } from "@/utils/nft-utils"
 
 // Type definitions
-type MintingStep = 'idle' | 'uploading' | 'wallet_required' | 'approval_required' | 'minting' | 'complete'
+type MintingStep = "idle" | "uploading" | "wallet_required" | "approval_required" | "minting" | "complete"
 
 interface MintStatus {
   success: boolean
@@ -26,9 +25,9 @@ interface MintStatus {
 }
 
 // Contract addresses and ABIs
-const PIGGY_TOKEN_ADDRESS = "0xe3CF8dBcBDC9B220ddeaD0bD6342E245DAFF934d";
-const PIGGY_ID_CONTRACT = "0x7FA5212be2b53A0bF3cA6b06664232695625F108";
-const MINT_PRICE = BigInt("1000000000000000000000000"); // 1,000,000 PIGGY tokens
+const PIGGY_TOKEN_ADDRESS = "0xe3CF8dBcBDC9B220ddeaD0bD6342E245DAFF934d"
+const PIGGY_ID_CONTRACT = "0x7FA5212be2b53A0bF3cA6b06664232695625F108"
+const MINT_PRICE = BigInt("1000000000000000000000000") // 1,000,000 PIGGY tokens
 
 // ABI for PiggyID contract
 const PIGGY_ID_ABI = [
@@ -38,32 +37,32 @@ const PIGGY_ID_ABI = [
     stateMutability: "nonpayable",
     inputs: [
       { name: "to", type: "address" },
-      { name: "ipfsHash", type: "string" }
+      { name: "ipfsHash", type: "string" },
     ],
-    outputs: [{ name: "", type: "uint256" }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
     name: "tokenURI",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "tokenId", type: "uint256" }],
-    outputs: [{ name: "", type: "string" }]
+    outputs: [{ name: "", type: "string" }],
   },
   {
     name: "ownerOf",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "tokenId", type: "uint256" }],
-    outputs: [{ name: "", type: "address" }]
+    outputs: [{ name: "", type: "address" }],
   },
   {
     name: "hasPiggyID",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "bool" }]
-  }
-];
+    outputs: [{ name: "", type: "bool" }],
+  },
+]
 
 // PIGGY token ABI (ERC20)
 const PIGGY_TOKEN_ABI = [
@@ -73,9 +72,9 @@ const PIGGY_TOKEN_ABI = [
     stateMutability: "nonpayable",
     inputs: [
       { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" }
+      { name: "amount", type: "uint256" },
     ],
-    outputs: [{ name: "", type: "bool" }]
+    outputs: [{ name: "", type: "bool" }],
   },
   {
     name: "allowance",
@@ -83,47 +82,40 @@ const PIGGY_TOKEN_ABI = [
     stateMutability: "view",
     inputs: [
       { name: "owner", type: "address" },
-      { name: "spender", type: "address" }
+      { name: "spender", type: "address" },
     ],
-    outputs: [{ name: "", type: "uint256" }]
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
     name: "balanceOf",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "account", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }]
-  }
-];
+    outputs: [{ name: "", type: "uint256" }],
+  },
+]
 
 const PiggyIdGenerator = () => {
   // Get Pinata gateway URL from environment variable
-  const pinataGatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://olive-familiar-gerbil-797.mypinata.cloud'
+  const pinataGatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "https://olive-familiar-gerbil-797.mypinata.cloud"
 
   // Header component with wallet connection
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
         <ConnectButton.Custom>
-          {({
-            account,
-            chain,
-            openAccountModal,
-            openChainModal,
-            openConnectModal,
-            mounted,
-          }) => {
-            const ready = mounted;
-            const connected = ready && account && chain;
+          {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
+            const ready = mounted
+            const connected = ready && account && chain
 
             return (
               <div
                 {...(!ready && {
-                  'aria-hidden': true,
+                  "aria-hidden": true,
                   style: {
                     opacity: 0,
-                    pointerEvents: 'none',
-                    userSelect: 'none',
+                    pointerEvents: "none",
+                    userSelect: "none",
                   },
                 })}
               >
@@ -136,18 +128,18 @@ const PiggyIdGenerator = () => {
                       >
                         CONNECT WALLET
                       </button>
-                    );
+                    )
                   }
 
                   if (chain.unsupported) {
                     return (
-                      <button 
+                      <button
                         onClick={openChainModal}
                         className="bg-black border border-red-500 text-red-500 font-mono text-sm px-4 py-2 rounded hover:bg-red-500 hover:text-black transition-colors"
                       >
                         WRONG NETWORK
                       </button>
-                    );
+                    )
                   }
 
                   return (
@@ -159,17 +151,17 @@ const PiggyIdGenerator = () => {
                         {chain.name}
                       </button>
 
-                      <button 
+                      <button
                         onClick={openAccountModal}
                         className="bg-black border border-pink-500 text-pink-500 font-mono text-xs px-3 py-1 rounded hover:bg-pink-500 hover:text-black transition-colors"
                       >
                         {account.displayName}
                       </button>
                     </div>
-                  );
+                  )
                 })()}
               </div>
-            );
+            )
           }}
         </ConnectButton.Custom>
       </div>
@@ -177,19 +169,19 @@ const PiggyIdGenerator = () => {
   )
 
   // State for form inputs and UI
-  const [firstName, setFirstName] = useState('')
-  const [surname, setSurname] = useState('')
+  const [firstName, setFirstName] = useState("")
+  const [surname, setSurname] = useState("")
   const [avatarImage, setAvatarImage] = useState<string | null>(null)
   const [passportNumber, setPassportNumber] = useState("")
   const [isMinting, setIsMinting] = useState(false)
-  const [mintingStep, setMintingStep] = useState<MintingStep>('idle')
-  const [mintButtonText, setMintButtonText] = useState<string>('MINT AS NFT')
+  const [mintingStep, setMintingStep] = useState<MintingStep>("idle")
+  const [mintButtonText, setMintButtonText] = useState<string>("MINT AS NFT")
   const [mintStatus, setMintStatus] = useState<MintStatus | null>(null)
   const [uploadedMetadata, setUploadedMetadata] = useState<{
-    metadataUrl: string;
-    imageUrl: string;
-    metadataGatewayUrl?: string;
-    imageGatewayUrl?: string;
+    metadataUrl: string
+    imageUrl: string
+    metadataGatewayUrl?: string
+    imageGatewayUrl?: string
   } | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -197,24 +189,28 @@ const PiggyIdGenerator = () => {
   const { address, isConnected } = useAccount()
 
   // Read contract data for PIGGY token balance and allowance
-  const { data: piggyBalance, isError: balanceError, error: balanceErrorData } = useContractRead({
+  const {
+    data: piggyBalance,
+    isError: balanceError,
+    error: balanceErrorData,
+  } = useContractRead({
     address: PIGGY_TOKEN_ADDRESS as `0x${string}`,
     abi: PIGGY_TOKEN_ABI,
-    functionName: 'balanceOf',
+    functionName: "balanceOf",
     args: address ? [address as `0x${string}`] : undefined,
     query: {
-      enabled: !!address
-    }
+      enabled: !!address,
+    },
   })
-  
+
   // Debug logging for PIGGY balance
   useEffect(() => {
     if (address) {
-      console.log('Connected wallet address:', address)
-      console.log('PIGGY_TOKEN_ADDRESS:', PIGGY_TOKEN_ADDRESS)
-      console.log('PIGGY balance data:', piggyBalance)
+      console.log("Connected wallet address:", address)
+      console.log("PIGGY_TOKEN_ADDRESS:", PIGGY_TOKEN_ADDRESS)
+      console.log("PIGGY balance data:", piggyBalance)
       if (balanceError) {
-        console.error('PIGGY balance error:', balanceErrorData)
+        console.error("PIGGY balance error:", balanceErrorData)
       }
     }
   }, [address, piggyBalance, balanceError, balanceErrorData])
@@ -222,22 +218,22 @@ const PiggyIdGenerator = () => {
   const { data: piggyAllowance } = useContractRead({
     address: PIGGY_TOKEN_ADDRESS as `0x${string}`,
     abi: PIGGY_TOKEN_ABI,
-    functionName: 'allowance',
+    functionName: "allowance",
     args: address ? [address as `0x${string}`, PIGGY_ID_CONTRACT as `0x${string}`] : undefined,
     query: {
-      enabled: !!address
-    }
+      enabled: !!address,
+    },
   })
 
   // Check if user already has a Piggy ID
   const { data: hasPiggyID } = useContractRead({
     address: PIGGY_ID_CONTRACT as `0x${string}`,
     abi: PIGGY_ID_ABI,
-    functionName: 'hasPiggyID',
+    functionName: "hasPiggyID",
     args: address ? [address as `0x${string}`] : undefined,
     query: {
-      enabled: !!address
-    }
+      enabled: !!address,
+    },
   })
 
   // Contract write hooks
@@ -247,8 +243,8 @@ const PiggyIdGenerator = () => {
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
     hash: approveData,
     query: {
-      enabled: !!approveData
-    }
+      enabled: !!approveData,
+    },
   })
 
   // Mint NFT hook
@@ -258,24 +254,24 @@ const PiggyIdGenerator = () => {
   const { isLoading: isMintConfirming, isSuccess: isMintSuccess } = useWaitForTransactionReceipt({
     hash: mintData,
     query: {
-      enabled: !!mintData
-    }
+      enabled: !!mintData,
+    },
   })
 
   // Handle opening and initializing the mint modal
   const handleOpenMintModal = () => {
-    setIsMinting(true);
+    setIsMinting(true)
     if (!passportNumber) {
-      setPassportNumber(generatePassportNumber()); // Initialize with a random passport number if empty
+      setPassportNumber(generatePassportNumber()) // Initialize with a random passport number if empty
     }
   }
 
   // Generate random passport number on first render
   useEffect(() => {
     if (!passportNumber) {
-      setPassportNumber(generatePassportNumber());
+      setPassportNumber(generatePassportNumber())
     }
-  }, []);
+  }, [])
 
   // Add font loading
   useEffect(() => {
@@ -302,7 +298,7 @@ const PiggyIdGenerator = () => {
 
     // Get current date formatted
     const currentDate = new Date()
-    const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`
+    const formattedDate = `${currentDate.getDate().toString().padStart(2, "0")}-${(currentDate.getMonth() + 1).toString().padStart(2, "0")}-${currentDate.getFullYear()}`
 
     const backgroundImg = new Image()
     backgroundImg.crossOrigin = "anonymous"
@@ -450,20 +446,20 @@ const PiggyIdGenerator = () => {
 
   // Function to generate random passport number
   const generatePassportNumber = () => {
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    let result = ""
     for (let i = 0; i < 7; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
     }
-    return result;
+    return result
   }
-  
+
   // Auto-generate passport number on component mount
   useEffect(() => {
     if (!passportNumber) {
-      setPassportNumber(generatePassportNumber());
+      setPassportNumber(generatePassportNumber())
     }
-  }, []);
+  }, [])
 
   // Handle passport number change (user override)
   const handlePassportNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -481,76 +477,76 @@ const PiggyIdGenerator = () => {
     let hash = 0
     for (let i = 0; i < baseString.length; i++) {
       const char = baseString.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash
     }
 
-    return Math.abs(hash).toString(16).padStart(8, '0').toUpperCase()
+    return Math.abs(hash).toString(16).padStart(8, "0").toUpperCase()
   }
 
   // Handle NFT minting with step-by-step workflow
   const mintAsNFT = async () => {
     if (!firstName || !surname || !canvasRef.current) {
-      return;
+      return
     }
 
     try {
       // Start minting process
-      setIsMinting(true);
-      setMintStatus({ success: false, pending: true });
-      
+      setIsMinting(true)
+      setMintStatus({ success: false, pending: true })
+
       // Check if wallet is connected first (needed to check balance)
       if (!address) {
         // If no wallet is connected, update step to prompt for connection
-        setMintingStep('wallet_required');
-        return; // Stop here until wallet is connected
+        setMintingStep("wallet_required")
+        return // Stop here until wallet is connected
       }
-      
+
       // Check if user already has a PiggyID
       if (hasPiggyID) {
         setMintStatus({
           success: false,
           pending: false,
-          error: 'You already have a PiggyID NFT minted to this address'
-        });
-        setMintingStep('idle');
-        setIsMinting(false);
-        return;
+          error: "You already have a PiggyID NFT minted to this address",
+        })
+        setMintingStep("idle")
+        setIsMinting(false)
+        return
       }
-      
+
       // Check if user has enough PIGGY tokens before uploading to Pinata
-      const hasBalance = (piggyBalance as bigint || BigInt(0)) >= MINT_PRICE;
+      const hasBalance = ((piggyBalance as bigint) || BigInt(0)) >= MINT_PRICE
       if (!hasBalance) {
         setMintStatus({
           success: false,
           pending: false,
-          error: 'Insufficient PIGGY token balance. You need 1,000,000 PIGGY tokens to mint.'
-        });
-        setMintingStep('idle');
-        setIsMinting(false);
-        return;
+          error: "Insufficient PIGGY token balance. You need 1,000,000 PIGGY tokens to mint.",
+        })
+        setMintingStep("idle")
+        setIsMinting(false)
+        return
       }
-      
+
       // Now proceed with uploading to Pinata
-      setMintingStep('uploading');
+      setMintingStep("uploading")
 
       // Generate unique hash for metadata
-      const uniqueHash = generateUniqueHash();
+      const uniqueHash = generateUniqueHash()
 
       // Get the current date formatted for metadata
-      const currentDate = new Date();
-      const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getFullYear()}`;
+      const currentDate = new Date()
+      const formattedDate = `${currentDate.getDate().toString().padStart(2, "0")}-${(currentDate.getMonth() + 1).toString().padStart(2, "0")}-${currentDate.getFullYear()}`
 
       // Step 1: Upload to Pinata
       // Convert canvas to blob
-      const blob = await canvasToBlob(canvasRef.current);
+      const blob = await canvasToBlob(canvasRef.current)
 
       // Create a File object from the blob
-      const file = new File([blob], `piggy-id-${passportNumber}.png`, { type: 'image/png' });
+      const file = new File([blob], `piggy-id-${passportNumber}.png`, { type: "image/png" })
 
       // Create form data for upload
-      const formData = new FormData();
-      formData.append('file', file);
+      const formData = new FormData()
+      formData.append("file", file)
 
       // Create metadata
       const metadata = {
@@ -558,54 +554,53 @@ const PiggyIdGenerator = () => {
         surname,
         passportNumber,
         mintDate: formattedDate,
-        uniqueHash
-      };
-      formData.append('metadata', JSON.stringify(metadata));
+        uniqueHash,
+      }
+      formData.append("metadata", JSON.stringify(metadata))
 
-      console.log('Uploading to Pinata...');
+      console.log("Uploading to Pinata...")
 
       // Upload to Pinata through our API route
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
-      });
+      })
 
-      const uploadResult = await uploadResponse.json();
+      const uploadResult = await uploadResponse.json()
 
       if (!uploadResponse.ok) {
-        console.error('Upload failed:', uploadResult);
-        throw new Error(uploadResult.error || 'Failed to upload to IPFS');
+        console.error("Upload failed:", uploadResult)
+        throw new Error(uploadResult.error || "Failed to upload to IPFS")
       }
 
-      console.log('Upload successful:', uploadResult);
+      console.log("Upload successful:", uploadResult)
 
       // Store upload result for later use, including gateway URLs
-      const pinataGatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://olive-familiar-gerbil-797.mypinata.cloud'
+      const pinataGatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "https://olive-familiar-gerbil-797.mypinata.cloud"
       setUploadedMetadata({
         metadataUrl: uploadResult.metadataUrl,
         imageUrl: uploadResult.imageUrl,
-        metadataGatewayUrl: `${pinataGatewayUrl}/ipfs/${uploadResult.metadataUrl.split('/ipfs/')[1]}`,
-        imageGatewayUrl: `${pinataGatewayUrl}/ipfs/${uploadResult.imageUrl.split('/ipfs/')[1]}`
-      });
+        metadataGatewayUrl: `${pinataGatewayUrl}/ipfs/${uploadResult.metadataUrl.split("/ipfs/")[1]}`,
+        imageGatewayUrl: `${pinataGatewayUrl}/ipfs/${uploadResult.imageUrl.split("/ipfs/")[1]}`,
+      })
 
       // Step 2: Check if wallet is connected
       if (!address) {
         // If no wallet is connected, update step to prompt for connection
-        setMintingStep('wallet_required')
+        setMintingStep("wallet_required")
         return // Stop here until wallet is connected
       }
 
       // If wallet is already connected, proceed to minting
       await completeMinting(uploadResult.metadataUrl, uploadResult.imageUrl)
-
     } catch (error: any) {
-      console.error('Minting error:', error)
+      console.error("Minting error:", error)
       setMintStatus({
         success: false,
         pending: false,
-        error: error.message || 'Unknown error occurred'
+        error: error.message || "Unknown error occurred",
       })
-      setMintingStep('idle')
+      setMintingStep("idle")
       setIsMinting(false)
     }
   }
@@ -613,16 +608,16 @@ const PiggyIdGenerator = () => {
   // Effect to watch for approval success and trigger minting after approval
   useEffect(() => {
     const handleApprovalSuccess = async () => {
-      if (isApproveSuccess && mintingStep === 'approval_required' && uploadedMetadata && address) {
+      if (isApproveSuccess && mintingStep === "approval_required" && uploadedMetadata && address) {
         // After successful approval, proceed to mint
-        setMintingStep('minting');
+        setMintingStep("minting")
 
         // Extract IPFS hash from metadata URI
         let ipfsHash = uploadedMetadata.metadataUrl
-        if (ipfsHash.startsWith('ipfs://')) {
-          ipfsHash = ipfsHash.replace('ipfs://', '')
-        } else if (ipfsHash.includes('/ipfs/')) {
-          ipfsHash = ipfsHash.split('/ipfs/')[1]
+        if (ipfsHash.startsWith("ipfs://")) {
+          ipfsHash = ipfsHash.replace("ipfs://", "")
+        } else if (ipfsHash.includes("/ipfs/")) {
+          ipfsHash = ipfsHash.split("/ipfs/")[1]
         }
 
         // Call mint function with address and IPFS hash
@@ -630,35 +625,44 @@ const PiggyIdGenerator = () => {
           await writeMintNFT({
             address: PIGGY_ID_CONTRACT as `0x${string}`,
             abi: PIGGY_ID_ABI,
-            functionName: 'mintPiggyID',
-            args: [address as `0x${string}`, ipfsHash]
+            functionName: "mintPiggyID",
+            args: [address as `0x${string}`, ipfsHash],
           })
         } catch (error: any) {
-          console.error('Error minting NFT:', error)
+          console.error("Error minting NFT:", error)
           setMintStatus({
             success: false,
             pending: false,
-            error: 'Failed to mint NFT. Please try again.'
+            error: "Failed to mint NFT. Please try again.",
           })
-          setMintingStep('idle')
+          setMintingStep("idle")
           setIsMinting(false)
         }
       }
     }
 
     handleApprovalSuccess()
-  }, [isApproveSuccess, mintingStep, uploadedMetadata, address, writeMintNFT, setMintStatus, setMintingStep, setIsMinting])
+  }, [
+    isApproveSuccess,
+    mintingStep,
+    uploadedMetadata,
+    address,
+    writeMintNFT,
+    setMintStatus,
+    setMintingStep,
+    setIsMinting,
+  ])
 
   // Effect to handle mint success
   useEffect(() => {
-    if (isMintSuccess && mintingStep === 'minting' && uploadedMetadata) {
+    if (isMintSuccess && mintingStep === "minting" && uploadedMetadata) {
       setMintStatus({
         success: true,
         pending: false,
         txHash: mintData,
-        ipfsHash: uploadedMetadata.metadataUrl.split('/ipfs/')[1]
+        ipfsHash: uploadedMetadata.metadataUrl.split("/ipfs/")[1],
       })
-      setMintingStep('complete')
+      setMintingStep("complete")
       setIsMinting(false)
     }
   }, [isMintSuccess, mintingStep, uploadedMetadata, mintData, setMintStatus, setMintingStep, setIsMinting])
@@ -670,135 +674,148 @@ const PiggyIdGenerator = () => {
       setMintStatus({
         success: false,
         pending: true,
-        message: 'Approving PIGGY tokens...'
+        message: "Approving PIGGY tokens...",
       })
     } else if (isMintLoading || isMintConfirming) {
       setMintStatus({
         success: false,
         pending: true,
-        message: 'Minting PiggyID NFT...'
+        message: "Minting PiggyID NFT...",
       })
     }
 
     // Update button text based on loading state
     if (isApproveLoading || isApproveConfirming || isMintLoading || isMintConfirming) {
-      setMintButtonText('Transaction in progress...')
+      setMintButtonText("Transaction in progress...")
     }
   }, [isApproveLoading, isApproveConfirming, isMintLoading, isMintConfirming, setMintStatus, setMintButtonText])
 
   // Complete the minting process
-  const completeMinting = useCallback(async (metadataUri: string, imageUrl: string) => {
-    try {
-      // Validate connection and ownership
-      if (!address) {
-        throw new Error('Please connect your wallet first')
-      }
+  const completeMinting = useCallback(
+    async (metadataUri: string, imageUrl: string) => {
+      try {
+        // Validate connection and ownership
+        if (!address) {
+          throw new Error("Please connect your wallet first")
+        }
 
-      // Check if user already has a PiggyID
-      if (hasPiggyID) {
-        throw new Error('You already have a PiggyID')
-      }
+        // Check if user already has a PiggyID
+        if (hasPiggyID) {
+          throw new Error("You already have a PiggyID")
+        }
 
-      // Check if user has enough PIGGY tokens
-      const hasBalance = (piggyBalance as bigint || BigInt(0)) >= MINT_PRICE
+        // Check if user has enough PIGGY tokens
+        const hasBalance = ((piggyBalance as bigint) || BigInt(0)) >= MINT_PRICE
 
-      // If insufficient balance, show error
-      if (!hasBalance) {
-        setMintStatus({
-          success: false,
-          pending: false,
-          error: 'Insufficient PIGGY token balance. You need 1,000,000 PIGGY tokens to mint.'
-        })
-        setMintingStep('idle')
-        setIsMinting(false)
-        return
-      }
-
-      // Check if tokens are approved
-      const allowance = piggyAllowance as bigint || BigInt(0)
-      const hasApproval = allowance >= MINT_PRICE
-
-      // If not approved, request approval
-      if (!hasApproval) {
-        setMintingStep('approval_required')
-
-        // Request token approval (this will trigger the effect above when successful)
-        try {
-          await writeApproveTokens({
-            address: PIGGY_TOKEN_ADDRESS as `0x${string}`,
-            abi: PIGGY_TOKEN_ABI,
-            functionName: 'approve',
-            args: [PIGGY_ID_CONTRACT as `0x${string}`, MINT_PRICE]
-          })
-        } catch (error: any) {
-          console.error('Error approving tokens:', error)
+        // If insufficient balance, show error
+        if (!hasBalance) {
           setMintStatus({
             success: false,
             pending: false,
-            error: 'Failed to approve tokens: ' + (error.message || 'Unknown error')
+            error: "Insufficient PIGGY token balance. You need 1,000,000 PIGGY tokens to mint.",
           })
-          setMintingStep('idle')
+          setMintingStep("idle")
           setIsMinting(false)
           return
         }
 
-        // Store metadata for later use in effects
-        setUploadedMetadata({
-          metadataUrl: metadataUri,
-          imageUrl: imageUrl
-        })
-      } else {
-        // If already approved, proceed to minting
-        setMintingStep('minting')
+        // Check if tokens are approved
+        const allowance = (piggyAllowance as bigint) || BigInt(0)
+        const hasApproval = allowance >= MINT_PRICE
 
-        // Extract IPFS hash from metadata URI
-        let ipfsHash = metadataUri
-        if (ipfsHash.startsWith('ipfs://')) {
-          ipfsHash = ipfsHash.replace('ipfs://', '')
-        } else if (ipfsHash.includes('/ipfs/')) {
-          ipfsHash = ipfsHash.split('/ipfs/')[1]
+        // If not approved, request approval
+        if (!hasApproval) {
+          setMintingStep("approval_required")
+
+          // Request token approval (this will trigger the effect above when successful)
+          try {
+            await writeApproveTokens({
+              address: PIGGY_TOKEN_ADDRESS as `0x${string}`,
+              abi: PIGGY_TOKEN_ABI,
+              functionName: "approve",
+              args: [PIGGY_ID_CONTRACT as `0x${string}`, MINT_PRICE],
+            })
+          } catch (error: any) {
+            console.error("Error approving tokens:", error)
+            setMintStatus({
+              success: false,
+              pending: false,
+              error: "Failed to approve tokens: " + (error.message || "Unknown error"),
+            })
+            setMintingStep("idle")
+            setIsMinting(false)
+            return
+          }
+
+          // Store metadata for later use in effects
+          setUploadedMetadata({
+            metadataUrl: metadataUri,
+            imageUrl: imageUrl,
+          })
+        } else {
+          // If already approved, proceed to minting
+          setMintingStep("minting")
+
+          // Extract IPFS hash from metadata URI
+          let ipfsHash = metadataUri
+          if (ipfsHash.startsWith("ipfs://")) {
+            ipfsHash = ipfsHash.replace("ipfs://", "")
+          } else if (ipfsHash.includes("/ipfs/")) {
+            ipfsHash = ipfsHash.split("/ipfs/")[1]
+          }
+
+          // Call mint function with address and IPFS hash
+          await writeMintNFT({
+            address: PIGGY_ID_CONTRACT as `0x${string}`,
+            abi: PIGGY_ID_ABI,
+            functionName: "mintPiggyID",
+            args: [address as `0x${string}`, ipfsHash],
+          })
+
+          // Store metadata for later use in effects
+          setUploadedMetadata({
+            metadataUrl: metadataUri,
+            imageUrl: imageUrl,
+          })
         }
-
-        // Call mint function with address and IPFS hash
-        await writeMintNFT({
-          address: PIGGY_ID_CONTRACT as `0x${string}`,
-          abi: PIGGY_ID_ABI,
-          functionName: 'mintPiggyID',
-          args: [address as `0x${string}`, ipfsHash]
+      } catch (error: any) {
+        console.error("Minting completion error:", error)
+        setMintStatus({
+          success: false,
+          pending: false,
+          error: error.message || "Unknown error occurred",
         })
-
-        // Store metadata for later use in effects
-        setUploadedMetadata({
-          metadataUrl: metadataUri,
-          imageUrl: imageUrl
-        })
+        setMintingStep("idle")
+        setIsMinting(false)
       }
-
-    } catch (error: any) {
-      console.error('Minting completion error:', error)
-      setMintStatus({
-        success: false,
-        pending: false,
-        error: error.message || 'Unknown error occurred'
-      })
-      setMintingStep('idle')
-      setIsMinting(false)
-    }
-  }, [address, hasPiggyID, piggyBalance, piggyAllowance, writeApproveTokens, writeMintNFT, setMintStatus, setMintingStep, setIsMinting, setUploadedMetadata]);
+    },
+    [
+      address,
+      hasPiggyID,
+      piggyBalance,
+      piggyAllowance,
+      writeApproveTokens,
+      writeMintNFT,
+      setMintStatus,
+      setMintingStep,
+      setIsMinting,
+      setUploadedMetadata,
+    ],
+  )
 
   // Effect to handle wallet connection
   useEffect(() => {
     const handleWalletConnection = async () => {
       // If we're in wallet_required step and now have an address and uploaded metadata
-      if (mintingStep === 'wallet_required' && address && uploadedMetadata) {
+      if (mintingStep === "wallet_required" && address && uploadedMetadata) {
         try {
           await completeMinting(uploadedMetadata.metadataUrl, uploadedMetadata.imageUrl)
         } catch (error) {
-          console.error('Error after wallet connection:', error)
+          console.error("Error after wallet connection:", error)
         }
       }
     }
-    
+
     handleWalletConnection()
   }, [address, mintingStep, uploadedMetadata, completeMinting])
 
@@ -809,7 +826,7 @@ const PiggyIdGenerator = () => {
     }, 100) // Small delay for better performance
 
     return () => clearTimeout(timeoutId)
-  }, [firstName, surname, avatarImage, passportNumber, generateIdCard])
+  }, [firstName, surname, avatarImage, passportNumber])
 
   // uploadedMetadata state moved to the top of the component
 
@@ -921,7 +938,7 @@ const PiggyIdGenerator = () => {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button
                   onClick={downloadIdCard}
-                  className="flex-1 flex items-center justify-center gap-2 cyber-button"
+                  className="flex-1 flex items-center justify-center gap-2 cyber-button bg-transparent"
                   variant="outline"
                   disabled={!firstName || !surname}
                 >
@@ -937,13 +954,13 @@ const PiggyIdGenerator = () => {
                   {isMinting ? "PROCESSING..." : "MINT AS NFT"}
                 </Button>
               </div>
-              
+
               {/* Wallet connection prompt - only shown when needed */}
-              {mintingStep === 'wallet_required' && (
-                <div 
+              {mintingStep === "wallet_required" && (
+                <div
                   onClick={() => {
-                    const button = document.querySelector('.cyber-wallet-prompt button') as HTMLElement;
-                    if (button) button.click();
+                    const button = document.querySelector(".cyber-wallet-prompt button") as HTMLElement
+                    if (button) button.click()
                   }}
                   className="mt-4 p-4 border border-pink-500 rounded-md bg-black/50 cursor-pointer hover:bg-pink-950/30 transition-colors"
                 >
@@ -956,28 +973,49 @@ const PiggyIdGenerator = () => {
 
               {/* Mint Status Display */}
               {mintStatus && (
-                <div className={`mt-4 p-4 border ${mintStatus.success ? 'border-green-500' : 'border-red-500'} rounded-md bg-black/50`}>
+                <div
+                  className={`mt-4 p-4 border ${mintStatus.success ? "border-green-500" : "border-red-500"} rounded-md bg-black/50`}
+                >
                   <div className="mt-4">
                     <p className="text-lg font-bold font-mono text-center">
-                    {">"} {mintStatus.pending ? 'MINTING IN PROGRESS...' : (mintStatus.success ? 'MINTING SUCCESSFUL' : 'MINTING FAILED')}
+                      {">"}{" "}
+                      {mintStatus.pending
+                        ? "MINTING IN PROGRESS..."
+                        : mintStatus.success
+                          ? "MINTING SUCCESSFUL"
+                          : "MINTING FAILED"}
                     </p>
                     {mintStatus.txHash && (
                       <p className="text-sm text-center text-pink-400 font-mono mt-2">
-                        TX: <a href={`https://basescan.org/tx/${mintStatus.txHash}`} target="_blank" rel="noopener noreferrer" className="text-pink-300 hover:text-pink-200 underline">{mintStatus.txHash.slice(0,10)}...{mintStatus.txHash.slice(-8)}</a>
+                        TX:{" "}
+                        <a
+                          href={`https://basescan.org/tx/${mintStatus.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-pink-300 hover:text-pink-200 underline"
+                        >
+                          {mintStatus.txHash.slice(0, 10)}...{mintStatus.txHash.slice(-8)}
+                        </a>
                       </p>
                     )}
                     {mintStatus.ipfsHash && (
                       <p className="text-sm text-center text-pink-400 font-mono mt-2">
-                        METADATA: <a href={`${pinataGatewayUrl}/ipfs/${mintStatus.ipfsHash}`} target="_blank" rel="noopener noreferrer" className="text-pink-300 hover:text-pink-200 underline">IPFS Link</a>
+                        METADATA:{" "}
+                        <a
+                          href={`${pinataGatewayUrl}/ipfs/${mintStatus.ipfsHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-pink-300 hover:text-pink-200 underline"
+                        >
+                          IPFS Link
+                        </a>
                       </p>
                     )}
-                  {mintStatus.error && (
-                    <p className="text-red-400 font-mono text-sm mt-1">
-                      ERROR: {mintStatus.error}
-                    </p>
-                  )}
+                    {mintStatus.error && (
+                      <p className="text-red-400 font-mono text-sm mt-1">ERROR: {mintStatus.error}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
               )}
             </CardContent>
           </Card>
@@ -994,16 +1032,25 @@ const PiggyIdGenerator = () => {
             <CardContent className="py-6">
               <div className="cyber-screen-container">
                 <div className="cyber-screen">
-                  <canvas 
-                    ref={canvasRef} 
-                    className="w-full h-auto" 
-                    style={{ display: 'block', maxWidth: '100%', height: 'auto' }} 
+                  <canvas
+                    ref={canvasRef}
+                    className="w-full h-auto"
+                    style={{ display: "block", maxWidth: "100%", height: "auto" }}
                   />
                 </div>
               </div>
               <p className="text-pink-400 font-mono text-sm text-center mt-2">
                 {">"} ENTER YOUR NAME TO SPAWN OINKDENTITY
               </p>
+              <div className="flex justify-center mt-4">
+                <Button
+                  onClick={() => window.open("https://opensea.io/collection/piggy-id", "_blank")}
+                  className="flex items-center justify-center gap-2 cyber-button"
+                  variant="outline"
+                >
+                  CHECK ID COLLECTION
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
