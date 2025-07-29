@@ -11,6 +11,7 @@ import { Download, Upload, Zap, Wallet } from "lucide-react"
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
 import { canvasToBlob, createPiggyIDMetadata } from '@/utils/nft-utils'
+import { Download, Upload, Zap, Wallet, ExternalLink } from 'lucide-react'
 
 // Type definitions
 type MintingStep = 'idle' | 'uploading' | 'wallet_required' | 'approval_required' | 'minting' | 'complete'
