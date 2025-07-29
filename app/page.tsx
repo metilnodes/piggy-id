@@ -1004,6 +1004,17 @@ const PiggyIdGenerator = () => {
               <p className="text-pink-400 font-mono text-sm text-center mt-2">
                 {">"} ENTER YOUR NAME TO SPAWN OINKDENTITY
               </p>
+              {/* Check ID Collection Button */}
+              <div className="flex justify-center mt-4">
+                <Button
+                  onClick={() => window.open("https://opensea.io/collection/piggy-id", "_blank")}
+                  className="flex items-center justify-center gap-2 cyber-button glow-button-sm"
+                  variant="outline"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  CHECK ID COLLECTION
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
