@@ -1060,7 +1060,7 @@ const PiggyIdGenerator = () => {
                   className="flex items-center justify-center gap-2 cyber-button"
                   variant="outline"
                 >
-                  BUY PIGGY ON BASE
+                  BUY $PIGGY ON BASE
                 </Button>
               </div>
             </CardContent>
