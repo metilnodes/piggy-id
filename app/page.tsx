@@ -1042,13 +1042,25 @@ const PiggyIdGenerator = () => {
               <p className="text-pink-400 font-mono text-sm text-center mt-2">
                 {">"} ENTER YOUR NAME TO SPAWN OINKDENTITY
               </p>
-              <div className="flex justify-center mt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
                 <Button
                   onClick={() => window.open("https://opensea.io/collection/piggy-id", "_blank")}
                   className="flex items-center justify-center gap-2 cyber-button"
                   variant="outline"
                 >
                   CHECK ID COLLECTION
+                </Button>
+                <Button
+                  onClick={() =>
+                    window.open(
+                      "https://app.uniswap.org/explore/tokens/base/0xe3cf8dbcbdc9b220ddead0bd6342e245daff934d",
+                      "_blank",
+                    )
+                  }
+                  className="flex items-center justify-center gap-2 cyber-button"
+                  variant="outline"
+                >
+                  BUY PIGGY ON BASE
                 </Button>
               </div>
             </CardContent>
