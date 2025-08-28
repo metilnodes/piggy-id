@@ -25,3 +25,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# poker data files
+/data/poker-assignments.json
+/public/poker.csv

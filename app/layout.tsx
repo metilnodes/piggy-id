@@ -7,7 +7,7 @@ export const metadata = {
   description: "Mint your OINKDENTITY and explore the Piggy World",
   generator: "metil",
   icons: {
-    icon: "/placeholder.svg?height=32&width=32&text=🐷",
+    icon: "/piggy-logo-favicon.png",
   },
   openGraph: {
     title: "Piggy ID",
@@ -16,7 +16,7 @@ export const metadata = {
     siteName: "Piggy ID",
     images: [
       {
-        url: "/placeholder.svg?height=630&width=1200&text=Piggy+ID+Preview",
+        url: "/piggy-id-preview-card.png",
         width: 1200,
         height: 630,
         alt: "Piggy ID Preview",
@@ -29,7 +29,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Piggy ID",
     description: "Mint your OINKDENTITY and explore the Piggy World",
-    images: ["/placeholder.svg?height=630&width=1200&text=Piggy+ID+Preview"],
+    images: ["/piggy-id-twitter-card.png"],
   },
 }
 
