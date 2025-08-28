@@ -247,13 +247,13 @@ export default function PokerPage() {
             ) : (
               <div className="space-y-6">
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
-                  <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR POKER ID</h3>
+                  <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR PIGGY ID</h3>
                   <div className="text-pink-400 font-mono">
                     {tokenId !== null ? (
                       <span className="text-pink-300">#{tokenId.toString()}</span>
                     ) : (
                       <div className="space-y-3">
-                        <span className="text-red-400">You don't have Poker ID</span>
+                        <span className="text-red-400">You don't have Piggy ID</span>
                         <div>
                           <a
                             href="https://id.piggyworld.xyz/"
