@@ -15,15 +15,10 @@ export interface CodeAssignment {
   assigned_at: string
 }
 
-// Fetch and sync invite codes from CSV to database
-export async function syncInviteCodesFromCSV(): Promise<void> {
+// Fetch and sync invite codes from CSV content to database
+export async function syncInviteCodesFromCSV(csvContent: string): Promise<void> {
   try {
-    const response = await fetch(
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/poker-now-mtt-tests2-q2jy6PkRdD-invites-PCx5hDbJvozLcZNT3TuFILSQiyiWV4.csv",
-    )
-    const csvText = await response.text()
-
-    const lines = csvText.trim().split("\n")
+    const lines = csvContent.trim().split("\n")
     const headers = lines[0].split(",")
 
     const codes: string[] = []
@@ -74,27 +69,7 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
     `
 
     if (availableCode.length === 0) {
-      await syncInviteCodesFromCSV()
-
-      const retryAvailableCode = await sql`
-        SELECT ic.code 
-        FROM invite_codes ic
-        LEFT JOIN code_assignments ca ON ic.code = ca.invite_code
-        LEFT JOIN code_usage cu ON ic.code = cu.invite_code
-        WHERE ca.invite_code IS NULL AND cu.invite_code IS NULL
-        LIMIT 1
-      `
-
-      if (retryAvailableCode.length === 0) {
-        return null // Still no available codes
-      }
-
-      const code = retryAvailableCode[0].code
-      await sql`
-        INSERT INTO code_assignments (token_id, invite_code, wallet_address)
-        VALUES (${tokenId}, ${code}, ${walletAddress})
-      `
-      return code
+      return null // No available codes - admin needs to upload more
     }
 
     const code = availableCode[0].code
