@@ -3,7 +3,7 @@
 import { useAccount } from "wagmi"
 import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import { getOrAssignInviteCode } from "@/lib/invites"
+import { getOrAssignInviteCode } from "@/lib/invite-db"
 import { getTokenIdForOwner } from "@/lib/nft-client"
 
 export default function PokerPage() {
@@ -33,7 +33,7 @@ export default function PokerPage() {
 
         if (tid !== null) {
           console.log("[v0] Getting invite code for tokenId:", tid)
-          const code = await getOrAssignInviteCode(tid)
+          const code = await getOrAssignInviteCode(Number(tid), address)
           console.log("[v0] Assigned invite code:", code)
           if (!active) return
           setInvite(code)
