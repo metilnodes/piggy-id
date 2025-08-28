@@ -252,7 +252,19 @@ export default function PokerPage() {
                     {tokenId !== null ? (
                       <span className="text-pink-300">#{tokenId.toString()}</span>
                     ) : (
-                      <span className="text-red-400">You don't have Poker ID</span>
+                      <div className="space-y-3">
+                        <span className="text-red-400">You don't have Poker ID</span>
+                        <div>
+                          <a
+                            href="https://id.piggyworld.xyz/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="cyber-button inline-block px-6 py-2 text-sm font-mono font-bold hover:scale-105 transition-transform"
+                          >
+                            Mint your Piggy ID
+                          </a>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
