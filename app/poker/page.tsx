@@ -2,11 +2,11 @@ import type { Metadata } from "next"
 import PokerClientPage from "./PokerClientPage"
 
 export const metadata: Metadata = {
-  title: "Piggy Summer Poker Tournament",
+  title: "PIGGY POKER CLUB",
   description:
-    "Join the exclusive Piggy Summer Poker Tournament! Connect your wallet, verify your Piggy ID NFT, and get your unique invite code to compete.",
+    "Join the exclusive PIGGY POKER CLUB! Connect your wallet, verify your Piggy ID NFT, and get your unique invite code to compete.",
   openGraph: {
-    title: "Piggy Summer Poker Tournament",
+    title: "PIGGY POKER CLUB",
     description: "Exclusive poker tournament for Piggy ID holders. Verify your NFT and get your invite code!",
     url: "https://id.piggyworld.xyz/poker",
     siteName: "Piggy ID",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
         url: "/poker-preview.png",
         width: 1200,
         height: 630,
-        alt: "Piggy Summer Poker Tournament",
+        alt: "PIGGY POKER CLUB",
       },
     ],
     locale: "en_US",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Piggy Summer Poker Tournament",
+    title: "PIGGY POKER CLUB",
     description: "Exclusive poker tournament for Piggy ID holders. Verify your NFT and get your invite code!",
     images: ["/poker-preview.png"],
   },
