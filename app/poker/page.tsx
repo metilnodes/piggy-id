@@ -5,7 +5,6 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { getProviderSafe } from "@/lib/wallet/getProvider"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
-import { getOrAssignInviteCode } from "@/lib/invite-db"
 
 type Status = "idle" | "checking" | "no-wallet" | "ready" | "error"
 
@@ -42,6 +41,28 @@ export default function PokerPage() {
     }
   }, [])
 
+  const fetchInviteCode = async (tokenId: number, walletAddress: string): Promise<string | null> => {
+    try {
+      const response = await fetch("/api/poker/invite-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tokenId, walletAddress }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.inviteCode
+    } catch (error) {
+      console.error("Error fetching invite code:", error)
+      return null
+    }
+  }
+
   // NFT and invite code checking
   useEffect(() => {
     let active = true
@@ -66,7 +87,7 @@ export default function PokerPage() {
 
         if (firstToken !== null) {
           console.log("[v0] Getting invite code for tokenId:", firstToken)
-          const code = await getOrAssignInviteCode(Number(firstToken), address)
+          const code = await fetchInviteCode(Number(firstToken), address)
           console.log("[v0] Assigned invite code:", code)
           if (!active) return
           setInvite(code)
