@@ -1,22 +1,53 @@
 "use client"
 
-import { useAccount } from "wagmi"
 import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { useAccount } from "wagmi"
+import { getProviderSafe } from "@/lib/wallet/getProvider"
+import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 import { getOrAssignInviteCode } from "@/lib/invite-db"
-import { getTokenIdForOwner } from "@/lib/nft-client"
+
+type Status = "idle" | "checking" | "no-wallet" | "ready" | "error"
 
 export default function PokerPage() {
   const { address, isConnected } = useAccount()
+  const [status, setStatus] = useState<Status>("idle")
+  const [error, setError] = useState<string>("")
   const [tokenId, setTokenId] = useState<bigint | null>(null)
   const [invite, setInvite] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Safe wallet initialization
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        setStatus("checking")
+        const provider = await getProviderSafe()
+        if (!provider) {
+          if (mounted) setStatus("no-wallet")
+          return
+        }
+        if (mounted) setStatus("ready")
+      } catch (e: any) {
+        console.error("Wallet init error:", e)
+        if (mounted) {
+          setError(e?.message || "Wallet init failed")
+          setStatus("error")
+        }
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // NFT and invite code checking
   useEffect(() => {
     let active = true
 
     const checkNFTAndAssignCode = async () => {
-      if (!isConnected || !address) {
+      if (!isConnected || !address || status !== "ready") {
         setTokenId(null)
         setInvite(null)
         return
@@ -25,15 +56,17 @@ export default function PokerPage() {
       setLoading(true)
       try {
         console.log("[v0] Checking NFT ownership for address:", address)
-        const tid = await getTokenIdForOwner(address as `0x${string}`)
-        console.log("[v0] Found tokenId:", tid)
+        const ownedTokens = await getOwnedTokenIds(address)
+        const firstToken = ownedTokens.length > 0 ? ownedTokens[0] : null
+
+        console.log("[v0] Found owned tokens:", ownedTokens)
 
         if (!active) return
-        setTokenId(tid)
+        setTokenId(firstToken)
 
-        if (tid !== null) {
-          console.log("[v0] Getting invite code for tokenId:", tid)
-          const code = await getOrAssignInviteCode(Number(tid), address)
+        if (firstToken !== null) {
+          console.log("[v0] Getting invite code for tokenId:", firstToken)
+          const code = await getOrAssignInviteCode(Number(firstToken), address)
           console.log("[v0] Assigned invite code:", code)
           if (!active) return
           setInvite(code)
@@ -42,6 +75,9 @@ export default function PokerPage() {
         }
       } catch (error) {
         console.error("[v0] Error checking NFT ownership:", error)
+        if (active) {
+          setError("Failed to check NFT ownership")
+        }
       } finally {
         if (active) setLoading(false)
       }
@@ -52,7 +88,44 @@ export default function PokerPage() {
     return () => {
       active = false
     }
-  }, [address, isConnected])
+  }, [address, isConnected, status])
+
+  // Early returns for different states
+  if (status === "checking") {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-pink-500 font-mono text-xl">Initializing…</div>
+      </div>
+    )
+  }
+
+  if (status === "no-wallet") {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="cyber-card rounded-lg p-8 text-center">
+          <div className="text-pink-500 font-mono text-xl mb-4">No wallet detected</div>
+          <p className="text-pink-400 font-mono mb-6">Please install MetaMask or Coinbase Wallet</p>
+          <button onClick={() => window.location.reload()} className="cyber-button px-6 py-2 font-mono font-bold">
+            REFRESH & TRY AGAIN
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === "error") {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="cyber-card rounded-lg p-8 text-center">
+          <div className="text-red-500 font-mono text-xl mb-4">Wallet Error</div>
+          <div className="text-pink-400 font-mono mb-6">Failed to init wallet: {error}</div>
+          <button onClick={() => window.location.reload()} className="cyber-button px-6 py-2 font-mono font-bold">
+            REFRESH & TRY AGAIN
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Header component with updated text
   const Header = () => (
