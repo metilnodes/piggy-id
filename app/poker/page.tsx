@@ -282,7 +282,7 @@ export default function PokerPage() {
                 <div className="text-center pt-4">
                   {tokenId !== null ? (
                     <a
-                      href="https://www.pokernow.club/mtt/tests2-q2jy6PkRdD"
+                      href="https://www.pokernow.club/mtt/piggy-summer-poker-NV9_BmueuR"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
