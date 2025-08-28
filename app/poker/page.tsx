@@ -15,6 +15,26 @@ export default function PokerPage() {
   const [tokenId, setTokenId] = useState<bigint | null>(null)
   const [invite, setInvite] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [tournamentUrl, setTournamentUrl] = useState<string>(
+    "https://www.pokernow.club/mtt/piggy-summer-poker-NV9_BmueuR",
+  )
+
+  useEffect(() => {
+    const loadTournamentUrl = async () => {
+      try {
+        const response = await fetch("/api/tournament-url")
+        const data = await response.json()
+        if (data.url) {
+          setTournamentUrl(data.url)
+        }
+      } catch (error) {
+        console.error("Failed to load tournament URL:", error)
+        // Keep default URL if fetch fails
+      }
+    }
+
+    loadTournamentUrl()
+  }, [])
 
   // Safe wallet initialization
   useEffect(() => {
@@ -282,7 +302,7 @@ export default function PokerPage() {
                 <div className="text-center pt-4">
                   {tokenId !== null ? (
                     <a
-                      href="https://www.pokernow.club/mtt/piggy-summer-poker-NV9_BmueuR"
+                      href={tournamentUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"

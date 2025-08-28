@@ -34,6 +34,8 @@ export default function AdminPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [manualCodes, setManualCodes] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [tournamentUrl, setTournamentUrl] = useState("")
+  const [urlLoading, setUrlLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export default function AdminPage() {
     if (isAuthenticated) {
       loadStats()
       loadCodes()
+      loadTournamentUrl()
     }
   }, [isAuthenticated])
 
@@ -74,6 +77,16 @@ export default function AdminPage() {
       setCodes(data.codes || [])
     } catch (error) {
       console.error("Failed to load codes:", error)
+    }
+  }
+
+  const loadTournamentUrl = async () => {
+    try {
+      const response = await fetch("/api/admin/tournament-url")
+      const data = await response.json()
+      setTournamentUrl(data.url || "")
+    } catch (error) {
+      console.error("Failed to load tournament URL:", error)
     }
   }
 
@@ -178,6 +191,33 @@ export default function AdminPage() {
     router.push("/admin/login")
   }
 
+  const updateTournamentUrl = async () => {
+    if (!tournamentUrl.trim()) return
+
+    setUrlLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/admin/tournament-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: tournamentUrl }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setMessage("✅ Tournament URL updated successfully")
+      } else {
+        setMessage(`❌ Error: ${result.error}`)
+      }
+    } catch (error) {
+      setMessage(`❌ Failed to update URL: ${error}`)
+    } finally {
+      setUrlLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -252,7 +292,7 @@ export default function AdminPage() {
         )}
 
         <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-900">
             <TabsTrigger value="upload" className="data-[state=active]:bg-pink-500">
               Upload CSV
             </TabsTrigger>
@@ -261,6 +301,9 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="codes" className="data-[state=active]:bg-pink-500">
               View Codes
+            </TabsTrigger>
+            <TabsTrigger value="tournament" className="data-[state=active]:bg-pink-500">
+              Tournament URL
             </TabsTrigger>
           </TabsList>
 
@@ -355,6 +398,42 @@ export default function AdminPage() {
                     ))}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tournament" className="space-y-4">
+            <Card className="bg-gray-900 border-pink-500">
+              <CardHeader>
+                <CardTitle className="text-pink-400">Tournament URL Management</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Update the JOIN GAME button URL without redeploying
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="tournament-url" className="text-white">
+                    Tournament URL
+                  </Label>
+                  <Input
+                    id="tournament-url"
+                    type="url"
+                    placeholder="https://www.pokernow.club/mtt/..."
+                    value={tournamentUrl}
+                    onChange={(e) => setTournamentUrl(e.target.value)}
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                </div>
+                <div className="text-sm text-gray-400">
+                  Current URL: <span className="text-pink-400 break-all">{tournamentUrl}</span>
+                </div>
+                <Button
+                  onClick={updateTournamentUrl}
+                  disabled={!tournamentUrl.trim() || urlLoading}
+                  className="bg-pink-500 hover:bg-pink-600"
+                >
+                  {urlLoading ? "Updating..." : "Update Tournament URL"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
