@@ -49,12 +49,9 @@ export async function syncInviteCodesFromCSV(): Promise<void> {
   }
 }
 
-// Get or assign invite code for a token ID
+// Get or assign invite code for a token ID (without auto-sync)
 export async function getOrAssignInviteCode(tokenId: number, walletAddress: string): Promise<string | null> {
   try {
-    // First, sync codes from CSV if needed
-    await syncInviteCodesFromCSV()
-
     // Check if this token already has an assigned code
     const existingAssignment = await sql`
       SELECT invite_code 
@@ -77,7 +74,27 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
     `
 
     if (availableCode.length === 0) {
-      return null // No available codes
+      await syncInviteCodesFromCSV()
+
+      const retryAvailableCode = await sql`
+        SELECT ic.code 
+        FROM invite_codes ic
+        LEFT JOIN code_assignments ca ON ic.code = ca.invite_code
+        LEFT JOIN code_usage cu ON ic.code = cu.invite_code
+        WHERE ca.invite_code IS NULL AND cu.invite_code IS NULL
+        LIMIT 1
+      `
+
+      if (retryAvailableCode.length === 0) {
+        return null // Still no available codes
+      }
+
+      const code = retryAvailableCode[0].code
+      await sql`
+        INSERT INTO code_assignments (token_id, invite_code, wallet_address)
+        VALUES (${tokenId}, ${code}, ${walletAddress})
+      `
+      return code
     }
 
     const code = availableCode[0].code
