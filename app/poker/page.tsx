@@ -1,160 +1,60 @@
 "use client"
-import { useEffect, useState, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, ExternalLink } from "lucide-react"
+
+import { useAccount } from "wagmi"
+import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import { useAccount, useContractRead, useContractReads } from "wagmi"
+import { getOrAssignInviteCode } from "@/lib/invites"
+import { getTokenIdForOwner } from "@/lib/nft-client"
 
-// Contract addresses and ABIs
-const PIGGY_ID_CONTRACT = "0x7FA5212be2b53A0bF3cA6b06664232695625f108"
-
-// ABI for checking NFT balance
-const ERC721_ABI = [
-  {
-    inputs: [{ name: "owner", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ name: "tokenId", type: "uint256" }],
-    name: "ownerOf",
-    outputs: [{ name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { name: "owner", type: "address" },
-      { name: "index", type: "uint256" },
-    ],
-    name: "tokenOfOwnerByIndex",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const
-
-interface InviteCode {
-  code: string
-  consumer_player: string | null
-}
-
-const PokerPage = () => {
+export default function PokerPage() {
   const { address, isConnected } = useAccount()
-  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([])
-  const [userInviteCode, setUserInviteCode] = useState<string>("")
+  const [tokenId, setTokenId] = useState<bigint | null>(null)
+  const [invite, setInvite] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [userTokenId, setUserTokenId] = useState<number | null>(null)
 
-  // Check NFT balance
-  const {
-    data: nftBalance,
-    isError: balanceError,
-    isLoading: balanceLoading,
-  } = useContractRead({
-    address: PIGGY_ID_CONTRACT,
-    abi: ERC721_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    enabled: !!address,
-    chainId: 8453, // Base network
-  })
+  useEffect(() => {
+    let active = true
 
-  // Get first token ID if user has NFTs
-  const { data: firstTokenId } = useContractRead({
-    address: PIGGY_ID_CONTRACT,
-    abi: ERC721_ABI,
-    functionName: "tokenOfOwnerByIndex",
-    args: address && nftBalance && Number(nftBalance) > 0 ? [address, BigInt(0)] : undefined,
-    enabled: !!address && !!nftBalance && Number(nftBalance) > 0,
-  })
+    const checkNFTAndAssignCode = async () => {
+      if (!isConnected || !address) {
+        setTokenId(null)
+        setInvite(null)
+        return
+      }
 
-  // Load invite codes from CSV
-  const loadInviteCodes = useCallback(async () => {
-    try {
       setLoading(true)
-      const response = await fetch(
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/poker-now-mtt-tests2-q2jy6PkRdD-invites-PCx5hDbJvozLcZNT3TuFILSQiyiWV4.csv",
-      )
-      const csvText = await response.text()
+      try {
+        console.log("[v0] Checking NFT ownership for address:", address)
+        const tid = await getTokenIdForOwner(address as `0x${string}`)
+        console.log("[v0] Found tokenId:", tid)
 
-      // Parse CSV
-      const lines = csvText.split("\n").filter((line) => line.trim())
-      const headers = lines[0].split(",")
-      const codes: InviteCode[] = []
+        if (!active) return
+        setTokenId(tid)
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",")
-        if (values.length >= 2) {
-          codes.push({
-            code: values[0].trim(),
-            consumer_player: values[1].trim() || null,
-          })
+        if (tid !== null) {
+          console.log("[v0] Getting invite code for tokenId:", tid)
+          const code = await getOrAssignInviteCode(tid)
+          console.log("[v0] Assigned invite code:", code)
+          if (!active) return
+          setInvite(code)
+        } else {
+          setInvite(null)
         }
-      }
-
-      setInviteCodes(codes)
-    } catch (error) {
-      console.error("Error loading invite codes:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  // Get available invite code for user
-  const getInviteCodeForUser = useCallback(() => {
-    if (!address || !firstTokenId) return ""
-
-    // Find an unused code
-    const availableCode = inviteCodes.find((code) => !code.consumer_player)
-    return availableCode?.code || ""
-  }, [address, firstTokenId, inviteCodes])
-
-  useEffect(() => {
-    loadInviteCodes()
-  }, [loadInviteCodes])
-
-  useEffect(() => {
-    if (address && firstTokenId && inviteCodes.length > 0) {
-      const code = getInviteCodeForUser()
-      setUserInviteCode(code)
-    }
-  }, [address, firstTokenId, inviteCodes, getInviteCodeForUser])
-
-  const tokenChecks = []
-  for (let i = 1; i <= 100; i++) {
-    tokenChecks.push({
-      address: PIGGY_ID_CONTRACT,
-      abi: ERC721_ABI,
-      functionName: "ownerOf",
-      args: [BigInt(i)],
-      chainId: 8453,
-    })
-  }
-
-  const { data: ownershipData } = useContractReads({
-    contracts: tokenChecks,
-    enabled: !!address && !!nftBalance && Number(nftBalance) > 0,
-  })
-
-  useEffect(() => {
-    if (address && ownershipData) {
-      for (let i = 0; i < ownershipData.length; i++) {
-        const result = ownershipData[i]
-        if (result.status === "success" && result.result === address) {
-          const tokenId = i + 1 // Token IDs start from 1
-          setUserTokenId(tokenId)
-          break
-        }
+      } catch (error) {
+        console.error("[v0] Error checking NFT ownership:", error)
+      } finally {
+        if (active) setLoading(false)
       }
     }
-  }, [address, ownershipData])
 
-  // Header component with wallet connection
+    checkNFTAndAssignCode()
+
+    return () => {
+      active = false
+    }
+  }, [address, isConnected])
+
+  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -223,123 +123,77 @@ const PokerPage = () => {
     </header>
   )
 
-  const hasNFT = nftBalance && Number(nftBalance) > 0 && userTokenId !== null
-  const tokenId = firstTokenId ? Number(firstTokenId) : null
-
   return (
-    <div className="min-h-screen grid place-items-center bg-black text-white overflow-hidden">
+    <div className="min-h-screen bg-black cyber-grid">
       <Header />
-      <div className="grid-background"></div>
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 border-2 border-pink-500 rounded-2xl flex items-center justify-center neon-glow mx-auto">
-              <img src="/piggy-logo.png" alt="Piggy Logo" className="w-12 h-12 object-contain" />
-            </div>
-          </div>
-          <h1 className="text-6xl font-bold mb-4 glitch neon-text" data-text="PIGGY ID POKER CLUB">
-            PIGGY ID POKER CLUB
+
+      <div className="container mx-auto px-4 py-8 pt-20">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="OINKMEMBERSHIP">
+            OINKMEMBERSHIP
           </h1>
-          <p className="text-pink-400 text-lg font-mono uppercase tracking-wider">OINKMEMBERSHIP</p>
-          {address && (
-            <p className="text-green-400 text-sm font-mono mt-2">
-              <span className="text-pink-400">{">"}.</span> OINK DETECTED: {address.slice(0, 6)}...{address.slice(-4)}
-            </p>
-          )}
         </div>
 
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
-            {/* Poker Registration Section */}
-            <Card className="cyber-card">
-              <CardHeader className="border-b border-pink-500">
-                <CardTitle className="text-pink-500 font-mono uppercase tracking-wider flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  POKER REGISTRATION
-                </CardTitle>
-                <CardDescription className="text-pink-400 font-mono">{">"} INITIALIZE YOUR PIGGY ID</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                {!isConnected ? (
-                  <div className="text-center py-8">
-                    <p className="text-pink-400 font-mono mb-4">{">"} CONNECT WALLET TO ACCESS POKER CLUB</p>
-                    <div className="cyber-button inline-block">
-                      <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
-                    </div>
+        <div className="max-w-2xl mx-auto">
+          <div className="cyber-card rounded-lg p-6">
+            <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
+              POKER REGISTRATION &gt; INITIALIZE YOUR PIGGY ID
+            </h2>
+
+            {!isConnected ? (
+              <div className="text-center py-8">
+                <p className="text-pink-400 font-mono mb-4">{">"} CONNECT WALLET TO CONTINUE</p>
+                <div className="cyber-button inline-block">
+                  <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
+                </div>
+              </div>
+            ) : loading ? (
+              <div className="text-center py-8">
+                <p className="text-pink-400 font-mono">{">"} CHECKING NFT OWNERSHIP...</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                  <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR POKER ID</h3>
+                  <div className="text-pink-400 font-mono">
+                    {tokenId !== null ? (
+                      <span className="text-pink-300">#{tokenId.toString()}</span>
+                    ) : (
+                      <span className="text-red-400">You don't have Poker ID</span>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    {/* Poker ID Status */}
-                    <div className="space-y-2">
-                      <Label className="text-pink-500 font-mono uppercase tracking-wider">{">"} YOUR POKER ID</Label>
-                      <div className="cyber-input p-3 bg-black/50">
-                        {balanceLoading ? (
-                          <span className="text-pink-400 font-mono">CHECKING NFT STATUS...</span>
-                        ) : hasNFT && userTokenId ? (
-                          <span className="text-green-400 font-mono">POKER ID #{userTokenId} VERIFIED</span>
-                        ) : (
-                          <span className="text-red-400 font-mono">You don't have Poker ID</span>
-                        )}
-                      </div>
-                      {address && (
-                        <div className="text-xs text-gray-500 font-mono">
-                          Debug: Balance={nftBalance?.toString() || "0"}, TokenID={userTokenId || "none"}, Network=Base
-                        </div>
+                </div>
+
+                {tokenId !== null && (
+                  <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                    <h3 className="text-pink-500 font-mono font-bold mb-2">Your invite code</h3>
+                    <div className="text-pink-400 font-mono">
+                      {invite ? (
+                        <span className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30">
+                          {invite}
+                        </span>
+                      ) : (
+                        <span className="text-yellow-400">Loading invite code...</span>
                       )}
                     </div>
-
-                    {/* Invite Code */}
-                    {hasNFT && (
-                      <div className="space-y-2">
-                        <Label className="text-pink-500 font-mono uppercase tracking-wider">
-                          {">"} Your invite code
-                        </Label>
-                        <div className="cyber-input p-3 bg-black/50">
-                          {loading ? (
-                            <span className="text-pink-400 font-mono">LOADING INVITE CODE...</span>
-                          ) : userInviteCode ? (
-                            <span className="text-green-400 font-mono text-lg font-bold">{userInviteCode}</span>
-                          ) : (
-                            <span className="text-red-400 font-mono">NO AVAILABLE INVITE CODES</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Join Game Button */}
-                    {hasNFT && userInviteCode && (
-                      <div className="pt-4">
-                        <Button
-                          onClick={() => window.open("https://www.pokernow.club/mtt/tests2-q2jy6PkRdD", "_blank")}
-                          className="w-full flex items-center justify-center gap-2 cyber-button glow-button"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          JOIN GAME
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* No NFT Message */}
-                    {!hasNFT && !balanceLoading && (
-                      <div className="text-center py-8">
-                        <p className="text-red-400 font-mono mb-4">
-                          {">"} YOU NEED A PIGGY ID NFT TO ACCESS POKER CLUB
-                        </p>
-                        <Button onClick={() => window.open("/", "_blank")} className="cyber-button" variant="outline">
-                          GET PIGGY ID
-                        </Button>
-                      </div>
-                    )}
-                  </>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
+
+                <div className="text-center pt-4">
+                  <a
+                    href="https://www.pokernow.club/mtt/tests2-q2jy6PkRdD"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
+                  >
+                    JOIN GAME
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   )
 }
-
-export default PokerPage
