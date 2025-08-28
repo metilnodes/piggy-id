@@ -187,6 +187,7 @@ const PiggyIdGenerator = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { address, isConnected } = useAccount()
+  const [formattedDate, setFormattedDate] = useState<string>("")
 
   // Read contract data for PIGGY token balance and allowance
   const {
@@ -293,108 +294,159 @@ const PiggyIdGenerator = () => {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Generate unique hash for this ID
-    const uniqueHash = generateUniqueHash()
-
-    // Get current date formatted
     const currentDate = new Date()
     const formattedDate = `${currentDate.getDate().toString().padStart(2, "0")}-${(currentDate.getMonth() + 1).toString().padStart(2, "0")}-${currentDate.getFullYear()}`
+    setFormattedDate(formattedDate)
 
-    const backgroundImg = new Image()
-    backgroundImg.crossOrigin = "anonymous"
-    backgroundImg.onload = () => {
-      // Set canvas size to match background image
-      canvas.width = backgroundImg.width
-      canvas.height = backgroundImg.height
+    console.log("[v0] Generating ID card with programmatic background")
 
-      // Draw background
-      ctx.drawImage(backgroundImg, 0, 0)
+    // Set standard canvas size
+    canvas.width = 3508
+    canvas.height = 2480
 
-      // Set text properties with custom font
-      ctx.fillStyle = "#000000"
-      ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.textAlign = "left"
+    // Create a cyberpunk-style background programmatically
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+    gradient.addColorStop(0, "#0f0f23")
+    gradient.addColorStop(0.5, "#1a1a2e")
+    gradient.addColorStop(1, "#16213e")
 
-      // First location - Main card area (based on first image)
-      if (surname) {
-        ctx.fillText(surname.toUpperCase(), 1375, 815) // Ser-name position
-      }
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      if (firstName) {
-        ctx.fillText(firstName.toUpperCase(), 1375, 1015) // First Name position
-      }
+    // Add some cyberpunk grid lines
+    ctx.strokeStyle = "#ff006e"
+    ctx.lineWidth = 2
+    ctx.globalAlpha = 0.1
 
-      // Add Passport Number (P<XXX...)
-      ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(`P<${passportNumber}`, 2555, 590)
-
-      // Add current date (replacing hardcoded Nov 24 2024)
-      ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-      ctx.fillText(formattedDate, 1375, 1880)
-
-      // Second location - Bottom section (based on second image)
-      ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
-
-      if (surname && firstName) {
-        // Very strict position limits
-        const startX = 358
-        const maxX = canvas.width - 200 // Very strict boundary
-        const maxWidth = maxX - startX // Maximum text width
-
-        // Names are already limited to 12 characters during input
-        const shortFirstName = firstName
-        const shortSurname = surname
-
-        // Initial number of "<" symbols
-        const nameLength = shortFirstName.length + shortSurname.length
-        const baseRepeats = 24 // Reduced to make room for hash
-        let dynamicRepeats = Math.max(0, baseRepeats - nameLength) // Minimum 0 symbols
-
-        // Create text and check its width
-        let bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${uniqueHash} < OINK ${"<".repeat(dynamicRepeats)}`
-        let textWidth = ctx.measureText(bottomText).width
-
-        // Reduce number of "<" symbols until text fits
-        while (textWidth > maxWidth && dynamicRepeats > 0) {
-          dynamicRepeats--
-          bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${uniqueHash} < OINK ${"<".repeat(dynamicRepeats)}`
-          textWidth = ctx.measureText(bottomText).width
-        }
-
-        // If still doesn't fit, reduce hash size or remove decorations
-        if (textWidth > maxWidth) {
-          const shortHash = uniqueHash.substring(0, 6)
-          bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
-        }
-
-        ctx.fillText(bottomText, startX, 2310)
-      }
-
-      // Draw avatar if uploaded
-      if (avatarImage) {
-        const avatarImg = new Image()
-        avatarImg.crossOrigin = "anonymous"
-        avatarImg.onload = () => {
-          // Avatar position and size (rectangular)
-          const avatarX = 420
-          const avatarY = 748
-          const avatarWidth = 850
-          const avatarHeight = 850
-
-          // Create rectangular clipping path
-          ctx.save()
-          ctx.beginPath()
-          ctx.rect(avatarX, avatarY, avatarWidth, avatarHeight)
-          ctx.clip()
-
-          // Draw avatar image
-          ctx.drawImage(avatarImg, avatarX, avatarY, avatarWidth, avatarHeight)
-          ctx.restore()
-        }
-        avatarImg.src = avatarImage
-      }
+    // Vertical lines
+    for (let x = 0; x < canvas.width; x += 100) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, canvas.height)
+      ctx.stroke()
     }
-    backgroundImg.src = "/background-id.png"
+
+    // Horizontal lines
+    for (let y = 0; y < canvas.height; y += 100) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(canvas.width, y)
+      ctx.stroke()
+    }
+
+    ctx.globalAlpha = 1.0
+
+    // Add main card border
+    ctx.strokeStyle = "#ff006e"
+    ctx.lineWidth = 8
+    ctx.strokeRect(200, 200, canvas.width - 400, canvas.height - 400)
+
+    // Draw text content
+    drawTextContent(ctx)
+  }
+
+  const drawTextContent = (ctx: CanvasRenderingContext2D) => {
+    // Set text properties with custom font
+    ctx.fillStyle = "#ff006e"
+    ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+    ctx.textAlign = "left"
+
+    // First location - Main card area (based on first image)
+    if (surname) {
+      ctx.fillText(surname.toUpperCase(), 1375, 815) // Ser-name position
+    }
+
+    if (firstName) {
+      ctx.fillText(firstName.toUpperCase(), 1375, 1015) // First Name position
+    }
+
+    // Add Passport Number (P<XXX...)
+    ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+    ctx.fillText(`P<${passportNumber}`, 2555, 590)
+
+    // Add current date (replacing hardcoded Nov 24 2024)
+    ctx.font = "116px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+    ctx.fillText(formattedDate, 1375, 1880)
+
+    // Second location - Bottom section (based on second image)
+    ctx.font = "135px 'TT Rounds Neue Trl Cmd', Arial, sans-serif"
+
+    if (surname && firstName) {
+      // Very strict position limits
+      const startX = 358
+      const maxX = canvasRef.current?.width - 200 || 0 // Very strict boundary
+      const maxWidth = maxX - startX // Maximum text width
+
+      // Names are already limited to 12 characters during input
+      const shortFirstName = firstName
+      const shortSurname = surname
+
+      // Initial number of "<" symbols
+      const nameLength = shortFirstName.length + shortSurname.length
+      const baseRepeats = 24 // Reduced to make room for hash
+      let dynamicRepeats = Math.max(0, baseRepeats - nameLength) // Minimum 0 symbols
+
+      // Create text and check its width
+      let bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${generateUniqueHash()} < OINK ${"<".repeat(dynamicRepeats)}`
+      let textWidth = ctx.measureText(bottomText).width
+
+      // Reduce number of "<" symbols until text fits
+      while (textWidth > maxWidth && dynamicRepeats > 0) {
+        dynamicRepeats--
+        bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${generateUniqueHash()} < OINK ${"<".repeat(dynamicRepeats)}`
+        textWidth = ctx.measureText(bottomText).width
+      }
+
+      // If still doesn't fit, reduce hash size or remove decorations
+      if (textWidth > maxWidth) {
+        const shortHash = generateUniqueHash().substring(0, 6)
+        bottomText = `${shortFirstName.toUpperCase()} < ${shortSurname.toUpperCase()} < AGENT < ${shortHash} < OINK`
+      }
+
+      ctx.fillText(bottomText, startX, 2310)
+    }
+
+    // Handle avatar image if provided
+    if (avatarImage) {
+      const avatarImg = new Image()
+      avatarImg.crossOrigin = "anonymous"
+
+      avatarImg.onerror = (error) => {
+        console.log("[v0] Avatar image failed to load, drawing placeholder avatar")
+        const avatarX = 450
+        const avatarY = 650
+        const avatarSize = 400
+
+        ctx.save()
+        ctx.fillStyle = "#ff006e"
+        ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize)
+
+        ctx.fillStyle = "#ffffff"
+        ctx.font = "200px Arial, sans-serif"
+        ctx.textAlign = "center"
+        ctx.fillText("👤", avatarX + avatarSize / 2, avatarY + avatarSize / 2 + 70)
+        ctx.restore()
+      }
+
+      avatarImg.onload = () => {
+        // Avatar positioning and drawing logic
+        const avatarSize = 400
+        const avatarX = 450
+        const avatarY = 650
+        const avatarWidth = avatarSize
+        const avatarHeight = avatarSize
+
+        ctx.save()
+        ctx.beginPath()
+        ctx.roundRect(avatarX, avatarY, avatarWidth, avatarHeight, 20)
+        ctx.clip()
+
+        // Draw avatar image
+        ctx.drawImage(avatarImg, avatarX, avatarY, avatarWidth, avatarHeight)
+        ctx.restore()
+      }
+      avatarImg.src = avatarImage
+    }
   }
 
   const downloadIdCard = () => {
@@ -536,8 +588,8 @@ const PiggyIdGenerator = () => {
       // Get the current date formatted for metadata
       const currentDate = new Date()
       const formattedDate = `${currentDate.getDate().toString().padStart(2, "0")}-${(currentDate.getMonth() + 1).toString().padStart(2, "0")}-${currentDate.getFullYear()}`
+      setFormattedDate(formattedDate)
 
-      // Step 1: Upload to Pinata
       // Convert canvas to blob
       const blob = await canvasToBlob(canvasRef.current)
 
@@ -609,7 +661,7 @@ const PiggyIdGenerator = () => {
   useEffect(() => {
     const handleApprovalSuccess = async () => {
       if (isApproveSuccess && mintingStep === "approval_required" && uploadedMetadata && address) {
-        // After successful approval, proceed to mint
+        // After successful approval, proceed to minting
         setMintingStep("minting")
 
         // Extract IPFS hash from metadata URI
@@ -839,7 +891,11 @@ const PiggyIdGenerator = () => {
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 border-2 border-pink-500 rounded-2xl flex items-center justify-center neon-glow mx-auto">
-              <img src="/piggy-logo.png" alt="Piggy Logo" className="w-12 h-12 object-contain" />
+              <img
+                src="/placeholder.svg?height=48&width=48&text=🐷"
+                alt="Piggy Logo"
+                className="w-12 h-12 object-contain"
+              />
             </div>
           </div>
           <h1 className="text-6xl font-bold mb-4 glitch neon-text" data-text="PIGGY ID">
@@ -1053,7 +1109,7 @@ const PiggyIdGenerator = () => {
                 <Button
                   onClick={() =>
                     window.open(
-                      "https://app.uniswap.org/explore/tokens/base/0xe3cf8dbcbdc9b220ddead0bd6342e245daff934d",
+                      "https://app.uniswap.org/explore/tokens/base/0xe3cf8dbcbdc9b220ddeaD0bD6342E245DAFF934d",
                       "_blank",
                     )
                   }
