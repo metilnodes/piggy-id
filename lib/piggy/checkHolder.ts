@@ -34,6 +34,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 export async function getOwnedTokenIds(address: string): Promise<bigint[]> {
   try {
     const owner = getAddress(address)
+    console.log("[v0] Checking NFTs for address:", owner)
 
     const balance = await withTimeout(
       client.readContract({
@@ -45,10 +46,13 @@ export async function getOwnedTokenIds(address: string): Promise<bigint[]> {
       5000, // 5 second timeout
     )
 
+    console.log("[v0] Balance found:", balance.toString())
     if (balance === 0n) return []
 
     const ownedTokens: bigint[] = []
-    const maxTokenId = Math.min(1000, Number(balance) * 50) // Reasonable upper bound
+    const maxTokenId = 500 // Check more tokens to catch higher IDs like 164
+
+    console.log("[v0] Checking token IDs 1 to", maxTokenId)
 
     for (let i = 1; i <= maxTokenId && ownedTokens.length < Number(balance); i++) {
       try {
@@ -63,20 +67,27 @@ export async function getOwnedTokenIds(address: string): Promise<bigint[]> {
         )
 
         if (tokenOwner.toLowerCase() === owner.toLowerCase()) {
+          console.log("[v0] Found owned token ID:", i)
           ownedTokens.push(BigInt(i))
         }
       } catch (e) {
+        // Token doesn't exist or other error, continue
         continue
       }
 
-      if (i % 10 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
+      if (i % 20 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        console.log("[v0] Checked up to token ID:", i)
       }
     }
 
+    console.log(
+      "[v0] Final owned tokens:",
+      ownedTokens.map((t) => t.toString()),
+    )
     return ownedTokens
   } catch (e) {
-    console.error("getOwnedTokenIds error:", e)
+    console.error("[v0] getOwnedTokenIds error:", e)
     return []
   }
 }
