@@ -75,29 +75,28 @@ export default function PokerPage() {
       }
 
       setLoading(true)
+      setInvite(null)
+
       try {
-        console.log("[v0] Checking NFT ownership for address:", address)
         const ownedTokens = await getOwnedTokenIds(address)
         const firstToken = ownedTokens.length > 0 ? ownedTokens[0] : null
-
-        console.log("[v0] Found owned tokens:", ownedTokens)
 
         if (!active) return
         setTokenId(firstToken)
 
         if (firstToken !== null) {
-          console.log("[v0] Getting invite code for tokenId:", firstToken)
+          setInvite("loading")
           const code = await fetchInviteCode(Number(firstToken), address)
-          console.log("[v0] Assigned invite code:", code)
           if (!active) return
-          setInvite(code)
+          setInvite(code || "error")
         } else {
           setInvite(null)
         }
       } catch (error) {
-        console.error("[v0] Error checking NFT ownership:", error)
+        console.error("Error checking NFT ownership:", error)
         if (active) {
           setError("Failed to check NFT ownership")
+          setInvite("error")
         }
       } finally {
         if (active) setLoading(false)
@@ -262,12 +261,16 @@ export default function PokerPage() {
                   <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                     <h3 className="text-pink-500 font-mono font-bold mb-2">Your invite code</h3>
                     <div className="text-pink-400 font-mono">
-                      {invite ? (
+                      {invite === "loading" ? (
+                        <span className="text-yellow-400">Loading invite code...</span>
+                      ) : invite === "error" ? (
+                        <span className="text-red-400">Error loading invite code</span>
+                      ) : invite ? (
                         <span className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30">
                           {invite}
                         </span>
                       ) : (
-                        <span className="text-yellow-400">Loading invite code...</span>
+                        <span className="text-yellow-400">Generating invite code...</span>
                       )}
                     </div>
                   </div>
