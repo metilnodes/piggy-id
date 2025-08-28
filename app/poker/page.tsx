@@ -289,14 +289,25 @@ export default function PokerPage() {
                 )}
 
                 <div className="text-center pt-4">
-                  <a
-                    href="https://www.pokernow.club/mtt/tests2-q2jy6PkRdD"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
-                  >
-                    JOIN GAME
-                  </a>
+                  {tokenId !== null ? (
+                    <a
+                      href="https://www.pokernow.club/mtt/tests2-q2jy6PkRdD"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
+                    >
+                      JOIN GAME
+                    </a>
+                  ) : (
+                    <a
+                      href="https://id.piggyworld.xyz/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
+                    >
+                      Mint your Piggy ID
+                    </a>
+                  )}
                 </div>
               </div>
             )}
