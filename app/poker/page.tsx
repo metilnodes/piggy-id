@@ -222,8 +222,11 @@ export default function PokerPage() {
 
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="OINKMEMBERSHIP">
-            OINKMEMBERSHIP
+          <h1
+            className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4"
+            data-text="PIGGY SUMMER POKER"
+          >
+            PIGGY SUMMER POKER
           </h1>
         </div>
 
@@ -247,24 +250,12 @@ export default function PokerPage() {
             ) : (
               <div className="space-y-6">
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
-                  <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR POKER ID</h3>
+                  <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR PIGGY ID</h3>
                   <div className="text-pink-400 font-mono">
                     {tokenId !== null ? (
                       <span className="text-pink-300">#{tokenId.toString()}</span>
                     ) : (
-                      <div className="space-y-3">
-                        <span className="text-red-400">You don't have Poker ID</span>
-                        <div>
-                          <a
-                            href="https://id.piggyworld.xyz/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="cyber-button inline-block px-6 py-2 text-sm font-mono font-bold hover:scale-105 transition-transform"
-                          >
-                            Mint your Piggy ID
-                          </a>
-                        </div>
-                      </div>
+                      <span className="text-red-400">You don't have PIGGY ID</span>
                     )}
                   </div>
                 </div>
