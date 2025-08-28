@@ -24,36 +24,53 @@ const ERC721_ABI = [
   },
 ] as const
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeoutMs)),
+  ])
+}
+
 export async function getOwnedTokenIds(address: string): Promise<bigint[]> {
   try {
     const owner = getAddress(address)
 
-    // Get balance first
-    const balance = await client.readContract({
-      address: CONTRACT,
-      abi: ERC721_ABI,
-      functionName: "balanceOf",
-      args: [owner],
-    })
+    const balance = await withTimeout(
+      client.readContract({
+        address: CONTRACT,
+        abi: ERC721_ABI,
+        functionName: "balanceOf",
+        args: [owner],
+      }),
+      5000, // 5 second timeout
+    )
 
     if (balance === 0n) return []
 
     const ownedTokens: bigint[] = []
-    for (let i = 1; i <= 1000; i++) {
+    const maxTokenId = Math.min(1000, Number(balance) * 50) // Reasonable upper bound
+
+    for (let i = 1; i <= maxTokenId && ownedTokens.length < Number(balance); i++) {
       try {
-        const tokenOwner = await client.readContract({
-          address: CONTRACT,
-          abi: ERC721_ABI,
-          functionName: "ownerOf",
-          args: [BigInt(i)],
-        })
+        const tokenOwner = await withTimeout(
+          client.readContract({
+            address: CONTRACT,
+            abi: ERC721_ABI,
+            functionName: "ownerOf",
+            args: [BigInt(i)],
+          }),
+          3000, // 3 second timeout per call
+        )
 
         if (tokenOwner.toLowerCase() === owner.toLowerCase()) {
           ownedTokens.push(BigInt(i))
         }
       } catch (e) {
-        // Token doesn't exist or other error, continue
         continue
+      }
+
+      if (i % 10 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
       }
     }
 
