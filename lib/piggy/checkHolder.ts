@@ -38,9 +38,8 @@ export async function getOwnedTokenIds(address: string): Promise<bigint[]> {
 
     if (balance === 0n) return []
 
-    // Check tokens 1-100 to find owned ones
     const ownedTokens: bigint[] = []
-    for (let i = 1; i <= 100; i++) {
+    for (let i = 1; i <= 1000; i++) {
       try {
         const tokenOwner = await client.readContract({
           address: CONTRACT,
