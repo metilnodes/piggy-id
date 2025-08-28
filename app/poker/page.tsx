@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: "Piggy ID",
     images: [
       {
-        url: "/preview.png",
+        url: "/poker-preview.png",
         width: 1200,
         height: 630,
         alt: "Piggy Summer Poker Tournament",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Piggy Summer Poker Tournament",
     description: "Exclusive poker tournament for Piggy ID holders. Verify your NFT and get your invite code!",
-    images: ["/preview.png"],
+    images: ["/poker-preview.png"],
   },
 }
 
