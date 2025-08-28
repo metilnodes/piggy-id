@@ -20,12 +20,6 @@ export const ERC721_MIN_ABI = [
   },
 ] as const
 
-const transports = [
-  http("https://base.llamarpc.com"),
-  http("https://mainnet.base.org"),
-  http("https://base.blockpi.network/v1/rpc/public"),
-]
-
 const publicClient = createPublicClient({
   chain: base,
   transport: http("https://base.llamarpc.com"),
@@ -50,13 +44,35 @@ export async function getTokenIdForOwner(owner: `0x${string}`): Promise<bigint |
       return null
     }
 
-    // Most NFT collections start from tokenId 1 and go sequentially
-    const maxTokensToCheck = 10000 // Reasonable limit
+    const knownTokenIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] // Common early tokenIds
 
-    console.log("[v0] Found", balance.toString(), "NFTs, checking tokenIds...")
+    console.log("[v0] Found", balance.toString(), "NFTs, checking known tokenIds first...")
 
-    // Check tokenIds in batches to avoid rate limiting
-    for (let tokenId = 1; tokenId <= maxTokensToCheck; tokenId++) {
+    // Check known tokenIds first
+    for (const tokenId of knownTokenIds) {
+      try {
+        const tokenOwner = (await publicClient.readContract({
+          address: NFT_ADDRESS,
+          abi: ERC721_MIN_ABI,
+          functionName: "ownerOf",
+          args: [BigInt(tokenId)],
+        })) as string
+
+        console.log("[v0] TokenId", tokenId, "owner:", tokenOwner)
+
+        if (tokenOwner.toLowerCase() === owner.toLowerCase()) {
+          console.log("[v0] Found owned tokenId:", tokenId)
+          return BigInt(tokenId)
+        }
+      } catch (error) {
+        console.log("[v0] TokenId", tokenId, "doesn't exist or error:", error)
+        continue
+      }
+    }
+
+    console.log("[v0] Not found in known range, doing broader search...")
+
+    for (let tokenId = 11; tokenId <= 1000; tokenId++) {
       try {
         const tokenOwner = (await publicClient.readContract({
           address: NFT_ADDRESS,
@@ -70,15 +86,12 @@ export async function getTokenIdForOwner(owner: `0x${string}`): Promise<bigint |
           return BigInt(tokenId)
         }
       } catch (error) {
-        // Token doesn't exist or other error, continue checking
-        if (tokenId % 100 === 0) {
-          console.log("[v0] Checked up to tokenId:", tokenId)
-        }
+        // Token doesn't exist, continue
         continue
       }
     }
 
-    console.log("[v0] No owned tokens found in range 1-" + maxTokensToCheck)
+    console.log("[v0] No owned tokens found")
     return null
   } catch (error) {
     console.error("[v0] Error in getTokenIdForOwner:", error)
