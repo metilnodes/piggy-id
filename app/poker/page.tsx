@@ -222,8 +222,8 @@ export default function PokerPage() {
 
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="OINKMEMBERSHIP">
-            OINKMEMBERSHIP
+          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="PIGGY SUMMER POKER">
+            PIGGY SUMMER POKER
           </h1>
         </div>
 
