@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Zap, ExternalLink } from "lucide-react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import { useAccount, useContractRead } from "wagmi"
+import { useAccount, useContractRead, useContractReads } from "wagmi"
 
 // Contract addresses and ABIs
 const PIGGY_ID_CONTRACT = "0x7FA5212be2b53A0bF3cA6b06664232695625f108"
@@ -16,6 +16,13 @@ const ERC721_ABI = [
     inputs: [{ name: "owner", type: "address" }],
     name: "balanceOf",
     outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    name: "ownerOf",
+    outputs: [{ name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
@@ -41,14 +48,20 @@ const PokerPage = () => {
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([])
   const [userInviteCode, setUserInviteCode] = useState<string>("")
   const [loading, setLoading] = useState(false)
+  const [userTokenId, setUserTokenId] = useState<number | null>(null)
 
   // Check NFT balance
-  const { data: nftBalance } = useContractRead({
+  const {
+    data: nftBalance,
+    isError: balanceError,
+    isLoading: balanceLoading,
+  } = useContractRead({
     address: PIGGY_ID_CONTRACT,
     abi: ERC721_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     enabled: !!address,
+    chainId: 8453, // Base network
   })
 
   // Get first token ID if user has NFTs
@@ -111,6 +124,35 @@ const PokerPage = () => {
       setUserInviteCode(code)
     }
   }, [address, firstTokenId, inviteCodes, getInviteCodeForUser])
+
+  const tokenChecks = []
+  for (let i = 1; i <= 100; i++) {
+    tokenChecks.push({
+      address: PIGGY_ID_CONTRACT,
+      abi: ERC721_ABI,
+      functionName: "ownerOf",
+      args: [BigInt(i)],
+      chainId: 8453,
+    })
+  }
+
+  const { data: ownershipData } = useContractReads({
+    contracts: tokenChecks,
+    enabled: !!address && !!nftBalance && Number(nftBalance) > 0,
+  })
+
+  useEffect(() => {
+    if (address && ownershipData) {
+      for (let i = 0; i < ownershipData.length; i++) {
+        const result = ownershipData[i]
+        if (result.status === "success" && result.result === address) {
+          const tokenId = i + 1 // Token IDs start from 1
+          setUserTokenId(tokenId)
+          break
+        }
+      }
+    }
+  }, [address, ownershipData])
 
   // Header component with wallet connection
   const Header = () => (
@@ -181,7 +223,7 @@ const PokerPage = () => {
     </header>
   )
 
-  const hasNFT = nftBalance && Number(nftBalance) > 0
+  const hasNFT = nftBalance && Number(nftBalance) > 0 && userTokenId !== null
   const tokenId = firstTokenId ? Number(firstTokenId) : null
 
   return (
@@ -232,14 +274,19 @@ const PokerPage = () => {
                     <div className="space-y-2">
                       <Label className="text-pink-500 font-mono uppercase tracking-wider">{">"} YOUR POKER ID</Label>
                       <div className="cyber-input p-3 bg-black/50">
-                        {loading ? (
+                        {balanceLoading ? (
                           <span className="text-pink-400 font-mono">CHECKING NFT STATUS...</span>
-                        ) : hasNFT && tokenId ? (
-                          <span className="text-green-400 font-mono">POKER ID #{tokenId} VERIFIED</span>
+                        ) : hasNFT && userTokenId ? (
+                          <span className="text-green-400 font-mono">POKER ID #{userTokenId} VERIFIED</span>
                         ) : (
                           <span className="text-red-400 font-mono">You don't have Poker ID</span>
                         )}
                       </div>
+                      {address && (
+                        <div className="text-xs text-gray-500 font-mono">
+                          Debug: Balance={nftBalance?.toString() || "0"}, TokenID={userTokenId || "none"}, Network=Base
+                        </div>
+                      )}
                     </div>
 
                     {/* Invite Code */}
@@ -274,7 +321,7 @@ const PokerPage = () => {
                     )}
 
                     {/* No NFT Message */}
-                    {!hasNFT && !loading && (
+                    {!hasNFT && !balanceLoading && (
                       <div className="text-center py-8">
                         <p className="text-red-400 font-mono mb-4">
                           {">"} YOU NEED A PIGGY ID NFT TO ACCESS POKER CLUB
