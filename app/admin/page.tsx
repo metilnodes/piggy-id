@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,15 +29,33 @@ interface InviteCode {
 export default function AdminPage() {
   const [stats, setStats] = useState<CodeStats | null>(null)
   const [codes, setCodes] = useState<InviteCode[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [manualCodes, setManualCodes] = useState("")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
-    loadStats()
-    loadCodes()
-  }, [])
+    const checkAuth = () => {
+      const token = sessionStorage.getItem("admin_auth")
+      if (!token) {
+        router.push("/admin/login")
+        return
+      }
+      setIsAuthenticated(true)
+      setLoading(false)
+    }
+
+    checkAuth()
+  }, [router])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadStats()
+      loadCodes()
+    }
+  }, [isAuthenticated])
 
   const loadStats = async () => {
     try {
@@ -154,11 +173,37 @@ export default function AdminPage() {
     }
   }
 
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_auth")
+    router.push("/admin/login")
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-pink-500 text-xl">Checking authentication...</div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-pink-500 mb-2">PIGGY SUMMER POKER</h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-4xl font-bold text-pink-500">PIGGY SUMMER POKER</h1>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white bg-transparent"
+            >
+              Logout
+            </Button>
+          </div>
           <h2 className="text-2xl text-pink-400">ADMIN PANEL</h2>
         </div>
 
