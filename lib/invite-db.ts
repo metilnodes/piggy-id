@@ -47,6 +47,8 @@ export async function syncInviteCodesFromCSV(csvContent: string): Promise<void> 
 // Get or assign invite code for a token ID (without auto-sync)
 export async function getOrAssignInviteCode(tokenId: number, walletAddress: string): Promise<string | null> {
   try {
+    console.log("[v0] Getting invite code for tokenId:", tokenId, "wallet:", walletAddress)
+
     // Check if this token already has an assigned code
     const existingAssignment = await sql`
       SELECT invite_code 
@@ -54,7 +56,10 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
       WHERE token_id = ${tokenId}
     `
 
+    console.log("[v0] Existing assignment check result:", existingAssignment)
+
     if (existingAssignment.length > 0) {
+      console.log("[v0] Found existing assignment:", existingAssignment[0].invite_code)
       return existingAssignment[0].invite_code
     }
 
@@ -68,21 +73,28 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
       LIMIT 1
     `
 
+    console.log("[v0] Available codes query result:", availableCode)
+
     if (availableCode.length === 0) {
+      console.log("[v0] No available codes found")
       return null // No available codes - admin needs to upload more
     }
 
     const code = availableCode[0].code
+    console.log("[v0] Assigning code:", code, "to tokenId:", tokenId)
 
     // Assign the code to this token
-    await sql`
+    const insertResult = await sql`
       INSERT INTO code_assignments (token_id, invite_code, wallet_address)
       VALUES (${tokenId}, ${code}, ${walletAddress})
     `
 
+    console.log("[v0] Insert result:", insertResult)
+    console.log("[v0] Successfully assigned code:", code)
+
     return code
   } catch (error) {
-    console.error("Error getting/assigning invite code:", error)
+    console.error("[v0] Error getting/assigning invite code:", error)
     return null
   }
 }
