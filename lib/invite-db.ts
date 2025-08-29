@@ -1,6 +1,20 @@
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
+const DATABASE_URL = process.env.DATABASE_URL!
+console.log("[v0] Database URL (first 50 chars):", DATABASE_URL.substring(0, 50) + "...")
+
+const sql = neon(DATABASE_URL)
+
+async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    const result = await sql`SELECT 1 as test`
+    console.log("[v0] Database connection test successful:", result)
+    return true
+  } catch (error) {
+    console.error("[v0] Database connection test failed:", error)
+    return false
+  }
+}
 
 export interface InviteCode {
   code: string
@@ -49,6 +63,15 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
   try {
     console.log("[v0] Getting invite code for tokenId:", tokenId, "wallet:", walletAddress)
 
+    const connectionOk = await testDatabaseConnection()
+    if (!connectionOk) {
+      console.error("[v0] Database connection failed, aborting")
+      return null
+    }
+
+    const totalCodes = await sql`SELECT COUNT(*) as count FROM invite_codes`
+    console.log("[v0] Total invite codes in database:", totalCodes[0]?.count || 0)
+
     // Check if this token already has an assigned code
     const existingAssignment = await sql`
       SELECT invite_code 
@@ -63,6 +86,12 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
       return existingAssignment[0].invite_code
     }
 
+    console.log("[v0] Searching for available codes...")
+    const assignedCodes = await sql`SELECT COUNT(*) as count FROM code_assignments`
+    const usedCodes = await sql`SELECT COUNT(*) as count FROM code_usage`
+    console.log("[v0] Assigned codes count:", assignedCodes[0]?.count || 0)
+    console.log("[v0] Used codes count:", usedCodes[0]?.count || 0)
+
     // Find an available code (not assigned and not used)
     const availableCode = await sql`
       SELECT ic.code 
@@ -76,7 +105,7 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
     console.log("[v0] Available codes query result:", availableCode)
 
     if (availableCode.length === 0) {
-      console.log("[v0] No available codes found")
+      console.log("[v0] No available codes found - need to upload codes via admin panel")
       return null // No available codes - admin needs to upload more
     }
 
@@ -87,14 +116,27 @@ export async function getOrAssignInviteCode(tokenId: number, walletAddress: stri
     const insertResult = await sql`
       INSERT INTO code_assignments (token_id, invite_code, wallet_address)
       VALUES (${tokenId}, ${code}, ${walletAddress})
+      RETURNING *
     `
 
     console.log("[v0] Insert result:", insertResult)
-    console.log("[v0] Successfully assigned code:", code)
 
-    return code
+    const verifyInsert = await sql`
+      SELECT * FROM code_assignments 
+      WHERE token_id = ${tokenId} AND invite_code = ${code}
+    `
+    console.log("[v0] Verification of inserted record:", verifyInsert)
+
+    if (verifyInsert.length > 0) {
+      console.log("[v0] Successfully assigned and verified code:", code)
+      return code
+    } else {
+      console.error("[v0] Code assignment failed - record not found after insert")
+      return null
+    }
   } catch (error) {
     console.error("[v0] Error getting/assigning invite code:", error)
+    console.error("[v0] Error details:", error.message, error.stack)
     return null
   }
 }
