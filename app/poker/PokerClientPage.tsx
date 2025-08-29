@@ -6,7 +6,7 @@ import { useAccount } from "wagmi"
 import { getProviderSafe } from "@/lib/wallet/getProvider"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 
-type Status = "idle" | "checking" | "no-wallet" | "ready" | "error"
+type Status = "idle" | "checking" | "ready" | "error"
 
 export default function PokerClientPage() {
   const { address, isConnected } = useAccount()
@@ -43,10 +43,6 @@ export default function PokerClientPage() {
       try {
         setStatus("checking")
         const provider = await getProviderSafe()
-        if (!provider) {
-          if (mounted) setStatus("no-wallet")
-          return
-        }
         if (mounted) setStatus("ready")
       } catch (e: any) {
         console.error("Wallet init error:", e)
@@ -135,20 +131,6 @@ export default function PokerClientPage() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-pink-500 font-mono text-xl">Initializing…</div>
-      </div>
-    )
-  }
-
-  if (status === "no-wallet") {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="cyber-card rounded-lg p-8 text-center">
-          <div className="text-pink-500 font-mono text-xl mb-4">No wallet detected</div>
-          <p className="text-pink-400 font-mono mb-6">Please install MetaMask or Coinbase Wallet</p>
-          <button onClick={() => window.location.reload()} className="cyber-button px-6 py-2 font-mono font-bold">
-            REFRESH & TRY AGAIN
-          </button>
-        </div>
       </div>
     )
   }
