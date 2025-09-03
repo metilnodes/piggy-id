@@ -218,6 +218,37 @@ export default function AdminPage() {
     }
   }
 
+  const deleteCode = async (codeId: number, codeValue: string) => {
+    if (!confirm(`Are you sure you want to delete code "${codeValue}"? This cannot be undone.`)) {
+      return
+    }
+
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/admin/delete-code", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codeId }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setMessage(`✅ Code "${codeValue}" deleted successfully`)
+        loadStats()
+        loadCodes()
+      } else {
+        setMessage(`❌ Error: ${result.error}`)
+      }
+    } catch (error) {
+      setMessage(`❌ Failed to delete code: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -389,10 +420,21 @@ export default function AdminPage() {
                         className="flex justify-between items-center p-2 bg-gray-800 rounded border border-gray-700"
                       >
                         <span className="font-mono text-white">{code.code}</span>
-                        <div className="flex gap-2 text-sm">
-                          {code.assigned_to && <span className="text-yellow-400">Assigned</span>}
-                          {code.used_by && <span className="text-blue-400">Used</span>}
-                          {!code.assigned_to && !code.used_by && <span className="text-green-400">Available</span>}
+                        <div className="flex gap-2 items-center">
+                          <div className="flex gap-2 text-sm">
+                            {code.assigned_to && <span className="text-yellow-400">Assigned</span>}
+                            {code.used_by && <span className="text-blue-400">Used</span>}
+                            {!code.assigned_to && !code.used_by && <span className="text-green-400">Available</span>}
+                          </div>
+                          <Button
+                            onClick={() => deleteCode(code.id, code.code)}
+                            disabled={loading}
+                            size="sm"
+                            variant="destructive"
+                            className="ml-2 h-6 px-2 text-xs"
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     ))}
