@@ -431,7 +431,7 @@ export default function PokerClientPage() {
           </div>
 
           <div className="cyber-card rounded-lg p-6">
-            <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTION</h2>
+            <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
             {!isConnected ? (
               <div className="text-center py-8">
