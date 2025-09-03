@@ -35,13 +35,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Upsert user identity
     await sql`
       INSERT INTO user_identities (wallet_address, token_id)
-      VALUES (${walletAddress.toLowerCase()}, ${tokenId})
+      VALUES (${walletAddress.toLowerCase()}, ${tokenId || null})
       ON CONFLICT (wallet_address) 
       DO UPDATE SET 
-        token_id = ${tokenId},
+        token_id = COALESCE(${tokenId}, user_identities.token_id),
         updated_at = NOW()
     `
 
@@ -63,6 +62,10 @@ export async function POST(request: NextRequest) {
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `
     } else if (type === "email") {
+      if (!data.email || !data.email.includes("@")) {
+        return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+      }
+
       await sql`
         UPDATE user_identities 
         SET email = ${data.email},
