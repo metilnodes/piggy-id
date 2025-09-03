@@ -33,6 +33,7 @@ export default function PokerClientPage() {
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
   const [email, setEmail] = useState<string>("")
   const [emailEditing, setEmailEditing] = useState<boolean>(false)
+  const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
@@ -202,46 +203,38 @@ export default function PokerClientPage() {
   }
 
   const connectEmail = async () => {
-    if (!address || !tokenId || !email.trim()) return
+    if (!address || !email.trim()) return
 
     setIdentityLoading(true)
     try {
-      const response = await fetch("/api/identity", {
+      const response = await fetch("/api/email/send-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           walletAddress: address,
-          tokenId: Number(tokenId),
-          type: "email",
-          data: { email: email.trim() },
+          email: email.trim(),
         }),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        setIdentity((prev) =>
-          prev
-            ? {
-                ...prev,
-                email: email.trim(),
-              }
-            : null,
-        )
+        setEmailVerificationPending(true)
         setEmail("")
-        setEmailEditing(false)
         setToast({
-          message: "Email successfully connected to your account.",
+          message: "Verification email sent! Please check your inbox and click the verification link.",
           type: "success",
         })
       } else {
         setToast({
-          message: "Failed to connect email. Please try again.",
+          message: data.error || "Failed to send verification email. Please try again.",
           type: "error",
         })
       }
     } catch (error) {
-      console.error("Error connecting email:", error)
+      console.error("Error sending verification email:", error)
       setToast({
-        message: "Failed to connect email. Please try again.",
+        message: "Failed to send verification email. Please try again.",
         type: "error",
       })
     } finally {
@@ -261,6 +254,30 @@ export default function PokerClientPage() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
+
+    if (urlParams.get("success") === "email_verified") {
+      setEmailVerificationPending(false)
+      setToast({
+        message: "Email successfully verified and connected to your account!",
+        type: "success",
+      })
+
+      // Reload identity data after successful email verification
+      if (address && isConnected) {
+        const loadIdentity = async () => {
+          try {
+            const response = await fetch(`/api/identity?address=${address}`)
+            const data = await response.json()
+            setIdentity(data.identity)
+          } catch (error) {
+            console.error("Error loading identity:", error)
+          }
+        }
+        loadIdentity()
+      }
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
 
     if (urlParams.get("discord_connected") === "true") {
       const username = urlParams.get("username")
@@ -322,6 +339,15 @@ export default function PokerClientPage() {
         errorMessage = "Discord authorization failed. Please try again."
       } else if (error === "twitter_auth_failed") {
         errorMessage = "Twitter authorization failed. Please try again."
+      } else if (error === "invalid_token") {
+        errorMessage = "Invalid verification token. Please request a new verification email."
+        setEmailVerificationPending(false)
+      } else if (error === "token_expired") {
+        errorMessage = "Verification token expired. Please request a new verification email."
+        setEmailVerificationPending(false)
+      } else if (error === "verification_failed") {
+        errorMessage = "Email verification failed. Please try again."
+        setEmailVerificationPending(false)
       }
 
       setToast({
@@ -617,6 +643,10 @@ export default function PokerClientPage() {
                           <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
                             {identity.email}
                           </div>
+                        ) : emailVerificationPending ? (
+                          <div className="text-yellow-400 bg-black/70 px-2 py-1 rounded border border-yellow-500/30 font-mono text-xs">
+                            Verification pending - check your email
+                          </div>
                         ) : (
                           <input
                             type="email"
@@ -632,14 +662,24 @@ export default function PokerClientPage() {
                           <button onClick={editEmail} className="cyber-button px-4 py-1 text-sm font-mono">
                             Edit
                           </button>
+                        ) : emailVerificationPending ? (
+                          <button
+                            onClick={() => {
+                              setEmailVerificationPending(false)
+                              setEmail("")
+                            }}
+                            className="border border-yellow-500 text-yellow-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
+                          >
+                            Resend
+                          </button>
                         ) : (
                           <>
                             <button
                               onClick={connectEmail}
-                              disabled={identityLoading || !tokenId || !email.trim()}
+                              disabled={identityLoading || !email.trim()}
                               className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
                             >
-                              Connect
+                              {identityLoading ? "Sending..." : "Connect"}
                             </button>
                             {emailEditing && (
                               <button
