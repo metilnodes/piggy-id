@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state")
 
   const origin = new URL(request.url).origin
-  const redirectUri = `${origin}/api/auth/callback/discord`
+  const redirectUri = `${origin}/api/auth/discord/callback`
 
   if (!code || !state) {
     return NextResponse.redirect(`${origin}/poker?error=discord_auth_failed`)

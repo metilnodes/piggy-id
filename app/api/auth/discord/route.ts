@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   }
 
   const origin = new URL(request.url).origin
-  const redirectUri = `${origin}/api/auth/callback/discord`
+  const redirectUri = `${origin}/api/auth/discord/callback`
 
   const state = Buffer.from(JSON.stringify({ walletAddress })).toString("base64")
 
