@@ -32,6 +32,7 @@ export default function PokerClientPage() {
 
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
   const [email, setEmail] = useState<string>("")
+  const [emailEditing, setEmailEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
@@ -226,12 +227,36 @@ export default function PokerClientPage() {
             : null,
         )
         setEmail("")
+        setEmailEditing(false)
+        setToast({
+          message: "Email successfully connected to your account.",
+          type: "success",
+        })
+      } else {
+        setToast({
+          message: "Failed to connect email. Please try again.",
+          type: "error",
+        })
       }
     } catch (error) {
       console.error("Error connecting email:", error)
+      setToast({
+        message: "Failed to connect email. Please try again.",
+        type: "error",
+      })
     } finally {
       setIdentityLoading(false)
     }
+  }
+
+  const editEmail = () => {
+    setEmailEditing(true)
+    setEmail(identity?.email || "")
+  }
+
+  const cancelEmailEdit = () => {
+    setEmailEditing(false)
+    setEmail("")
   }
 
   useEffect(() => {
@@ -588,10 +613,9 @@ export default function PokerClientPage() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
-                        {identity?.email ? (
-                          <div className="flex items-center gap-2">
-                            <div className="text-green-400 font-mono text-xs">{identity.email}</div>
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        {identity?.email && !emailEditing ? (
+                          <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
+                            {identity.email}
                           </div>
                         ) : (
                           <input
@@ -603,13 +627,31 @@ export default function PokerClientPage() {
                           />
                         )}
                       </div>
-                      <button
-                        onClick={connectEmail}
-                        disabled={identityLoading || !tokenId || (!email.trim() && !identity?.email)}
-                        className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
-                      >
-                        {identity?.email ? "Connected" : "Connect"}
-                      </button>
+                      <div className="flex gap-2">
+                        {identity?.email && !emailEditing ? (
+                          <button onClick={editEmail} className="cyber-button px-4 py-1 text-sm font-mono">
+                            Edit
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={connectEmail}
+                              disabled={identityLoading || !tokenId || !email.trim()}
+                              className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                            >
+                              Connect
+                            </button>
+                            {emailEditing && (
+                              <button
+                                onClick={cancelEmailEdit}
+                                className="border border-gray-500 text-gray-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
