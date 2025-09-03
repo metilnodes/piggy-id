@@ -180,83 +180,17 @@ export default function PokerClientPage() {
   }, [address, isConnected])
 
   const connectDiscord = async () => {
-    if (!address || !tokenId) return
+    if (!address) return
 
-    setIdentityLoading(true)
-    try {
-      // Simulate Discord OAuth (in real implementation, this would redirect to Discord OAuth)
-      const mockDiscordData = {
-        id: "123456789",
-        username: "user#1234",
-      }
-
-      const response = await fetch("/api/identity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: address,
-          tokenId: Number(tokenId),
-          type: "discord",
-          data: mockDiscordData,
-        }),
-      })
-
-      if (response.ok) {
-        setIdentity((prev) =>
-          prev
-            ? {
-                ...prev,
-                discord_id: mockDiscordData.id,
-                discord_username: mockDiscordData.username,
-              }
-            : null,
-        )
-      }
-    } catch (error) {
-      console.error("Error connecting Discord:", error)
-    } finally {
-      setIdentityLoading(false)
-    }
+    // Redirect to Discord OAuth
+    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}`
   }
 
   const connectTwitter = async () => {
-    if (!address || !tokenId) return
+    if (!address) return
 
-    setIdentityLoading(true)
-    try {
-      // Simulate Twitter OAuth (in real implementation, this would redirect to Twitter OAuth)
-      const mockTwitterData = {
-        id: "987654321",
-        username: "@username",
-      }
-
-      const response = await fetch("/api/identity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: address,
-          tokenId: Number(tokenId),
-          type: "twitter",
-          data: mockTwitterData,
-        }),
-      })
-
-      if (response.ok) {
-        setIdentity((prev) =>
-          prev
-            ? {
-                ...prev,
-                twitter_id: mockTwitterData.id,
-                twitter_username: mockTwitterData.username,
-              }
-            : null,
-        )
-      }
-    } catch (error) {
-      console.error("Error connecting Twitter:", error)
-    } finally {
-      setIdentityLoading(false)
-    }
+    // Redirect to Twitter OAuth
+    window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
   }
 
   const connectEmail = async () => {
@@ -292,6 +226,54 @@ export default function PokerClientPage() {
       setIdentityLoading(false)
     }
   }
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+
+    if (urlParams.get("discord_connected") === "true") {
+      // Reload identity data after successful Discord connection
+      if (address && isConnected) {
+        const loadIdentity = async () => {
+          try {
+            const response = await fetch(`/api/identity?address=${address}`)
+            const data = await response.json()
+            setIdentity(data.identity)
+          } catch (error) {
+            console.error("Error loading identity:", error)
+          }
+        }
+        loadIdentity()
+      }
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
+    if (urlParams.get("twitter_connected") === "true") {
+      // Reload identity data after successful Twitter connection
+      if (address && isConnected) {
+        const loadIdentity = async () => {
+          try {
+            const response = await fetch(`/api/identity?address=${address}`)
+            const data = await response.json()
+            setIdentity(data.identity)
+          } catch (error) {
+            console.error("Error loading identity:", error)
+          }
+        }
+        loadIdentity()
+      }
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
+    if (urlParams.get("error")) {
+      const error = urlParams.get("error")
+      console.error("OAuth error:", error)
+      // You could show a toast notification here
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [address, isConnected])
 
   // Header component with updated text
   const Header = () => (
