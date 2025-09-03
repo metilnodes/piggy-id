@@ -8,8 +8,11 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const state = searchParams.get("state")
 
+  const origin = new URL(request.url).origin
+  const redirectUri = `${origin}/api/auth/callback/discord`
+
   if (!code || !state) {
-    return NextResponse.redirect("/poker?error=discord_auth_failed")
+    return NextResponse.redirect(`${origin}/poker?error=discord_auth_failed`)
   }
 
   try {
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
         client_secret: process.env.DISCORD_CLIENT_SECRET!,
         grant_type: "authorization_code",
         code,
-        redirect_uri: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/discord/callback`,
+        redirect_uri: redirectUri,
       }),
     })
 
@@ -58,9 +61,9 @@ export async function GET(request: NextRequest) {
         updated_at = NOW()
     `
 
-    return NextResponse.redirect("/poker?discord_connected=true")
+    return NextResponse.redirect(`${origin}/poker?discord_connected=true`)
   } catch (error) {
     console.error("Discord OAuth error:", error)
-    return NextResponse.redirect("/poker?error=discord_connection_failed")
+    return NextResponse.redirect(`${origin}/poker?error=discord_connection_failed`)
   }
 }
