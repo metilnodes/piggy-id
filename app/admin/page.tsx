@@ -26,6 +26,11 @@ interface InviteCode {
   used_by?: string
 }
 
+interface TournamentInfo {
+  url: string
+  name: string
+}
+
 export default function AdminPage() {
   const [stats, setStats] = useState<CodeStats | null>(null)
   const [codes, setCodes] = useState<InviteCode[]>([])
@@ -34,7 +39,7 @@ export default function AdminPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [manualCodes, setManualCodes] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [tournamentUrl, setTournamentUrl] = useState("")
+  const [tournamentInfo, setTournamentInfo] = useState<TournamentInfo>({ url: "", name: "" })
   const [urlLoading, setUrlLoading] = useState(false)
   const router = useRouter()
 
@@ -56,7 +61,7 @@ export default function AdminPage() {
     if (isAuthenticated) {
       loadStats()
       loadCodes()
-      loadTournamentUrl()
+      loadTournamentInfo()
     }
   }, [isAuthenticated])
 
@@ -80,13 +85,13 @@ export default function AdminPage() {
     }
   }
 
-  const loadTournamentUrl = async () => {
+  const loadTournamentInfo = async () => {
     try {
-      const response = await fetch("/api/admin/tournament-url")
+      const response = await fetch("/api/admin/tournament-info")
       const data = await response.json()
-      setTournamentUrl(data.url || "")
+      setTournamentInfo({ url: data.url || "", name: data.name || "" })
     } catch (error) {
-      console.error("Failed to load tournament URL:", error)
+      console.error("Failed to load tournament info:", error)
     }
   }
 
@@ -191,28 +196,28 @@ export default function AdminPage() {
     router.push("/admin/login")
   }
 
-  const updateTournamentUrl = async () => {
-    if (!tournamentUrl.trim()) return
+  const updateTournamentInfo = async () => {
+    if (!tournamentInfo.url.trim() || !tournamentInfo.name.trim()) return
 
     setUrlLoading(true)
     setMessage("")
 
     try {
-      const response = await fetch("/api/admin/tournament-url", {
+      const response = await fetch("/api/admin/tournament-info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: tournamentUrl }),
+        body: JSON.stringify({ url: tournamentInfo.url, name: tournamentInfo.name }),
       })
 
       const result = await response.json()
 
       if (response.ok) {
-        setMessage("✅ Tournament URL updated successfully")
+        setMessage("✅ Tournament info updated successfully")
       } else {
         setMessage(`❌ Error: ${result.error}`)
       }
     } catch (error) {
-      setMessage(`❌ Failed to update URL: ${error}`)
+      setMessage(`❌ Failed to update tournament info: ${error}`)
     } finally {
       setUrlLoading(false)
     }
@@ -334,7 +339,7 @@ export default function AdminPage() {
               View Codes
             </TabsTrigger>
             <TabsTrigger value="tournament" className="data-[state=active]:bg-pink-500">
-              Tournament URL
+              Tournament INFO
             </TabsTrigger>
           </TabsList>
 
@@ -447,12 +452,25 @@ export default function AdminPage() {
           <TabsContent value="tournament" className="space-y-4">
             <Card className="bg-gray-900 border-pink-500">
               <CardHeader>
-                <CardTitle className="text-pink-400">Tournament URL Management</CardTitle>
+                <CardTitle className="text-pink-400">Tournament Information</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Update the JOIN GAME button URL without redeploying
+                  Update tournament name and JOIN GAME button URL without redeploying
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="tournament-name" className="text-white">
+                    Tournament Name
+                  </Label>
+                  <Input
+                    id="tournament-name"
+                    type="text"
+                    placeholder="PIGGY SUMMER POKER"
+                    value={tournamentInfo.name}
+                    onChange={(e) => setTournamentInfo((prev) => ({ ...prev, name: e.target.value }))}
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="tournament-url" className="text-white">
                     Tournament URL
@@ -461,20 +479,25 @@ export default function AdminPage() {
                     id="tournament-url"
                     type="url"
                     placeholder="https://www.pokernow.club/mtt/..."
-                    value={tournamentUrl}
-                    onChange={(e) => setTournamentUrl(e.target.value)}
+                    value={tournamentInfo.url}
+                    onChange={(e) => setTournamentInfo((prev) => ({ ...prev, url: e.target.value }))}
                     className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
-                <div className="text-sm text-gray-400">
-                  Current URL: <span className="text-pink-400 break-all">{tournamentUrl}</span>
+                <div className="text-sm text-gray-400 space-y-1">
+                  <div>
+                    Current Name: <span className="text-pink-400">{tournamentInfo.name}</span>
+                  </div>
+                  <div>
+                    Current URL: <span className="text-pink-400 break-all">{tournamentInfo.url}</span>
+                  </div>
                 </div>
                 <Button
-                  onClick={updateTournamentUrl}
-                  disabled={!tournamentUrl.trim() || urlLoading}
+                  onClick={updateTournamentInfo}
+                  disabled={!tournamentInfo.url.trim() || !tournamentInfo.name.trim() || urlLoading}
                   className="bg-pink-500 hover:bg-pink-600"
                 >
-                  {urlLoading ? "Updating..." : "Update Tournament URL"}
+                  {urlLoading ? "Updating..." : "Update Tournament Info"}
                 </Button>
               </CardContent>
             </Card>
