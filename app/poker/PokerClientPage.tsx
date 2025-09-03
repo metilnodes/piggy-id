@@ -8,6 +8,16 @@ import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 
 type Status = "idle" | "checking" | "ready" | "error"
 
+interface UserIdentity {
+  wallet_address: string
+  token_id?: number
+  discord_id?: string
+  discord_username?: string
+  twitter_id?: string
+  twitter_username?: string
+  email?: string
+}
+
 export default function PokerClientPage() {
   const { address, isConnected } = useAccount()
   const [status, setStatus] = useState<Status>("idle")
@@ -19,6 +29,10 @@ export default function PokerClientPage() {
     "https://www.pokernow.club/mtt/piggy-summer-poker-NV9_BmueuR",
   )
   const [tournamentName, setTournamentName] = useState<string>("PIGGY SUMMER POKER")
+
+  const [identity, setIdentity] = useState<UserIdentity | null>(null)
+  const [email, setEmail] = useState<string>("")
+  const [identityLoading, setIdentityLoading] = useState(false)
 
   useEffect(() => {
     const loadTournamentInfo = async () => {
@@ -33,7 +47,6 @@ export default function PokerClientPage() {
         }
       } catch (error) {
         console.error("Failed to load tournament info:", error)
-        // Keep default values if fetch fails
       }
     }
 
@@ -147,27 +160,137 @@ export default function PokerClientPage() {
     }
   }, [address, isConnected, status])
 
-  // Early returns for different states
-  if (status === "checking") {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-pink-500 font-mono text-xl">Initializing…</div>
-      </div>
-    )
+  useEffect(() => {
+    const loadIdentity = async () => {
+      if (!address || !isConnected) {
+        setIdentity(null)
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/identity?address=${address}`)
+        const data = await response.json()
+        setIdentity(data.identity)
+      } catch (error) {
+        console.error("Error loading identity:", error)
+      }
+    }
+
+    loadIdentity()
+  }, [address, isConnected])
+
+  const connectDiscord = async () => {
+    if (!address || !tokenId) return
+
+    setIdentityLoading(true)
+    try {
+      // Simulate Discord OAuth (in real implementation, this would redirect to Discord OAuth)
+      const mockDiscordData = {
+        id: "123456789",
+        username: "user#1234",
+      }
+
+      const response = await fetch("/api/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          tokenId: Number(tokenId),
+          type: "discord",
+          data: mockDiscordData,
+        }),
+      })
+
+      if (response.ok) {
+        setIdentity((prev) =>
+          prev
+            ? {
+                ...prev,
+                discord_id: mockDiscordData.id,
+                discord_username: mockDiscordData.username,
+              }
+            : null,
+        )
+      }
+    } catch (error) {
+      console.error("Error connecting Discord:", error)
+    } finally {
+      setIdentityLoading(false)
+    }
   }
 
-  if (status === "error") {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="cyber-card rounded-lg p-8 text-center">
-          <div className="text-red-500 font-mono text-xl mb-4">Wallet Error</div>
-          <div className="text-pink-400 font-mono mb-6">Failed to init wallet: {error}</div>
-          <button onClick={() => window.location.reload()} className="cyber-button px-6 py-2 font-mono font-bold">
-            REFRESH & TRY AGAIN
-          </button>
-        </div>
-      </div>
-    )
+  const connectTwitter = async () => {
+    if (!address || !tokenId) return
+
+    setIdentityLoading(true)
+    try {
+      // Simulate Twitter OAuth (in real implementation, this would redirect to Twitter OAuth)
+      const mockTwitterData = {
+        id: "987654321",
+        username: "@username",
+      }
+
+      const response = await fetch("/api/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          tokenId: Number(tokenId),
+          type: "twitter",
+          data: mockTwitterData,
+        }),
+      })
+
+      if (response.ok) {
+        setIdentity((prev) =>
+          prev
+            ? {
+                ...prev,
+                twitter_id: mockTwitterData.id,
+                twitter_username: mockTwitterData.username,
+              }
+            : null,
+        )
+      }
+    } catch (error) {
+      console.error("Error connecting Twitter:", error)
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
+  const connectEmail = async () => {
+    if (!address || !tokenId || !email.trim()) return
+
+    setIdentityLoading(true)
+    try {
+      const response = await fetch("/api/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          tokenId: Number(tokenId),
+          type: "email",
+          data: { email: email.trim() },
+        }),
+      })
+
+      if (response.ok) {
+        setIdentity((prev) =>
+          prev
+            ? {
+                ...prev,
+                email: email.trim(),
+              }
+            : null,
+        )
+        setEmail("")
+      }
+    } catch (error) {
+      console.error("Error connecting email:", error)
+    } finally {
+      setIdentityLoading(false)
+    }
   }
 
   // Header component with updated text
@@ -250,7 +373,8 @@ export default function PokerClientPage() {
           </h1>
         </div>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Existing Poker Registration Window */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
               POKER REGISTRATION &gt; INITIALIZE YOUR PIGGY ID
@@ -319,6 +443,93 @@ export default function PokerClientPage() {
                       Mint your Piggy ID
                     </a>
                   )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="cyber-card rounded-lg p-6">
+            <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTION</h2>
+
+            {!isConnected ? (
+              <div className="text-center py-8">
+                <p className="text-pink-400 font-mono mb-4">{">"} CONNECT WALLET TO CONTINUE</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Primary Identity */}
+                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                  <h3 className="text-pink-500 font-mono font-bold mb-2">Primary Identity</h3>
+                  <div className="text-pink-400 font-mono text-sm">
+                    <div className="mb-1">EVM</div>
+                    <div className="text-pink-300 break-all">{address}</div>
+                  </div>
+                </div>
+
+                {/* Secondary Identities */}
+                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                  <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
+
+                  <div className="space-y-4">
+                    {/* Discord */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="text-pink-400 font-mono text-sm">Discord</div>
+                        {identity?.discord_username && (
+                          <div className="text-green-400 font-mono text-xs">{identity.discord_username}</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={connectDiscord}
+                        disabled={identityLoading || !tokenId}
+                        className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                      >
+                        {identity?.discord_id ? "Connected" : "Connect"}
+                      </button>
+                    </div>
+
+                    {/* Twitter */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="text-pink-400 font-mono text-sm">Twitter</div>
+                        {identity?.twitter_username && (
+                          <div className="text-green-400 font-mono text-xs">{identity.twitter_username}</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={connectTwitter}
+                        disabled={identityLoading || !tokenId}
+                        className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                      >
+                        {identity?.twitter_id ? "Connected" : "Connect"}
+                      </button>
+                    </div>
+
+                    {/* Email */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
+                        {identity?.email ? (
+                          <div className="text-green-400 font-mono text-xs">{identity.email}</div>
+                        ) : (
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            className="w-full bg-black border border-pink-500/30 text-pink-300 font-mono text-sm px-2 py-1 rounded focus:border-pink-500 focus:outline-none"
+                          />
+                        )}
+                      </div>
+                      <button
+                        onClick={connectEmail}
+                        disabled={identityLoading || !tokenId || (!email.trim() && !identity?.email)}
+                        className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                      >
+                        {identity?.email ? "Connected" : "Connect"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
