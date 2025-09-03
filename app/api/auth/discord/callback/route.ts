@@ -18,6 +18,17 @@ export async function GET(request: NextRequest) {
   try {
     const { walletAddress } = JSON.parse(Buffer.from(state, "base64").toString())
 
+    const existingConnection = await sql`
+      SELECT wallet_address FROM user_identities 
+      WHERE platform = 'discord' AND platform_user_id = (
+        SELECT platform_user_id FROM user_identities 
+        WHERE wallet_address = ${walletAddress.toLowerCase()} AND platform = 'discord'
+        UNION
+        SELECT ${""} WHERE FALSE
+      ) AND wallet_address != ${walletAddress.toLowerCase()}
+      LIMIT 1
+    `
+
     // Exchange code for access token
     const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
@@ -48,6 +59,16 @@ export async function GET(request: NextRequest) {
 
     const userData = await userResponse.json()
 
+    const discordAlreadyConnected = await sql`
+      SELECT wallet_address FROM user_identities 
+      WHERE platform = 'discord' AND platform_user_id = ${userData.id} AND wallet_address != ${walletAddress.toLowerCase()}
+      LIMIT 1
+    `
+
+    if (discordAlreadyConnected.length > 0) {
+      return NextResponse.redirect(`${origin}/poker?error=discord_already_connected`)
+    }
+
     // Store in database
     await sql`
       INSERT INTO user_identities (wallet_address, platform, platform_user_id, username, display_name, avatar_url, created_at, updated_at)
@@ -61,7 +82,9 @@ export async function GET(request: NextRequest) {
         updated_at = NOW()
     `
 
-    return NextResponse.redirect(`${origin}/poker?discord_connected=true`)
+    return NextResponse.redirect(
+      `${origin}/poker?discord_connected=true&username=${encodeURIComponent(userData.username)}`,
+    )
   } catch (error) {
     console.error("Discord OAuth error:", error)
     return NextResponse.redirect(`${origin}/poker?error=discord_connection_failed`)

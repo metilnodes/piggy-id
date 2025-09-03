@@ -33,6 +33,7 @@ export default function PokerClientPage() {
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
   const [email, setEmail] = useState<string>("")
   const [identityLoading, setIdentityLoading] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
   useEffect(() => {
     const loadTournamentInfo = async () => {
@@ -231,6 +232,12 @@ export default function PokerClientPage() {
     const urlParams = new URLSearchParams(window.location.search)
 
     if (urlParams.get("discord_connected") === "true") {
+      const username = urlParams.get("username")
+      setToast({
+        message: `Successfully signed in! Your account has been successfully connected to discord.`,
+        type: "success",
+      })
+
       // Reload identity data after successful Discord connection
       if (address && isConnected) {
         const loadIdentity = async () => {
@@ -249,6 +256,12 @@ export default function PokerClientPage() {
     }
 
     if (urlParams.get("twitter_connected") === "true") {
+      const username = urlParams.get("username")
+      setToast({
+        message: `Successfully signed in! Your account has been successfully connected to twitter.`,
+        type: "success",
+      })
+
       // Reload identity data after successful Twitter connection
       if (address && isConnected) {
         const loadIdentity = async () => {
@@ -268,12 +281,33 @@ export default function PokerClientPage() {
 
     if (urlParams.get("error")) {
       const error = urlParams.get("error")
-      console.error("OAuth error:", error)
-      // You could show a toast notification here
+      let errorMessage = "Connection failed. Please try again."
+
+      if (error === "discord_already_connected") {
+        errorMessage = "This Discord account is already connected to another wallet."
+      } else if (error === "twitter_already_connected") {
+        errorMessage = "This Twitter account is already connected to another wallet."
+      } else if (error === "discord_auth_failed") {
+        errorMessage = "Discord authorization failed. Please try again."
+      } else if (error === "twitter_auth_failed") {
+        errorMessage = "Twitter authorization failed. Please try again."
+      }
+
+      setToast({
+        message: errorMessage,
+        type: "error",
+      })
+
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
-  }, [address, isConnected])
+
+    // Auto-hide toast after 5 seconds
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [address, isConnected, toast])
 
   // Header component with updated text
   const Header = () => (
@@ -347,6 +381,33 @@ export default function PokerClientPage() {
   return (
     <div className="min-h-screen bg-black cyber-grid">
       <Header />
+
+      {toast && (
+        <div
+          className={`fixed bottom-4 right-4 z-50 p-4 rounded-lg border font-mono text-sm max-w-sm ${
+            toast.type === "success"
+              ? "bg-green-900/90 border-green-500 text-green-100"
+              : "bg-red-900/90 border-red-500 text-red-100"
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+              }`}
+            >
+              {toast.type === "success" ? "✓" : "✕"}
+            </div>
+            <div className="flex-1">
+              {toast.type === "success" && <div className="font-bold mb-1">Successfully signed in!</div>}
+              <div>{toast.message}</div>
+            </div>
+            <button onClick={() => setToast(null)} className="text-gray-400 hover:text-white">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="text-center mb-8">
@@ -455,36 +516,66 @@ export default function PokerClientPage() {
                   <div className="space-y-4">
                     {/* Discord */}
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="text-pink-400 font-mono text-sm">Discord</div>
-                        {identity?.discord_username && (
-                          <div className="text-green-400 font-mono text-xs">{identity.discord_username}</div>
-                        )}
+                      <div className="flex items-center gap-3 flex-1">
+                        {/* Add Discord logo */}
+                        <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-pink-400 font-mono text-sm">Discord</div>
+                          {identity?.discord_username && (
+                            <div className="flex items-center gap-2">
+                              <div className="text-green-400 font-mono text-xs">{identity.discord_username}</div>
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={connectDiscord}
-                        disabled={identityLoading || !tokenId}
-                        className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
-                      >
-                        {identity?.discord_id ? "Connected" : "Connect"}
-                      </button>
+                      {identity?.discord_id ? (
+                        <div className="text-green-400 font-mono text-sm">Connected</div>
+                      ) : (
+                        <button
+                          onClick={connectDiscord}
+                          disabled={identityLoading || !tokenId}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          Connect
+                        </button>
+                      )}
                     </div>
 
                     {/* Twitter */}
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="text-pink-400 font-mono text-sm">Twitter</div>
-                        {identity?.twitter_username && (
-                          <div className="text-green-400 font-mono text-xs">{identity.twitter_username}</div>
-                        )}
+                      <div className="flex items-center gap-3 flex-1">
+                        {/* Add Twitter logo */}
+                        <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-pink-400 font-mono text-sm">Twitter</div>
+                          {identity?.twitter_username && (
+                            <div className="flex items-center gap-2">
+                              <div className="text-green-400 font-mono text-xs">{identity.twitter_username}</div>
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={connectTwitter}
-                        disabled={identityLoading || !tokenId}
-                        className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
-                      >
-                        {identity?.twitter_id ? "Connected" : "Connect"}
-                      </button>
+                      {identity?.twitter_id ? (
+                        <div className="text-green-400 font-mono text-sm">Connected</div>
+                      ) : (
+                        <button
+                          onClick={connectTwitter}
+                          disabled={identityLoading || !tokenId}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          Connect
+                        </button>
+                      )}
                     </div>
 
                     {/* Email */}
@@ -492,7 +583,10 @@ export default function PokerClientPage() {
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
                         {identity?.email ? (
-                          <div className="text-green-400 font-mono text-xs">{identity.email}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-green-400 font-mono text-xs">{identity.email}</div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          </div>
                         ) : (
                           <input
                             type="email"
