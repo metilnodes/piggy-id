@@ -168,12 +168,18 @@ export default function PokerClientPage() {
         return
       }
 
+      console.log("[v0] Loading identity for address:", address)
+
       try {
         const response = await fetch(`/api/identity?address=${address}`)
         const data = await response.json()
+
+        console.log("[v0] Identity API response:", data)
+        console.log("[v0] Identity data:", data.identity)
+
         setIdentity(data.identity)
       } catch (error) {
-        console.error("Error loading identity:", error)
+        console.error("[v0] Error loading identity:", error)
       }
     }
 
@@ -533,7 +539,7 @@ export default function PokerClientPage() {
                           )}
                         </div>
                       </div>
-                      {identity?.discord_id ? (
+                      {identity?.discord_username ? (
                         <div className="text-green-400 font-mono text-sm">Connected</div>
                       ) : (
                         <button
