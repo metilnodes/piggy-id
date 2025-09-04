@@ -1,18 +1,23 @@
-export const runtime = "nodejs"
-
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 import { Resend } from "resend"
+import crypto from "crypto"
+
+export const runtime = "nodejs"
 
 const sql = neon(process.env.DATABASE_URL!)
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[v0] Email verification request started")
+    console.log("[v0] Send verification request received")
 
     const { email, walletAddress } = await request.json()
-    console.log("[v0] Email verification for:", email, "Wallet:", walletAddress)
+
+    if (!email || !walletAddress) {
+      console.log("[v0] Missing email or wallet address")
+      return NextResponse.json({ error: "Missing email or wallet address" }, { status: 400 })
+    }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -21,70 +26,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
     }
 
-    // Check if email is already verified by another wallet
+    const emailLc = email.toLowerCase()
+    const walletLc = walletAddress.toLowerCase()
+
+    console.log("[v0] Processing email verification for:", emailLc, "wallet:", walletLc)
+
+    // Check if email is already connected to another wallet
     const existingEmail = await sql`
-      SELECT wallet_address, verified FROM email_verifications 
-      WHERE email = ${email} AND verified = true
+      SELECT wallet_address FROM user_identities 
+      WHERE email = ${emailLc} AND wallet_address != ${walletLc}
     `
 
-    if (existingEmail.length > 0 && existingEmail[0].wallet_address !== walletAddress) {
+    if (existingEmail.length > 0) {
       console.log("[v0] Email already connected to another wallet")
-      return NextResponse.json(
-        {
-          error: "This email is already connected to another wallet",
-        },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: "Email already connected to another account" }, { status: 409 })
     }
 
-    // Generate verification token
-    const verificationToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2)
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+    // Generate verification token and hash
+    const token = crypto.randomBytes(32).toString("hex")
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex")
+    const expires = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
 
-    console.log("[v0] Generated token:", verificationToken)
+    console.log("[v0] Generated verification token, expires at:", expires.toISOString())
 
-    // Store verification token (use ON CONFLICT with verification_token)
+    // Store verification data
     await sql`
-      INSERT INTO email_verifications (email, wallet_address, verification_token, expires_at)
-      VALUES (${email}, ${walletAddress}, ${verificationToken}, ${expiresAt})
-      ON CONFLICT (email) DO UPDATE SET 
-        verification_token = ${verificationToken},
-        expires_at = ${expiresAt},
-        verified = false,
+      INSERT INTO email_verifications (
+        email, wallet_address, verification_token, token_hash, expires_at, verified, created_at, updated_at
+      )
+      VALUES (
+        ${emailLc}, ${walletLc}, ${token}, ${tokenHash}, ${expires.toISOString()}, FALSE, NOW(), NOW()
+      )
+      ON CONFLICT (email) DO UPDATE SET
+        verification_token = EXCLUDED.verification_token,
+        token_hash = EXCLUDED.token_hash,
+        expires_at = EXCLUDED.expires_at,
+        wallet_address = EXCLUDED.wallet_address,
+        verified = FALSE,
         updated_at = NOW()
     `
 
-    console.log("[v0] Token stored in database")
+    // Send verification email
+    const verificationUrl = `${new URL(request.url).origin}/api/email/verify?token=${token}`
 
-    // Create verification URL
-    const origin = request.nextUrl.origin
-    const verificationUrl = `${origin}/api/email/verify?token=${verificationToken}`
+    console.log("[v0] Sending verification email to:", emailLc)
 
-    console.log("[v0] Verification URL:", verificationUrl)
-
-    // Send email using Resend with piggyworld.xyz domain
     const emailResult = await resend.emails.send({
-      from: `noreply@piggyworld.xyz`, // Using piggyworld.xyz domain
-      to: [email],
+      from: "noreply@piggyworld.xyz",
+      to: emailLc,
       subject: "Verify your email for Piggy ID",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Verify Your Email Address</h2>
-          <p>Click the button below to verify your email address for Piggy ID:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background-color: #007cba; color: white; padding: 12px 24px; 
-                      text-decoration: none; border-radius: 5px; display: inline-block;">
-              Verify Email Address
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            This link will expire in 15 minutes. If you didn't request this verification, 
-            you can safely ignore this email.
-          </p>
-          <p style="color: #666; font-size: 12px;">
-            If the button doesn't work, copy and paste this link: ${verificationUrl}
-          </p>
+          <h2 style="color: #333;">Verify Your Email</h2>
+          <p>Click the link below to verify your email address for your Piggy ID account:</p>
+          <a href="${verificationUrl}" style="display: inline-block; background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 16px 0;">
+            Verify Email Address
+          </a>
+          <p style="color: #666; font-size: 14px;">This link will expire in 15 minutes.</p>
+          <p style="color: #666; font-size: 14px;">If you didn't request this verification, you can safely ignore this email.</p>
         </div>
       `,
     })
@@ -93,26 +92,13 @@ export async function POST(request: NextRequest) {
 
     if (emailResult.error) {
       console.error("[v0] Resend API error:", emailResult.error)
-      return NextResponse.json(
-        {
-          error: "Failed to send verification email. Please check domain configuration.",
-        },
-        { status: 500 },
-      )
+      return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 })
     }
 
     console.log("[v0] Verification email sent successfully")
-    return NextResponse.json({
-      success: true,
-      message: "Verification email sent successfully",
-    })
+    return NextResponse.json({ success: true, message: "Verification email sent" })
   } catch (error) {
-    console.error("[v0] Email verification error:", error)
-    return NextResponse.json(
-      {
-        error: "Failed to send verification email",
-      },
-      { status: 500 },
-    )
+    console.error("[v0] Send verification error:", error)
+    return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 })
   }
 }

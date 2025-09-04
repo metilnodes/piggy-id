@@ -117,7 +117,7 @@ importers:
         specifier: latest
         version: 1.1.1(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       crypto:
-        specifier: 1.0.1
+        specifier: latest
         version: 1.0.1
       date-fns:
         specifier: 4.1.0

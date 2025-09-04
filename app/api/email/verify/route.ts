@@ -1,67 +1,80 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import crypto from "crypto"
+
+export const runtime = "nodejs"
 
 const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("[v0] Email verification request received") // Added debugging
+    console.log("[v0] Email verification request received")
 
     const { searchParams } = new URL(request.url)
-    const token = searchParams.get("token")
+    const token = searchParams.get("token")?.trim()
 
-    console.log("[v0] Verification token:", token) // Added token logging
+    console.log("[v0] Verification token:", token)
 
     if (!token) {
-      console.log("[v0] No token provided") // Added error logging
-      return NextResponse.redirect(new URL("/poker?error=invalid_token", request.url))
+      console.log("[v0] No token provided")
+      return NextResponse.redirect(new URL("/poker?error=missing_token", request.url))
     }
 
-    // Find verification record
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex")
+
     const verification = await sql`
-      SELECT * FROM email_verifications 
-      WHERE verification_token = ${token} 
-      AND expires_at > NOW() 
-      AND verified = FALSE
+      SELECT email, wallet_address, verified, expires_at, verification_token, token_hash
+      FROM email_verifications
+      WHERE (verification_token = ${token} OR token_hash = ${tokenHash})
+      AND expires_at > NOW()
+      ORDER BY created_at DESC
+      LIMIT 1
     `
 
-    console.log("[v0] Verification record found:", verification.length > 0) // Added verification status logging
+    console.log("[v0] Verification record found:", verification.length > 0)
 
     if (verification.length === 0) {
-      console.log("[v0] Token expired or already used") // Added error logging
-      return NextResponse.redirect(new URL("/poker?error=token_expired", request.url))
+      console.log("[v0] Token not found or expired")
+      return NextResponse.redirect(new URL("/poker?error=verification_expired", request.url))
     }
 
     const { wallet_address, email } = verification[0]
-    console.log("[v0] Verifying email:", email, "for wallet:", wallet_address) // Added verification details logging
+    console.log("[v0] Verifying email:", email, "for wallet:", wallet_address)
 
-    // Mark as verified
     await sql`
-      UPDATE email_verifications 
-      SET verified = TRUE, updated_at = NOW()
-      WHERE verification_token = ${token}
+      UPDATE email_verifications
+      SET verified = TRUE,
+          verification_token = NULL,
+          token_hash = NULL,
+          updated_at = NOW()
+      WHERE email = ${email} AND wallet_address = ${wallet_address}
     `
 
-    // Update or create user identity with verified email
     await sql`
-      INSERT INTO user_identities (wallet_address, email, created_at, updated_at)
-      VALUES (${wallet_address}, ${email}, NOW(), NOW())
-      ON CONFLICT (wallet_address) DO UPDATE SET
-        email = ${email},
+      INSERT INTO user_identities (
+        wallet_address, platform, platform_user_id, username, display_name, avatar_url, created_at, updated_at
+      )
+      VALUES (
+        ${wallet_address.toLowerCase()},
+        'email',
+        ${email},
+        ${email},
+        ${email},
+        NULL,
+        NOW(), NOW()
+      )
+      ON CONFLICT (wallet_address, platform)
+      DO UPDATE SET
+        platform_user_id = EXCLUDED.platform_user_id,
+        username = EXCLUDED.username,
+        display_name = EXCLUDED.display_name,
         updated_at = NOW()
     `
 
-    // Clean up old verification records for this wallet
-    await sql`
-      DELETE FROM email_verifications 
-      WHERE wallet_address = ${wallet_address} 
-      AND verification_token != ${token}
-    `
-
-    console.log("[v0] Email verification completed successfully") // Added success logging
-    return NextResponse.redirect(new URL("/poker?success=email_verified", request.url))
+    console.log("[v0] Email verification completed successfully")
+    return NextResponse.redirect(new URL("/poker?email_connected=true", request.url))
   } catch (error) {
-    console.error("[v0] Email verification error:", error) // Added v0 prefix to error logging
+    console.error("[v0] Email verification error:", error)
     return NextResponse.redirect(new URL("/poker?error=verification_failed", request.url))
   }
 }
