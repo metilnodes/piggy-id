@@ -51,23 +51,11 @@ export async function GET(request: NextRequest) {
     `
 
     await sql`
-      INSERT INTO user_identities (
-        wallet_address, platform, platform_user_id, username, display_name, avatar_url, created_at, updated_at
-      )
-      VALUES (
-        ${wallet_address.toLowerCase()},
-        'email',
-        ${email},
-        ${email},
-        ${email},
-        NULL,
-        NOW(), NOW()
-      )
-      ON CONFLICT (wallet_address, platform)
-      DO UPDATE SET
-        platform_user_id = EXCLUDED.platform_user_id,
-        username = EXCLUDED.username,
-        display_name = EXCLUDED.display_name,
+      INSERT INTO user_identities (wallet_address, email, created_at, updated_at)
+      VALUES (${wallet_address.toLowerCase()}, ${email}, NOW(), NOW())
+      ON CONFLICT (wallet_address) 
+      DO UPDATE SET 
+        email = EXCLUDED.email,
         updated_at = NOW()
     `
 
