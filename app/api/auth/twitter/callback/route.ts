@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     return redirectBack("?error=twitter_state_missing")
   }
 
-  let parsed: { v: string; w: string; s: string }
+  let parsed: { w: string; s: string }
   try {
     parsed = JSON.parse(raw)
   } catch {
@@ -38,28 +38,26 @@ export async function GET(req: NextRequest) {
     return redirectBack("?error=twitter_state_mismatch")
   }
 
-  const verifier = parsed.v
   const wallet = (parsed.w || "").toLowerCase()
   if (!wallet) {
     console.log("[v0] Twitter callback - no wallet in state")
     return redirectBack("?error=twitter_wallet_missing")
   }
 
-  console.log("[v0] Twitter callback - wallet:", wallet, "verifier length:", verifier.length)
+  console.log("[v0] Twitter callback - wallet:", wallet)
 
   try {
     const redirectUri = `${origin}/api/auth/twitter/callback`
 
-    // 1) обмен code -> токен (PKCE)
     const tokenRes = await fetch("https://api.twitter.com/2/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: new URLSearchParams({
         client_id: process.env.TWITTER_CLIENT_ID!,
+        client_secret: process.env.TWITTER_CLIENT_SECRET!,
         grant_type: "authorization_code",
         code,
         redirect_uri: redirectUri,
-        code_verifier: verifier,
       }),
     })
 
