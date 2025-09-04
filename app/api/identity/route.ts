@@ -16,14 +16,64 @@ export async function GET(request: NextRequest) {
 
     console.log("[v0] Querying user_identities table for wallet:", walletAddress.toLowerCase())
 
-    const result = await sql`
+    let result = await sql`
       SELECT * FROM user_identities 
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `
 
+    if (result[0] && !result[0].token_id) {
+      console.log("[v0] No token_id found, checking code_assignments table")
+
+      const codeAssignment = await sql`
+        SELECT token_id FROM code_assignments 
+        WHERE wallet_address = ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (codeAssignment[0]?.token_id) {
+        console.log("[v0] Found token_id in code_assignments:", codeAssignment[0].token_id)
+
+        await sql`
+          UPDATE user_identities 
+          SET token_id = ${codeAssignment[0].token_id}, updated_at = NOW()
+          WHERE wallet_address = ${walletAddress.toLowerCase()}
+        `
+
+        result = await sql`
+          SELECT * FROM user_identities 
+          WHERE wallet_address = ${walletAddress.toLowerCase()}
+        `
+      }
+    }
+
+    if (!result[0]) {
+      console.log("[v0] No user_identities record found, checking code_assignments")
+
+      const codeAssignment = await sql`
+        SELECT token_id FROM code_assignments 
+        WHERE wallet_address = ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (codeAssignment[0]?.token_id) {
+        console.log("[v0] Creating user_identities record with token_id:", codeAssignment[0].token_id)
+
+        await sql`
+          INSERT INTO user_identities (wallet_address, token_id, created_at, updated_at)
+          VALUES (${walletAddress.toLowerCase()}, ${codeAssignment[0].token_id}, NOW(), NOW())
+        `
+
+        result = await sql`
+          SELECT * FROM user_identities 
+          WHERE wallet_address = ${walletAddress.toLowerCase()}
+        `
+      }
+    }
+
     console.log("[v0] Identity query result:", result)
     console.log("[v0] Identity result length:", result.length)
     if (result[0]) {
+      console.log("[v0] Identity token_id:", result[0].token_id)
       console.log("[v0] Identity email field:", result[0].email)
       console.log("[v0] Identity discord fields:", result[0].discord_id, result[0].discord_username)
       console.log("[v0] Identity twitter fields:", result[0].twitter_id, result[0].twitter_username)
@@ -60,16 +110,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    let finalTokenId = tokenId
+    if (!finalTokenId) {
+      const codeAssignment = await sql`
+        SELECT token_id FROM code_assignments 
+        WHERE wallet_address = ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+      finalTokenId = codeAssignment[0]?.token_id || null
+      console.log("[v0] Auto-fetched token_id from code_assignments:", finalTokenId)
+    }
+
     await sql`
       INSERT INTO user_identities (wallet_address, token_id)
-      VALUES (${walletAddress.toLowerCase()}, ${tokenId || null})
+      VALUES (${walletAddress.toLowerCase()}, ${finalTokenId})
       ON CONFLICT (wallet_address) 
       DO UPDATE SET 
-        token_id = COALESCE(${tokenId}, user_identities.token_id),
+        token_id = COALESCE(${finalTokenId}, user_identities.token_id),
         updated_at = NOW()
     `
 
-    // Update specific identity type
     if (type === "discord") {
       await sql`
         UPDATE user_identities 
