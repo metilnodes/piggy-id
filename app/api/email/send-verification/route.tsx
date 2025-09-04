@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@vercel/postgres"
 import crypto from "crypto"
+import { Resend } from "resend"
+
+export const runtime = "nodejs"
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,5 +64,53 @@ export async function POST(request: NextRequest) {
     `
 
     console.log("[v0] Verification token stored successfully")
-  } catch (error) {}
+
+    // Get the origin for the verification link
+    const origin = request.nextUrl.origin
+    const verificationUrl = `${origin}/api/email/verify?token=${token}`
+
+    console.log("[v0] Sending verification email to:", emailLc)
+    console.log("[v0] Verification URL:", verificationUrl)
+
+    // Send verification email using Resend
+    const emailResult = await resend.emails.send({
+      from: "id@piggyworld.xyz",
+      to: [emailLc],
+      subject: "Verify your email for Piggy ID",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Verify Your Email Address</h2>
+          <p>Click the link below to verify your email address and connect it to your Piggy ID account:</p>
+          <div style="margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Verify Email Address
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            This link will expire in 30 minutes. If you didn't request this verification, you can safely ignore this email.
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            Wallet Address: ${walletAddress}
+          </p>
+        </div>
+      `,
+    })
+
+    console.log("[v0] Resend API response:", emailResult)
+
+    if (emailResult.error) {
+      console.error("[v0] Resend API error:", emailResult.error)
+      return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 })
+    }
+
+    console.log("[v0] Verification email sent successfully")
+    return NextResponse.json({
+      success: true,
+      message: "Verification email sent successfully",
+    })
+  } catch (error) {
+    console.error("[v0] Send verification error:", error)
+    return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 })
+  }
 }
