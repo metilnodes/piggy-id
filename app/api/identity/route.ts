@@ -8,20 +8,39 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const walletAddress = searchParams.get("address")
 
+    console.log("[v0] Identity API GET request for address:", walletAddress)
+
     if (!walletAddress) {
       return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
     }
+
+    console.log("[v0] Querying user_identities table for wallet:", walletAddress.toLowerCase())
 
     const result = await sql`
       SELECT * FROM user_identities 
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `
 
+    console.log("[v0] Identity query result:", result)
+
     return NextResponse.json({
       identity: result[0] || null,
     })
   } catch (error) {
-    console.error("Error fetching identity:", error)
+    console.error("[v0] Error fetching identity - Full error:", error)
+    console.error("[v0] Error message:", error.message)
+    console.error("[v0] Error code:", error.code)
+
+    if (error.message?.includes('relation "user_identities" does not exist')) {
+      console.error("[v0] user_identities table does not exist! Run scripts/005_add_identity_connections.sql")
+      return NextResponse.json(
+        {
+          error: "Database not initialized. Please run identity connections script.",
+        },
+        { status: 500 },
+      )
+    }
+
     return NextResponse.json({ error: "Failed to fetch identity" }, { status: 500 })
   }
 }
