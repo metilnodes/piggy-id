@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
     `
 
     console.log("[v0] Identity query result:", result)
+    console.log("[v0] Identity result length:", result.length)
+    if (result[0]) {
+      console.log("[v0] Identity email field:", result[0].email)
+      console.log("[v0] Identity discord fields:", result[0].discord_id, result[0].discord_username)
+      console.log("[v0] Identity twitter fields:", result[0].twitter_id, result[0].twitter_username)
+    }
 
     return NextResponse.json({
       identity: result[0] || null,
