@@ -13,6 +13,13 @@ export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin
   const redirectUri = `${origin}/api/auth/twitter/callback`
 
+  console.log("[v0] Twitter OAuth Debug:", {
+    origin,
+    redirectUri,
+    wallet,
+    clientId: process.env.TWITTER_CLIENT_ID ? `${process.env.TWITTER_CLIENT_ID.substring(0, 8)}...` : "NOT SET",
+  })
+
   const state = b64url(crypto.randomBytes(16)) // nonce
 
   const payload = JSON.stringify({ w: wallet, s: state })
