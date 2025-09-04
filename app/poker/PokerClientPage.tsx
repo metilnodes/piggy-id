@@ -261,6 +261,8 @@ export default function PokerClientPage() {
 
     if (urlParams.get("success") === "email_verified") {
       setEmailVerificationPending(false)
+      setEmailEditing(false)
+      setEmail("")
       setToast({
         message: "Email successfully verified and connected to your account!",
         type: "success",
@@ -270,14 +272,16 @@ export default function PokerClientPage() {
       if (address && isConnected) {
         const loadIdentity = async () => {
           try {
+            console.log("[v0] Reloading identity after email verification...")
             const response = await fetch(`/api/identity?address=${address}`)
             const data = await response.json()
+            console.log("[v0] Updated identity data:", data.identity)
             setIdentity(data.identity)
           } catch (error) {
             console.error("Error loading identity:", error)
           }
         }
-        loadIdentity()
+        setTimeout(loadIdentity, 500)
       }
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
