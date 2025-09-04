@@ -1,42 +1,41 @@
 import { type NextRequest, NextResponse } from "next/server"
+import crypto from "crypto"
 
-export async function GET(request: NextRequest) {
-  try {
-    const origin = request.nextUrl.origin
-    const wallet = request.nextUrl.searchParams.get("wallet")
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
-    if (!wallet) {
-      return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
-    }
+function b64url(buf: Buffer) {
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+}
 
-    // Check for required environment variables
-    const clientId = process.env.TWITTER_CLIENT_ID
-    if (!clientId) {
-      console.error("[v0] Twitter OAuth Error: TWITTER_CLIENT_ID not found")
-      return NextResponse.json({ error: "Twitter OAuth not configured" }, { status: 500 })
-    }
+export async function GET(req: NextRequest) {
+  const wallet = (req.nextUrl.searchParams.get("wallet") || "").toLowerCase()
+  const origin = req.nextUrl.origin
+  const redirectUri = `${origin}/api/auth/twitter/callback`
 
-    const redirectUri = `${origin}/api/auth/twitter/callback`
-    const state = Buffer.from(JSON.stringify({ wallet })).toString("base64")
+  // PKCE
+  const verifier = b64url(crypto.randomBytes(32))
+  const challenge = b64url(crypto.createHash("sha256").update(verifier).digest())
+  const state = b64url(crypto.randomBytes(16)) // nonce
 
-    console.log("[v0] Twitter OAuth starting:", { wallet, redirectUri, origin })
+  // сохраним verifier+wallet+state в HttpOnly cookie на 10 минут
+  const payload = JSON.stringify({ v: verifier, w: wallet, s: state })
+  const authUrl = new URL("https://twitter.com/i/oauth2/authorize")
+  authUrl.searchParams.set("client_id", process.env.TWITTER_CLIENT_ID!)
+  authUrl.searchParams.set("response_type", "code")
+  authUrl.searchParams.set("redirect_uri", redirectUri)
+  authUrl.searchParams.set("scope", "users.read offline.access") // добавим ещё, если нужно
+  authUrl.searchParams.set("state", state)
+  authUrl.searchParams.set("code_challenge", challenge)
+  authUrl.searchParams.set("code_challenge_method", "S256")
 
-    const params = new URLSearchParams({
-      response_type: "code",
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      scope: "tweet.read users.read",
-      state,
-      code_challenge: "challenge",
-      code_challenge_method: "plain",
-    })
-
-    const authorizeUrl = `https://twitter.com/i/oauth2/authorize?${params.toString()}`
-    console.log("[v0] Redirecting to Twitter:", authorizeUrl)
-
-    return NextResponse.redirect(authorizeUrl)
-  } catch (error) {
-    console.error("[v0] Twitter OAuth Error:", error)
-    return NextResponse.json({ error: "Failed to initiate Twitter OAuth" }, { status: 500 })
-  }
+  const res = NextResponse.redirect(authUrl.toString(), { status: 302 })
+  res.cookies.set("tw_oauth", payload, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10,
+  })
+  return res
 }

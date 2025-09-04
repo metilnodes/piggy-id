@@ -1,119 +1,90 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { neon } from "@neondatabase/serverless"
+
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 const sql = neon(process.env.DATABASE_URL!)
 
-export async function GET(request: NextRequest) {
-  console.log("[v0] Twitter OAuth callback started")
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url)
+  const code = url.searchParams.get("code")
+  const state = url.searchParams.get("state")
+  const origin = url.origin
+  const redirectBack = (qs: string) => NextResponse.redirect(`${origin}/poker${qs}`)
 
-  const searchParams = request.nextUrl.searchParams
-  const code = searchParams.get("code")
-  const state = searchParams.get("state")
-  const error = searchParams.get("error")
+  if (!code || !state) return redirectBack("?error=twitter_auth_failed")
 
-  console.log("[v0] Twitter callback params:", { code: !!code, state: !!state, error })
+  // достанем PKCE и кошелёк из HttpOnly cookie
+  const jar = cookies()
+  const raw = jar.get("tw_oauth")?.value
+  if (!raw) return redirectBack("?error=twitter_state_missing")
 
-  if (error) {
-    console.log("[v0] Twitter OAuth error:", error)
-    return NextResponse.redirect(`${new URL(request.url).origin}/poker?error=twitter_auth_denied`)
+  let parsed: { v: string; w: string; s: string }
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return redirectBack("?error=twitter_state_parse")
   }
+  if (parsed.s !== state) return redirectBack("?error=twitter_state_mismatch")
 
-  if (!code || !state) {
-    console.log("[v0] Missing code or state parameter")
-    return NextResponse.redirect(`${new URL(request.url).origin}/poker?error=twitter_auth_failed`)
-  }
+  const verifier = parsed.v
+  const wallet = (parsed.w || "").toLowerCase()
+  if (!wallet) return redirectBack("?error=twitter_wallet_missing")
 
   try {
-    const { walletAddress } = JSON.parse(Buffer.from(state, "base64").toString())
-    console.log("[v0] Decoded wallet address:", walletAddress)
+    const redirectUri = `${origin}/api/auth/twitter/callback`
 
-    // Get code verifier
-    const codeVerifier = global.twitterCodeVerifiers?.get(state)
-    if (!codeVerifier) {
-      console.log("[v0] Code verifier not found for state:", state)
-      throw new Error("Code verifier not found")
-    }
-
-    // Clean up
-    global.twitterCodeVerifiers?.delete(state)
-
-    const origin = new URL(request.url).origin
-    const redirect_uri = `${origin}/api/auth/twitter/callback`
-
-    console.log("[v0] Exchanging code for token with redirect_uri:", redirect_uri)
-
-    // Exchange code for access token
-    const tokenResponse = await fetch("https://api.twitter.com/2/oauth2/token", {
+    // 1) обмен code -> токен (PKCE)
+    const tokenRes = await fetch("https://api.twitter.com/2/oauth2/token", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${Buffer.from(`${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`).toString("base64")}`,
-      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: new URLSearchParams({
+        client_id: process.env.TWITTER_CLIENT_ID!,
         grant_type: "authorization_code",
         code,
-        redirect_uri,
-        code_verifier: codeVerifier,
+        redirect_uri: redirectUri,
+        code_verifier: verifier,
       }),
     })
-
-    const tokenData = await tokenResponse.json()
-    console.log("[v0] Token response:", { success: !!tokenData.access_token, error: tokenData.error })
-
-    if (!tokenData.access_token) {
-      console.log("[v0] Failed to get access token:", tokenData)
-      throw new Error(`Failed to get access token: ${tokenData.error_description || tokenData.error}`)
+    if (!tokenRes.ok) {
+      const t = await tokenRes.text()
+      throw new Error(`token error: ${t}`)
     }
+    const token = await tokenRes.json()
+    if (!token.access_token) throw new Error("no access_token")
 
-    // Get user info
-    console.log("[v0] Fetching Twitter user data")
-    const userResponse = await fetch(
-      "https://api.twitter.com/2/users/me?user.fields=profile_image_url,public_metrics",
-      {
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-        },
-      },
-    )
-
-    const userResponseData = await userResponse.json()
-    console.log("[v0] User response:", { success: !!userResponseData.data, error: userResponseData.error })
-
-    if (!userResponseData.data) {
-      throw new Error(`Failed to get user data: ${userResponseData.error?.message || "Unknown error"}`)
+    // 2) профиль
+    const meRes = await fetch("https://api.twitter.com/2/users/me?user.fields=name,username,profile_image_url", {
+      headers: { Authorization: `Bearer ${token.access_token}` },
+    })
+    if (!meRes.ok) {
+      const t = await meRes.text()
+      throw new Error(`me error: ${t}`)
     }
+    const me = await meRes.json() // { data: { id, name, username, ... } }
+    const tUser = me?.data
+    if (!tUser?.id) throw new Error("no user id")
 
-    const userData = userResponseData.data
-
-    const existingConnection = await sql`
-      SELECT wallet_address FROM user_identities 
-      WHERE platform = 'twitter' AND platform_user_id = ${userData.id}
-      AND wallet_address != ${walletAddress.toLowerCase()}
-    `
-
-    if (existingConnection.length > 0) {
-      console.log("[v0] Twitter account already connected to another wallet")
-      return NextResponse.redirect(`${origin}/poker?error=twitter_already_connected`)
-    }
-
-    // Store in database
-    console.log("[v0] Storing Twitter connection in database")
-    await sql`
-      INSERT INTO user_identities (wallet_address, platform, platform_user_id, username, display_name, avatar_url, created_at, updated_at)
-      VALUES (${walletAddress.toLowerCase()}, 'twitter', ${userData.id}, ${userData.username}, ${userData.name}, ${userData.profile_image_url || null}, NOW(), NOW())
-      ON CONFLICT (wallet_address, platform) 
-      DO UPDATE SET 
-        platform_user_id = EXCLUDED.platform_user_id,
-        username = EXCLUDED.username,
-        display_name = EXCLUDED.display_name,
-        avatar_url = EXCLUDED.avatar_url,
+    // 3) upsert в user_identities (как делали для Discord)
+    await sql /* sql */`
+      INSERT INTO user_identities (wallet_address, twitter_id, twitter_username, updated_at, created_at)
+      VALUES (${wallet}, ${tUser.id}, ${tUser.username}, NOW(), NOW())
+      ON CONFLICT (wallet_address) DO UPDATE SET
+        twitter_id = EXCLUDED.twitter_id,
+        twitter_username = EXCLUDED.twitter_username,
         updated_at = NOW()
     `
 
-    console.log("[v0] Twitter connection successful")
-    return NextResponse.redirect(`${origin}/poker?twitter_connected=true`)
-  } catch (error) {
-    console.error("[v0] Twitter OAuth error:", error)
-    return NextResponse.redirect(`${new URL(request.url).origin}/poker?error=twitter_connection_failed`)
+    // 4) гасим cookie и редиректим с флагом успеха
+    const res = redirectBack("?success=twitter_verified")
+    res.cookies.set("tw_oauth", "", { path: "/", maxAge: 0 })
+    return res
+  } catch (e) {
+    console.error("[twitter callback] error:", e)
+    const res = redirectBack("?error=twitter_connection_failed")
+    res.cookies.set("tw_oauth", "", { path: "/", maxAge: 0 })
+    return res
   }
 }
