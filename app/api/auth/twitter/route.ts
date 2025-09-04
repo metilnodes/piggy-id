@@ -21,13 +21,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/poker?error=twitter_config_missing`, { status: 302 })
   }
 
+  const clientId = process.env.TWITTER_CLIENT_ID
+  if (clientId.length < 20 || !/^[a-zA-Z0-9_-]+$/.test(clientId)) {
+    console.error(
+      "[v0] Twitter OAuth Error: Invalid Client ID format - make sure you're using OAuth 2.0 Client ID, not OAuth 1.0a API Key",
+      {
+        clientIdLength: clientId.length,
+        clientIdPreview: `${clientId.substring(0, 8)}...`,
+      },
+    )
+    return NextResponse.redirect(`${origin}/poker?error=twitter_invalid_client_format`, { status: 302 })
+  }
+
   console.log("[v0] Twitter OAuth Debug:", {
     origin,
     redirectUri,
     wallet,
-    clientId: process.env.TWITTER_CLIENT_ID ? `${process.env.TWITTER_CLIENT_ID.substring(0, 8)}...` : "NOT SET",
-    clientIdLength: process.env.TWITTER_CLIENT_ID?.length || 0,
-    note: "Make sure you're using OAuth 2.0 Client ID/Secret, not OAuth 1.0a API Key/Secret",
+    clientId: `${clientId.substring(0, 8)}...`,
+    clientIdLength: clientId.length,
+    callbackUrlNote: "Callback URL must match exactly in X Dev Portal: " + redirectUri,
+    credentialsNote: "Using OAuth 2.0 Client ID/Secret (not OAuth 1.0a API Key/Secret)",
+    scopeNote: "Using users.read offline.access - minimum required scopes",
   })
 
   const state = b64url(crypto.randomBytes(16)) // nonce

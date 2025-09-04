@@ -67,20 +67,43 @@ export async function GET(req: NextRequest) {
       const errorText = await tokenRes.text()
       console.error("[v0] Twitter token error:", tokenRes.status, errorText)
 
-      // Parse specific Twitter errors
       try {
         const errorData = JSON.parse(errorText)
         if (errorData.error === "invalid_client") {
-          return redirectBack("?error=twitter_invalid_client&step=token&errorCode=InvalidClientComponent")
+          console.error(
+            "[v0] Twitter invalid_client - Check: 1) Using OAuth 2.0 Client ID/Secret (not 1.0a), 2) Credentials set in Vercel Preview env",
+          )
+          return redirectBack("?error=twitter_invalid_client&step=token&help=check_oauth2_credentials")
         }
         if (errorData.error === "invalid_grant") {
-          return redirectBack("?error=twitter_invalid_grant&step=token&errorCode=InvalidGrantComponent")
+          console.error(
+            "[v0] Twitter invalid_grant - Check: 1) Callback URL matches exactly, 2) Code not expired/reused",
+          )
+          return redirectBack("?error=twitter_invalid_grant&step=token&help=check_callback_url")
         }
         if (errorData.error === "unauthorized_client") {
-          return redirectBack("?error=twitter_unauthorized&step=token&errorCode=UnauthorizedComponent")
+          console.error(
+            "[v0] Twitter unauthorized_client - Check: 1) User authentication enabled in X Dev Portal, 2) App has required permissions",
+          )
+          return redirectBack("?error=twitter_unauthorized&step=token&help=check_dev_portal_settings")
+        }
+        if (errorData.error === "invalid_request") {
+          console.error(
+            "[v0] Twitter invalid_request - Check: 1) All required parameters present, 2) Callback URL format",
+          )
+          return redirectBack("?error=twitter_invalid_request&step=token&help=check_parameters")
         }
       } catch (e) {
         console.log("[v0] Could not parse Twitter error JSON")
+      }
+
+      if (tokenRes.status === 400) {
+        console.error(
+          "[v0] Twitter 400 Bad Request - Common causes: wrong credentials, callback URL mismatch, or app configuration issues",
+        )
+        return redirectBack(
+          `?error=twitter_400_error&step=token&help=check_configuration&details=${encodeURIComponent(errorText)}`,
+        )
       }
 
       return redirectBack(`?error=twitter_token_failed&step=token&errorCode=TokenErrorComponent`)
@@ -104,7 +127,15 @@ export async function GET(req: NextRequest) {
     if (!meRes.ok) {
       const errorText = await meRes.text()
       console.error("[v0] Twitter profile error:", meRes.status, errorText)
-      return redirectBack(`?error=twitter_profile_failed&step=profile&errorCode=ProfileErrorComponent`)
+
+      if (meRes.status === 403) {
+        console.error(
+          "[v0] Twitter 403 Forbidden - Check: 1) users.read scope granted, 2) Developer account has required access level",
+        )
+        return redirectBack(`?error=twitter_profile_forbidden&step=profile&help=check_scopes_and_account`)
+      }
+
+      return redirectBack(`?error=twitter_profile_failed&step=profile&details=${encodeURIComponent(errorText)}`)
     }
 
     const me = await meRes.json()

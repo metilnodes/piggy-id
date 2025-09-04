@@ -277,6 +277,8 @@ export default function PokerClientPage() {
 
     if (urlParams.get("error")) {
       const error = urlParams.get("error")
+      const help = urlParams.get("help")
+      const step = urlParams.get("step")
       let errorMessage = "Connection failed. Please try again."
 
       if (error === "discord_already_connected") {
@@ -287,6 +289,44 @@ export default function PokerClientPage() {
         errorMessage = "Discord authorization failed. Please try again."
       } else if (error === "twitter_auth_failed") {
         errorMessage = "Twitter authorization failed. Please try again."
+      } else if (error === "twitter_invalid_client") {
+        errorMessage =
+          help === "check_oauth2_credentials"
+            ? "Twitter connection failed: Invalid credentials. Make sure you're using OAuth 2.0 Client ID/Secret (not OAuth 1.0a API Key/Secret) and they're set correctly in your environment variables."
+            : "Twitter connection failed: Invalid client credentials."
+      } else if (error === "twitter_invalid_grant") {
+        errorMessage =
+          help === "check_callback_url"
+            ? "Twitter connection failed: Callback URL mismatch. Verify the callback URL in your X Developer Portal matches exactly: " +
+              window.location.origin +
+              "/api/auth/twitter/callback"
+            : "Twitter connection failed: Invalid authorization grant."
+      } else if (error === "twitter_unauthorized") {
+        errorMessage =
+          help === "check_dev_portal_settings"
+            ? "Twitter connection failed: Unauthorized client. Enable 'User authentication settings' in your X Developer Portal and ensure your app has the required permissions."
+            : "Twitter connection failed: Unauthorized client."
+      } else if (error === "twitter_invalid_request") {
+        errorMessage =
+          help === "check_parameters"
+            ? "Twitter connection failed: Invalid request parameters. Check your X Developer Portal configuration and callback URL format."
+            : "Twitter connection failed: Invalid request."
+      } else if (error === "twitter_400_error") {
+        errorMessage =
+          help === "check_configuration"
+            ? "Twitter connection failed: Bad request (400). Common causes: wrong OAuth credentials, callback URL mismatch, or incorrect app configuration in X Developer Portal."
+            : "Twitter connection failed: Bad request."
+      } else if (error === "twitter_profile_forbidden") {
+        errorMessage =
+          help === "check_scopes_and_account"
+            ? "Twitter connection failed: Profile access forbidden. Ensure 'users.read' scope is granted and your developer account has the required access level."
+            : "Twitter connection failed: Profile access forbidden."
+      } else if (error === "twitter_config_missing") {
+        errorMessage =
+          "Twitter connection failed: Missing configuration. TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET must be set in environment variables."
+      } else if (error === "twitter_invalid_client_format") {
+        errorMessage =
+          "Twitter connection failed: Invalid Client ID format. Make sure you're using OAuth 2.0 Client ID (not OAuth 1.0a API Key)."
       } else if (error === "invalid_token") {
         errorMessage = "Invalid verification token. Please request a new verification email."
         setEmailVerificationPending(false)
