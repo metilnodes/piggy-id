@@ -227,10 +227,10 @@ export default function PokerClientPage() {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
-    if (urlParams.get("discord_connected") === "true") {
+    if (urlParams.get("success") === "discord_verified") {
       const username = urlParams.get("username")
       setToast({
-        message: `Successfully signed in! Your account has been successfully connected to discord.`,
+        message: "Discord successfully connected to your account!",
         type: "success",
       })
 
@@ -251,10 +251,10 @@ export default function PokerClientPage() {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
-    if (urlParams.get("twitter_connected") === "true") {
+    if (urlParams.get("success") === "twitter_verified") {
       const username = urlParams.get("username")
       setToast({
-        message: `Successfully signed in! Your account has been successfully connected to twitter.`,
+        message: "Twitter successfully connected to your account!",
         type: "success",
       })
 
@@ -452,6 +452,49 @@ export default function PokerClientPage() {
     setEmail("")
   }
 
+  const disconnectPlatform = async (platform: string) => {
+    if (!address) return
+
+    setIdentityLoading(true)
+    try {
+      const response = await fetch("/api/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          platform: platform,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setToast({
+          message: `${platform.charAt(0).toUpperCase() + platform.slice(1)} successfully disconnected!`,
+          type: "success",
+        })
+
+        // Reload identity data
+        const identityResponse = await fetch(`/api/identity?address=${address}`)
+        const identityData = await identityResponse.json()
+        setIdentity(identityData.identity)
+      } else {
+        setToast({
+          message: data.error || `Failed to disconnect ${platform}. Please try again.`,
+          type: "error",
+        })
+      }
+    } catch (error) {
+      console.error(`Error disconnecting ${platform}:`, error)
+      setToast({
+        message: `Failed to disconnect ${platform}. Please try again.`,
+        type: "error",
+      })
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black cyber-grid">
       <Header />
@@ -608,7 +651,13 @@ export default function PokerClientPage() {
                         </div>
                       </div>
                       {identity?.discord_username ? (
-                        <div className="text-green-400 font-mono text-sm">Connected</div>
+                        <button
+                          onClick={() => disconnectPlatform("discord")}
+                          disabled={identityLoading}
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                        >
+                          Disconnect
+                        </button>
                       ) : (
                         <button
                           onClick={connectDiscord}
@@ -640,7 +689,13 @@ export default function PokerClientPage() {
                         </div>
                       </div>
                       {identity?.twitter_id ? (
-                        <div className="text-green-400 font-mono text-sm">Connected</div>
+                        <button
+                          onClick={() => disconnectPlatform("twitter")}
+                          disabled={identityLoading}
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                        >
+                          Disconnect
+                        </button>
                       ) : (
                         <button
                           onClick={connectTwitter}
@@ -688,9 +743,18 @@ export default function PokerClientPage() {
                       </div>
                       <div className="flex gap-2">
                         {identity?.email && !emailEditing ? (
-                          <button onClick={editEmail} className="cyber-button px-4 py-1 text-sm font-mono">
-                            Edit
-                          </button>
+                          <>
+                            <button onClick={editEmail} className="cyber-button px-4 py-1 text-sm font-mono">
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => disconnectPlatform("email")}
+                              disabled={identityLoading}
+                              className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                            >
+                              Disconnect
+                            </button>
+                          </>
                         ) : emailVerificationPending ? (
                           <button
                             onClick={() => {
