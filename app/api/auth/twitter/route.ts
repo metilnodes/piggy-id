@@ -23,20 +23,25 @@ export async function GET(req: NextRequest) {
 
     const cookieData = JSON.stringify({ wallet, state })
 
-    const authUrl = new URL("https://twitter.com/i/oauth2/authorize")
-    authUrl.searchParams.set("response_type", "code")
-    authUrl.searchParams.set("client_id", process.env.TWITTER_CLIENT_ID)
-    authUrl.searchParams.set("redirect_uri", redirectUri)
-    authUrl.searchParams.set("scope", "users.read")
-    authUrl.searchParams.set("state", state)
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: process.env.TWITTER_CLIENT_ID,
+      redirect_uri: redirectUri,
+      scope: "users.read",
+      state: state,
+    })
+
+    const authUrl = `https://twitter.com/i/oauth2/authorize?${params.toString()}`
 
     console.log("[v0] Twitter OAuth: Starting authorization", {
       wallet,
       redirectUri,
       scope: "users.read",
+      clientIdPrefix: process.env.TWITTER_CLIENT_ID.substring(0, 8),
+      authUrl: authUrl.substring(0, 100) + "...",
     })
 
-    const response = NextResponse.redirect(authUrl.toString())
+    const response = NextResponse.redirect(authUrl)
 
     response.cookies.set("twitter_oauth_state", cookieData, {
       httpOnly: true,
