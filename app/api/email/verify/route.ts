@@ -5,10 +5,15 @@ const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("[v0] Email verification request received") // Added debugging
+
     const { searchParams } = new URL(request.url)
     const token = searchParams.get("token")
 
+    console.log("[v0] Verification token:", token) // Added token logging
+
     if (!token) {
+      console.log("[v0] No token provided") // Added error logging
       return NextResponse.redirect(new URL("/poker?error=invalid_token", request.url))
     }
 
@@ -20,11 +25,15 @@ export async function GET(request: NextRequest) {
       AND verified = FALSE
     `
 
+    console.log("[v0] Verification record found:", verification.length > 0) // Added verification status logging
+
     if (verification.length === 0) {
+      console.log("[v0] Token expired or already used") // Added error logging
       return NextResponse.redirect(new URL("/poker?error=token_expired", request.url))
     }
 
     const { wallet_address, email } = verification[0]
+    console.log("[v0] Verifying email:", email, "for wallet:", wallet_address) // Added verification details logging
 
     // Mark as verified
     await sql`
@@ -49,9 +58,10 @@ export async function GET(request: NextRequest) {
       AND verification_token != ${token}
     `
 
+    console.log("[v0] Email verification completed successfully") // Added success logging
     return NextResponse.redirect(new URL("/poker?success=email_verified", request.url))
   } catch (error) {
-    console.error("Email verification error:", error)
+    console.error("[v0] Email verification error:", error) // Added v0 prefix to error logging
     return NextResponse.redirect(new URL("/poker?error=verification_failed", request.url))
   }
 }

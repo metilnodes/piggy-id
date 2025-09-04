@@ -362,13 +362,14 @@ export default function PokerClientPage() {
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
+  }, [address, isConnected])
 
-    // Auto-hide toast after 5 seconds
+  useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 5000)
       return () => clearTimeout(timer)
     }
-  }, [address, isConnected, toast])
+  }, [toast])
 
   // Header component with updated text
   const Header = () => (
