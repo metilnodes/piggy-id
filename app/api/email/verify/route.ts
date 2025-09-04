@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     console.log("[v0] Verification - user_identities record:", verifyRecord)
 
     console.log("[v0] Email verification completed successfully")
-    return NextResponse.redirect(new URL("/poker?email_connected=true", request.url))
+    return NextResponse.redirect(new URL("/poker?success=email_verified", request.url))
   } catch (error) {
     console.error("[v0] Email verification error:", error)
     console.error("[v0] Error details:", error.message)
