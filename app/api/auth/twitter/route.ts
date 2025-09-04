@@ -34,6 +34,14 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // Validate redirect_uri format
+  if (!redirectUri.startsWith("https://")) {
+    console.error("[v0] Twitter OAuth Error: Redirect URI must use HTTPS", { redirectUri })
+    return NextResponse.redirect(`${origin}/poker?error=twitter_redirect_uri_invalid&help=https_required`, {
+      status: 302,
+    })
+  }
+
   console.log("[v0] Twitter OAuth Debug:", {
     origin,
     redirectUri,
@@ -49,17 +57,27 @@ export async function GET(req: NextRequest) {
   const state = b64url(crypto.randomBytes(16))
 
   const payload = JSON.stringify({ w: wallet, s: state })
+
   const authUrl = new URL("https://twitter.com/i/oauth2/authorize")
-  authUrl.searchParams.set("client_id", process.env.TWITTER_CLIENT_ID!)
   authUrl.searchParams.set("response_type", "code")
+  authUrl.searchParams.set("client_id", process.env.TWITTER_CLIENT_ID!)
   authUrl.searchParams.set("redirect_uri", redirectUri)
   authUrl.searchParams.set("scope", "users.read")
   authUrl.searchParams.set("state", state)
 
-  console.log("[v0] Twitter OAuth URL:", {
-    url: authUrl.toString(),
+  console.log("[v0] Twitter OAuth URL Debug:", {
+    fullUrl: authUrl.toString(),
+    params: {
+      response_type: authUrl.searchParams.get("response_type"),
+      client_id: authUrl.searchParams.get("client_id")?.substring(0, 8) + "...",
+      redirect_uri: authUrl.searchParams.get("redirect_uri"),
+      scope: authUrl.searchParams.get("scope"),
+      state: authUrl.searchParams.get("state"),
+    },
     scopeNote: "Using minimal 'users.read' scope for better compatibility",
     pkceNote: "PKCE disabled - using Web App (Confidential) flow with client_secret",
+    troubleshootingNote:
+      "If still getting 400, check X Dev Portal: User authentication enabled, Web App type, exact callback URL match",
   })
 
   const res = NextResponse.redirect(authUrl.toString(), { status: 302 })
