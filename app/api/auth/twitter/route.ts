@@ -13,11 +13,21 @@ export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin
   const redirectUri = `${origin}/api/auth/twitter/callback`
 
+  if (!process.env.TWITTER_CLIENT_ID || !process.env.TWITTER_CLIENT_SECRET) {
+    console.error("[v0] Twitter OAuth Error: Missing credentials", {
+      clientId: !!process.env.TWITTER_CLIENT_ID,
+      clientSecret: !!process.env.TWITTER_CLIENT_SECRET,
+    })
+    return NextResponse.redirect(`${origin}/poker?error=twitter_config_missing`, { status: 302 })
+  }
+
   console.log("[v0] Twitter OAuth Debug:", {
     origin,
     redirectUri,
     wallet,
     clientId: process.env.TWITTER_CLIENT_ID ? `${process.env.TWITTER_CLIENT_ID.substring(0, 8)}...` : "NOT SET",
+    clientIdLength: process.env.TWITTER_CLIENT_ID?.length || 0,
+    note: "Make sure you're using OAuth 2.0 Client ID/Secret, not OAuth 1.0a API Key/Secret",
   })
 
   const state = b64url(crypto.randomBytes(16)) // nonce
