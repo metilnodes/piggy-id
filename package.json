@@ -45,7 +45,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "latest",
-    "crypto": "latest",
+    "crypto": "1.0.1",
     "date-fns": "4.1.0",
     "embla-carousel-react": "latest",
     "express": "5.1.0",
