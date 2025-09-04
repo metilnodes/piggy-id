@@ -171,6 +171,7 @@ export default function PokerClientPage() {
       }
 
       console.log("[v0] Loading identity for address:", address)
+      setIdentityLoading(true)
 
       try {
         const response = await fetch(`/api/identity?address=${address}`)
@@ -178,83 +179,19 @@ export default function PokerClientPage() {
 
         console.log("[v0] Identity API response:", data)
         console.log("[v0] Identity data:", data.identity)
+        console.log("[v0] Email field in identity:", data.identity?.email)
+        console.log("[v0] Identity object keys:", data.identity ? Object.keys(data.identity) : "null")
 
         setIdentity(data.identity)
       } catch (error) {
         console.error("[v0] Error loading identity:", error)
+      } finally {
+        setIdentityLoading(false)
       }
     }
 
     loadIdentity()
   }, [address, isConnected])
-
-  const connectDiscord = async () => {
-    if (!address) return
-
-    console.log("[v0] Discord Connect button clicked")
-    console.log("[v0] Wallet address:", address)
-    console.log("[v0] Redirecting to Discord OAuth...")
-
-    // Redirect to Discord OAuth
-    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}`
-  }
-
-  const connectTwitter = async () => {
-    if (!address) return
-
-    // Redirect to Twitter OAuth
-    window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
-  }
-
-  const connectEmail = async () => {
-    if (!address || !email.trim()) return
-
-    setIdentityLoading(true)
-    try {
-      const response = await fetch("/api/email/send-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: address,
-          email: email.trim(),
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setEmailVerificationPending(true)
-        setEmail("")
-        setToast({
-          message: "Verification email sent! Please check your inbox and click the verification link.",
-          type: "success",
-        })
-      } else {
-        setToast({
-          message: data.error || "Failed to send verification email. Please try again.",
-          type: "error",
-        })
-      }
-    } catch (error) {
-      console.error("Error sending verification email:", error)
-      setToast({
-        message: "Failed to send verification email. Please try again.",
-        type: "error",
-      })
-    } finally {
-      setIdentityLoading(false)
-    }
-  }
-
-  const editEmail = () => {
-    setEmailEditing(true)
-    setEmail(identity?.email || "")
-  }
-
-  const cancelEmailEdit = () => {
-    setEmailEditing(false)
-    setEmail("")
-  }
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -273,15 +210,18 @@ export default function PokerClientPage() {
         const loadIdentity = async () => {
           try {
             console.log("[v0] Reloading identity after email verification...")
+            await new Promise((resolve) => setTimeout(resolve, 1000))
             const response = await fetch(`/api/identity?address=${address}`)
             const data = await response.json()
-            console.log("[v0] Updated identity data:", data.identity)
+            console.log("[v0] Updated identity data after email verification:", data.identity)
+            console.log("[v0] Email field after verification:", data.identity?.email)
+            console.log("[v0] All identity fields:", JSON.stringify(data.identity, null, 2))
             setIdentity(data.identity)
           } catch (error) {
             console.error("Error loading identity:", error)
           }
         }
-        setTimeout(loadIdentity, 500)
+        loadIdentity()
       }
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
@@ -443,6 +383,74 @@ export default function PokerClientPage() {
       </div>
     </header>
   )
+
+  const connectDiscord = async () => {
+    if (!address) return
+
+    console.log("[v0] Discord Connect button clicked")
+    console.log("[v0] Wallet address:", address)
+    console.log("[v0] Redirecting to Discord OAuth...")
+
+    // Redirect to Discord OAuth
+    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}`
+  }
+
+  const connectTwitter = async () => {
+    if (!address) return
+
+    // Redirect to Twitter OAuth
+    window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
+  }
+
+  const connectEmail = async () => {
+    if (!address || !email.trim()) return
+
+    setIdentityLoading(true)
+    try {
+      const response = await fetch("/api/email/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          email: email.trim(),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setEmailVerificationPending(true)
+        setEmail("")
+        setToast({
+          message: "Verification email sent! Please check your inbox and click the verification link.",
+          type: "success",
+        })
+      } else {
+        setToast({
+          message: data.error || "Failed to send verification email. Please try again.",
+          type: "error",
+        })
+      }
+    } catch (error) {
+      console.error("Error sending verification email:", error)
+      setToast({
+        message: "Failed to send verification email. Please try again.",
+        type: "error",
+      })
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
+  const editEmail = () => {
+    setEmailEditing(true)
+    setEmail(identity?.email || "")
+  }
+
+  const cancelEmailEdit = () => {
+    setEmailEditing(false)
+    setEmail("")
+  }
 
   return (
     <div className="min-h-screen bg-black cyber-grid">
@@ -648,23 +656,35 @@ export default function PokerClientPage() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
-                        {identity?.email && !emailEditing ? (
-                          <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
-                            {identity.email}
-                          </div>
-                        ) : emailVerificationPending ? (
-                          <div className="text-yellow-400 bg-black/70 px-2 py-1 rounded border border-yellow-500/30 font-mono text-xs">
-                            Verification pending - check your email
-                          </div>
-                        ) : (
-                          <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            className="w-full bg-black border border-pink-500/30 text-pink-300 font-mono text-sm px-2 py-1 rounded focus:border-pink-500 focus:outline-none"
-                          />
-                        )}
+                        {(() => {
+                          console.log("[v0] Email display logic - identity?.email:", identity?.email)
+                          console.log("[v0] Email display logic - emailEditing:", emailEditing)
+                          console.log("[v0] Email display logic - emailVerificationPending:", emailVerificationPending)
+
+                          if (identity?.email && !emailEditing) {
+                            return (
+                              <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
+                                {identity.email}
+                              </div>
+                            )
+                          } else if (emailVerificationPending) {
+                            return (
+                              <div className="text-yellow-400 bg-black/70 px-2 py-1 rounded border border-yellow-500/30 font-mono text-xs">
+                                Verification pending - check your email
+                              </div>
+                            )
+                          } else {
+                            return (
+                              <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                className="w-full bg-black border border-pink-500/30 text-pink-300 font-mono text-sm px-2 py-1 rounded focus:border-pink-500 focus:outline-none"
+                              />
+                            )
+                          }
+                        })()}
                       </div>
                       <div className="flex gap-2">
                         {identity?.email && !emailEditing ? (
