@@ -63,7 +63,14 @@ export async function GET(request: NextRequest) {
         `
       }
 
-      return NextResponse.redirect(`${origin}/superpoker?success=discord_verified`)
+      const response = NextResponse.redirect(`${origin}/superpoker?success=discord_verified`)
+      response.cookies.set("superpoker_discord_id", me.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+      })
+      return response
     } else {
       // Original poker logic
       const tokenIdRows = await sql`
