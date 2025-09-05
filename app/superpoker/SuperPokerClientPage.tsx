@@ -248,14 +248,24 @@ export default function SuperPokerClientPage() {
                             </a>
                           </div>
                         ) : (
-                          <div className="text-red-400 text-sm">
-                            ❌ Missing required roles
-                            {((roleCheck.missingRoleNames && roleCheck.missingRoleNames.length > 0) ||
-                              (roleCheck.missingRoles && roleCheck.missingRoles.length > 0)) && (
-                              <div className="mt-1 text-xs text-gray-400">
-                                Missing: {roleCheck.missingRoleNames?.join(", ") || roleCheck.missingRoles.join(", ")}
-                              </div>
-                            )}
+                          <div className="space-y-3">
+                            <div className="text-red-400 text-sm">
+                              ❌ Missing required roles
+                              {((roleCheck.missingRoleNames && roleCheck.missingRoleNames.length > 0) ||
+                                (roleCheck.missingRoles && roleCheck.missingRoles.length > 0)) && (
+                                <div className="mt-1 text-xs text-gray-400">
+                                  Missing: {roleCheck.missingRoleNames?.join(", ") || roleCheck.missingRoles.join(", ")}
+                                </div>
+                              )}
+                            </div>
+                            <a
+                              href="https://guild.xyz/superform/piggy"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                            >
+                              Claim role now
+                            </a>
                           </div>
                         )}
 
