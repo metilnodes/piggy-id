@@ -329,16 +329,16 @@ export default function AdminPage() {
 
         <Tabs defaultValue="upload" className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-gray-900">
-            <TabsTrigger value="upload" className="data-[state=active]:bg-pink-500">
+            <TabsTrigger value="upload" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
               Upload CSV
             </TabsTrigger>
-            <TabsTrigger value="manual" className="data-[state=active]:bg-pink-500">
+            <TabsTrigger value="manual" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
               Manual Add
             </TabsTrigger>
-            <TabsTrigger value="codes" className="data-[state=active]:bg-pink-500">
+            <TabsTrigger value="codes" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
               View Codes
             </TabsTrigger>
-            <TabsTrigger value="tournament" className="data-[state=active]:bg-pink-500">
+            <TabsTrigger value="tournament" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
               Tournament INFO
             </TabsTrigger>
           </TabsList>
