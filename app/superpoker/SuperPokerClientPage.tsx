@@ -262,7 +262,7 @@ export default function SuperPokerClientPage() {
                               href="https://guild.xyz/superform/piggy"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-block px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                              className="inline-block px-6 py-2 border-2 border-pink-500 text-pink-400 hover:bg-pink-500/10 hover:text-pink-300 font-medium rounded-lg transition-all duration-200 bg-transparent"
                             >
                               Claim role now
                             </a>
