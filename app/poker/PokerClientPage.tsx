@@ -486,7 +486,77 @@ export default function PokerClientPage() {
   const connectFarcaster = async () => {
     if (!address) return
 
-    window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
+    // Load SIWN script if not already loaded
+    if (!window.neynarSIWN) {
+      const script = document.createElement("script")
+      script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
+      script.async = true
+      document.head.appendChild(script)
+
+      // Wait for script to load
+      await new Promise((resolve) => {
+        script.onload = resolve
+      })
+    }
+
+    // Create SIWN button programmatically
+    const siwn = window.neynarSIWN.createSIWNButton({
+      clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID,
+      onSuccess: async (data) => {
+        console.log("[v0] SIWN Success:", data)
+
+        try {
+          // Send data to our SIWN endpoint
+          const response = await fetch("/api/auth/farcaster/siwn", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              walletAddress: address,
+              signer_uuid: data.signer_uuid,
+              fid: data.fid,
+              user: data.user,
+            }),
+          })
+
+          const result = await response.json()
+
+          if (response.ok) {
+            setToast({
+              message: "Farcaster successfully connected to your account!",
+              type: "success",
+            })
+
+            // Reload identity data
+            const identityResponse = await fetch(`/api/identity?address=${address}`)
+            const identityData = await identityResponse.json()
+            setIdentity(identityData.identity)
+          } else {
+            setToast({
+              message: result.error || "Failed to connect Farcaster account",
+              type: "error",
+            })
+          }
+        } catch (error) {
+          console.error("[v0] SIWN callback error:", error)
+          setToast({
+            message: "Failed to connect Farcaster account",
+            type: "error",
+          })
+        }
+      },
+      onError: (error) => {
+        console.error("[v0] SIWN Error:", error)
+        setToast({
+          message: "Farcaster connection failed. Please try again.",
+          type: "error",
+        })
+      },
+    })
+
+    // Trigger the SIWN flow
+    siwn.click()
   }
 
   const connectEmail = async () => {
@@ -916,4 +986,16 @@ export default function PokerClientPage() {
       </div>
     </div>
   )
+}
+
+declare global {
+  interface Window {
+    neynarSIWN: {
+      createSIWNButton: (config: {
+        clientId: string
+        onSuccess: (data: { signer_uuid: string; fid: number; user: any }) => void
+        onError: (error: any) => void
+      }) => HTMLElement
+    }
+  }
 }
