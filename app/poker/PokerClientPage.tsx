@@ -5,6 +5,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { getProviderSafe } from "@/lib/wallet/getProvider"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
+import { NeynarSDK } from "neynar-sdk"
 
 type Status = "idle" | "checking" | "ready" | "error"
 
@@ -41,17 +42,7 @@ export default function PokerClientPage() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
-  // Load Neynar SIWN script on component mount
-  useEffect(() => {
-    const script = document.createElement("script")
-    script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
-    script.async = true
-    document.head.appendChild(script)
-
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [])
+  const neynarSDK = new NeynarSDK()
 
   useEffect(() => {
     const loadTournamentInfo = async () => {
@@ -89,7 +80,6 @@ export default function PokerClientPage() {
     loadTournamentUrl()
   }, [])
 
-  // Safe wallet initialization
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -132,7 +122,6 @@ export default function PokerClientPage() {
     }
   }
 
-  // NFT and invite code checking
   useEffect(() => {
     let active = true
 
@@ -408,7 +397,6 @@ export default function PokerClientPage() {
     }
   }, [toast])
 
-  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -498,7 +486,8 @@ export default function PokerClientPage() {
   const connectFarcaster = async () => {
     if (!address) return
 
-    window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
+    // This will be handled by the Neynar SDK button
+    console.log("[v0] Farcaster connection will be handled by Neynar SDK")
   }
 
   const connectEmail = async () => {
@@ -834,13 +823,7 @@ export default function PokerClientPage() {
                           Disconnect
                         </button>
                       ) : (
-                        <button
-                          onClick={connectFarcaster}
-                          disabled={identityLoading || !tokenId}
-                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
-                        >
-                          Connect
-                        </button>
+                        <div className="text-yellow-400 font-mono text-xs">SDK Setup Required</div>
                       )}
                     </div>
 
