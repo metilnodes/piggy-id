@@ -18,6 +18,8 @@ interface RoleCheckResponse {
   matchedRoles: string[]
   missingRoles: string[]
   discordId: string
+  isGuildMember: boolean
+  guildInviteUrl?: string
   error?: string
 }
 
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
             matchedRoles: [],
             missingRoles: roleIds,
             discordId: discordId,
+            isGuildMember: false,
           },
           { status: 404 },
         )
@@ -92,6 +95,7 @@ export async function GET(request: NextRequest) {
             matchedRoles: [],
             missingRoles: roleIds,
             discordId: "",
+            isGuildMember: false,
           },
           { status: 404 },
         )
@@ -113,6 +117,7 @@ export async function GET(request: NextRequest) {
           matchedRoles: [],
           missingRoles: roleIds,
           discordId,
+          isGuildMember: false,
         },
         { status: 500 },
       )
@@ -124,6 +129,20 @@ export async function GET(request: NextRequest) {
         "Content-Type": "application/json",
       },
     })
+
+    if (discordResponse.status === 404) {
+      return NextResponse.json({
+        hasRequired: false,
+        mode,
+        checkedRoles: roleIds,
+        matchedRoles: [],
+        missingRoles: roleIds,
+        discordId: finalDiscordId,
+        isGuildMember: false,
+        guildInviteUrl: "https://discord.gg/superform",
+        error: "User is not a member of the Discord server",
+      })
+    }
 
     if (!discordResponse.ok) {
       const errorText = await discordResponse.text()
@@ -138,6 +157,7 @@ export async function GET(request: NextRequest) {
           matchedRoles: [],
           missingRoles: roleIds,
           discordId: finalDiscordId,
+          isGuildMember: false,
         },
         { status: discordResponse.status },
       )
@@ -158,6 +178,7 @@ export async function GET(request: NextRequest) {
       matchedRoles,
       missingRoles,
       discordId: finalDiscordId,
+      isGuildMember: true, // User is confirmed guild member
     }
 
     return NextResponse.json(response)
@@ -172,6 +193,7 @@ export async function GET(request: NextRequest) {
         matchedRoles: [],
         missingRoles: [],
         discordId: "",
+        isGuildMember: false,
       },
       { status: 500 },
     )

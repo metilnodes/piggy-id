@@ -15,6 +15,8 @@ interface RoleCheckResult {
   matchedRoles: string[]
   missingRoles: string[]
   discordId: string
+  isGuildMember: boolean
+  guildInviteUrl?: string
   error?: string
 }
 
@@ -39,7 +41,13 @@ export default function SuperPokerClientPage() {
       setRoleCheck(result)
 
       if (result.error) {
-        toast.error(`Role check failed: ${result.error}`)
+        if (!result.isGuildMember) {
+          toast.error("You need to join the Discord server first")
+        } else {
+          toast.error(`Role check failed: ${result.error}`)
+        }
+      } else if (!result.isGuildMember) {
+        toast.warning("Please join the Discord server to continue")
       } else if (result.hasRequired) {
         toast.success("Discord roles verified!")
       } else {
@@ -53,7 +61,12 @@ export default function SuperPokerClientPage() {
     }
   }
 
-  // Handle Discord OAuth callback
+  const handleJoinDiscord = () => {
+    if (roleCheck?.guildInviteUrl) {
+      window.open(roleCheck.guildInviteUrl, "_blank")
+    }
+  }
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const success = urlParams.get("success")
@@ -173,38 +186,68 @@ export default function SuperPokerClientPage() {
 
                 {roleCheck ? (
                   <div className="space-y-3">
-                    <div className="text-sm text-gray-300">
-                      Required roles:{" "}
-                      {roleCheck.checkedRoles.length > 0 ? roleCheck.checkedRoles.join(", ") : "None specified"}
-                    </div>
-
-                    {roleCheck.error ? (
-                      <div className="text-red-400 text-sm">❌ Error: {roleCheck.error}</div>
-                    ) : roleCheck.hasRequired ? (
-                      <div className="text-green-400 text-sm">
-                        ✅ Access granted
-                        {roleCheck.matchedRoles.length > 0 && (
-                          <div className="mt-1 text-xs text-gray-400">
-                            Matched roles: {roleCheck.matchedRoles.join(", ")}
-                          </div>
+                    {!roleCheck.isGuildMember ? (
+                      <div className="space-y-3">
+                        <div className="text-red-400 text-sm">❌ You are not subscribed to the Discord server</div>
+                        <div className="text-gray-400 text-xs">
+                          Please join our Discord server to continue with role verification
+                        </div>
+                        {roleCheck.guildInviteUrl && (
+                          <button
+                            onClick={handleJoinDiscord}
+                            className="px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded transition-colors font-medium"
+                          >
+                            Join Discord
+                          </button>
                         )}
+                        <button
+                          onClick={checkDiscordRoles}
+                          disabled={isCheckingRoles}
+                          className="ml-2 px-3 py-1 text-xs border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50"
+                        >
+                          {isCheckingRoles ? "Checking..." : "Refresh check"}
+                        </button>
                       </div>
                     ) : (
-                      <div className="text-red-400 text-sm">
-                        ❌ Missing required roles
-                        {roleCheck.missingRoles.length > 0 && (
-                          <div className="mt-1 text-xs text-gray-400">Missing: {roleCheck.missingRoles.join(", ")}</div>
+                      <div className="space-y-3">
+                        <div className="text-green-400 text-sm">✓ Discord server member</div>
+
+                        <div className="text-sm text-gray-300">
+                          Required roles:{" "}
+                          {roleCheck.checkedRoles.length > 0 ? roleCheck.checkedRoles.join(", ") : "None specified"}
+                        </div>
+
+                        {roleCheck.error ? (
+                          <div className="text-red-400 text-sm">❌ Error: {roleCheck.error}</div>
+                        ) : roleCheck.hasRequired ? (
+                          <div className="text-green-400 text-sm">
+                            ✅ Access granted
+                            {roleCheck.matchedRoles.length > 0 && (
+                              <div className="mt-1 text-xs text-gray-400">
+                                Matched roles: {roleCheck.matchedRoles.join(", ")}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-red-400 text-sm">
+                            ❌ Missing required roles
+                            {roleCheck.missingRoles.length > 0 && (
+                              <div className="mt-1 text-xs text-gray-400">
+                                Missing: {roleCheck.missingRoles.join(", ")}
+                              </div>
+                            )}
+                          </div>
                         )}
+
+                        <button
+                          onClick={checkDiscordRoles}
+                          disabled={isCheckingRoles}
+                          className="px-3 py-1 text-xs border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50"
+                        >
+                          {isCheckingRoles ? "Checking..." : "Refresh check"}
+                        </button>
                       </div>
                     )}
-
-                    <button
-                      onClick={checkDiscordRoles}
-                      disabled={isCheckingRoles}
-                      className="px-3 py-1 text-xs border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isCheckingRoles ? "Checking..." : "Refresh check"}
-                    </button>
                   </div>
                 ) : (
                   <button
