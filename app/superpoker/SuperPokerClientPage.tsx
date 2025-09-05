@@ -28,6 +28,39 @@ export default function SuperPokerClientPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [roleCheck, setRoleCheck] = useState<RoleCheckResult | null>(null)
   const [isCheckingRoles, setIsCheckingRoles] = useState(false)
+  const [inviteCode, setInviteCode] = useState<string | null>(null)
+  const [isLoadingInviteCode, setIsLoadingInviteCode] = useState(false)
+
+  const loadInviteCode = async () => {
+    if (!discordUser?.discord_id || !discordUser?.discord_username) {
+      return
+    }
+
+    setIsLoadingInviteCode(true)
+    try {
+      const response = await fetch("/api/superpoker/invite-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordId: discordUser.discord_id,
+          discordUsername: discordUser.discord_username,
+        }),
+      })
+
+      const result = await response.json()
+      if (response.ok && result.inviteCode) {
+        setInviteCode(result.inviteCode)
+        toast.success("Invite code assigned!")
+      } else {
+        toast.error("No invite codes available. Please contact admin.")
+      }
+    } catch (error) {
+      console.error("Failed to load invite code:", error)
+      toast.error("Failed to get invite code")
+    } finally {
+      setIsLoadingInviteCode(false)
+    }
+  }
 
   const checkDiscordRoles = async () => {
     if (!discordUser?.discord_id) {
@@ -53,6 +86,9 @@ export default function SuperPokerClientPage() {
         toast.warning("Please join the Discord server to continue")
       } else if (result.hasRequired) {
         toast.success("Discord roles verified!")
+        if (!inviteCode) {
+          loadInviteCode()
+        }
       } else {
         toast.warning("Missing required Discord roles")
       }
@@ -114,6 +150,7 @@ export default function SuperPokerClientPage() {
       if (response.ok) {
         setDiscordUser(null)
         setRoleCheck(null)
+        setInviteCode(null)
         toast.success("Discord disconnected successfully!")
       } else {
         toast.error("Failed to disconnect Discord")
@@ -289,6 +326,40 @@ export default function SuperPokerClientPage() {
                   </button>
                 )}
               </div>
+
+              {roleCheck?.hasRequired && (
+                <div className="mt-6 p-4 border border-green-500/30 rounded-xl bg-black/40">
+                  <h3 className="text-lg font-bold mb-4 text-green-400">Your Invite Code</h3>
+
+                  {inviteCode ? (
+                    <div className="space-y-3">
+                      <div className="text-center">
+                        <div className="text-xs text-gray-400 mb-2">Your unique invite code:</div>
+                        <div className="text-2xl font-mono font-bold text-pink-400 bg-gray-900/50 px-4 py-2 rounded border border-pink-500/30">
+                          {inviteCode}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 text-center">
+                        Use this code to join the SuperPoker tournament
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      {isLoadingInviteCode ? (
+                        <div className="text-gray-400">Loading your invite code...</div>
+                      ) : (
+                        <button
+                          onClick={loadInviteCode}
+                          disabled={isLoadingInviteCode}
+                          className="px-4 py-2 bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 rounded transition-colors disabled:opacity-50"
+                        >
+                          Get Invite Code
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
