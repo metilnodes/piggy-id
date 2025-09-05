@@ -12,9 +12,13 @@ export async function GET(req: NextRequest) {
     const apiKey = process.env.NEYNAR_API_KEY
 
     if (!apiKey) {
-      console.error("Missing Neynar API key")
+      console.error("[v0] Missing Neynar API key")
       return NextResponse.redirect("/poker?error=farcaster_config_missing")
     }
+
+    console.log("[v0] Neynar API Key present:", !!apiKey)
+    console.log("[v0] API Key length:", apiKey.length)
+    console.log("[v0] API Key prefix:", apiKey.substring(0, 8) + "...")
 
     // Create state parameter with wallet address
     const state = Buffer.from(JSON.stringify({ wallet })).toString("base64")
@@ -26,9 +30,11 @@ export async function GET(req: NextRequest) {
     authUrl.searchParams.set("scope", "openid farcaster:read")
     authUrl.searchParams.set("state", state)
 
+    console.log("[v0] Authorization URL:", authUrl.toString())
+
     return NextResponse.redirect(authUrl.toString())
   } catch (error) {
-    console.error("Farcaster auth error:", error)
+    console.error("[v0] Farcaster auth error:", error)
     return NextResponse.redirect("/poker?error=farcaster_auth_failed")
   }
 }
