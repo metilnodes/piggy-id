@@ -265,7 +265,7 @@ export default function SuperPokerClientPage() {
                         <button
                           onClick={checkDiscordRoles}
                           disabled={isCheckingRoles}
-                          className="mt-2 px-3 md:px-4 py-2 text-sm border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50 w-full sm:w-auto"
+                          className="mt-4 px-3 md:px-4 py-2 text-sm border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50 w-full sm:w-auto"
                         >
                           {isCheckingRoles ? "Checking..." : "Refresh check"}
                         </button>
@@ -316,7 +316,7 @@ export default function SuperPokerClientPage() {
                         <button
                           onClick={checkDiscordRoles}
                           disabled={isCheckingRoles}
-                          className="px-3 md:px-4 py-2 text-sm border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50 w-full sm:w-auto"
+                          className="mt-4 px-3 md:px-4 py-2 text-sm border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50 w-full sm:w-auto"
                         >
                           {isCheckingRoles ? "Checking..." : "Refresh check"}
                         </button>
