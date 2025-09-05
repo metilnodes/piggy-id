@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { walletAddress } = JSON.parse(Buffer.from(state, "base64").toString())
+    const { walletAddress, source = "poker" } = JSON.parse(Buffer.from(state, "base64").toString())
 
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
@@ -42,24 +42,54 @@ export async function GET(request: NextRequest) {
     if (!meRes.ok) throw new Error(await meRes.text())
     const me = await meRes.json() // { id, username, global_name, avatar, ... }
 
-    const tokenIdRows = await sql`
-      SELECT token_id FROM user_identities WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
-    `
-    const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
+    if (source === "superpoker") {
+      // Check if Discord user already exists in superpoker_users
+      const existingUser = await sql`
+        SELECT * FROM superpoker_users WHERE discord_id = ${me.id} LIMIT 1
+      `
 
-    await sql /* sql */`
-      INSERT INTO user_identities (wallet_address, discord_id, discord_username, token_id, created_at, updated_at)
-      VALUES (${walletAddress.toLowerCase()}, ${me.id}, ${me.username}, ${tokenId}, NOW(), NOW())
-      ON CONFLICT (wallet_address) DO UPDATE SET
-        discord_id       = EXCLUDED.discord_id,
-        discord_username = EXCLUDED.discord_username,
-        token_id         = COALESCE(EXCLUDED.token_id, user_identities.token_id),
-        updated_at       = NOW()
-    `
+      if (existingUser.length === 0) {
+        // Insert new superpoker user
+        await sql`
+          INSERT INTO superpoker_users (discord_id, discord_username, created_at, updated_at)
+          VALUES (${me.id}, ${me.username}, NOW(), NOW())
+        `
+      } else {
+        // Update existing user
+        await sql`
+          UPDATE superpoker_users 
+          SET discord_username = ${me.username}, updated_at = NOW()
+          WHERE discord_id = ${me.id}
+        `
+      }
 
-    return NextResponse.redirect(`${origin}/poker?success=discord_verified`)
+      return NextResponse.redirect(`${origin}/superpoker?success=discord_verified`)
+    } else {
+      // Original poker logic
+      const tokenIdRows = await sql`
+        SELECT token_id FROM user_identities WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
+      `
+      const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
+
+      await sql /* sql */`
+        INSERT INTO user_identities (wallet_address, discord_id, discord_username, token_id, created_at, updated_at)
+        VALUES (${walletAddress.toLowerCase()}, ${me.id}, ${me.username}, ${tokenId}, NOW(), NOW())
+        ON CONFLICT (wallet_address) DO UPDATE SET
+          discord_id       = EXCLUDED.discord_id,
+          discord_username = EXCLUDED.discord_username,
+          token_id         = COALESCE(EXCLUDED.token_id, user_identities.token_id),
+          updated_at       = NOW()
+      `
+
+      return NextResponse.redirect(`${origin}/poker?success=discord_verified`)
+    }
   } catch (e) {
     console.error("[discord callback] error:", e)
-    return NextResponse.redirect(`${origin}/poker?error=discord_connection_failed`)
+    const redirectPage = state
+      ? JSON.parse(Buffer.from(state, "base64").toString()).source === "superpoker"
+        ? "superpoker"
+        : "poker"
+      : "poker"
+    return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed`)
   }
 }

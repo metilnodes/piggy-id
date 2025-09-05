@@ -8,10 +8,12 @@ export async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams
   const walletAddress = searchParams.get("wallet")
+  const source = searchParams.get("source") || "poker"
 
   console.log("[v0] Wallet address from params:", walletAddress)
+  console.log("[v0] Source from params:", source)
 
-  if (!walletAddress) {
+  if (!walletAddress && source !== "superpoker") {
     console.log("[v0] ERROR: No wallet address provided")
     return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
   }
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
   console.log("[v0] Origin:", origin)
   console.log("[v0] Redirect URI:", redirectUri)
 
-  const state = Buffer.from(JSON.stringify({ walletAddress })).toString("base64")
+  const state = Buffer.from(JSON.stringify({ walletAddress, source })).toString("base64")
 
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID!,
