@@ -10,14 +10,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface CodeStats {
+interface SuperPokerCodeStats {
   totalCodes: number
   assignedCodes: number
   usedCodes: number
   availableCodes: number
 }
 
-interface InviteCode {
+interface SuperPokerInviteCode {
   id: number
   code: string
   created_at: string
@@ -26,28 +26,29 @@ interface InviteCode {
   used_by?: string
 }
 
-interface TournamentInfo {
-  url: string
-  name: string
+interface SuperPokerSettings {
+  tournament_name: string
+  game_url: string
 }
 
-export default function AdminPage() {
-  const [stats, setStats] = useState<CodeStats | null>(null)
-  const [codes, setCodes] = useState<InviteCode[]>([])
+export default function SuperAdminPage() {
+  const [stats, setStats] = useState<SuperPokerCodeStats | null>(null)
+  const [codes, setCodes] = useState<SuperPokerInviteCode[]>([])
+  const [settings, setSettings] = useState<SuperPokerSettings | null>(null)
+  const [tournamentName, setTournamentName] = useState("")
+  const [gameUrl, setGameUrl] = useState("")
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [manualCodes, setManualCodes] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [tournamentInfo, setTournamentInfo] = useState<TournamentInfo>({ url: "", name: "" })
-  const [urlLoading, setUrlLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = sessionStorage.getItem("admin_auth")
+      const token = sessionStorage.getItem("superadmin_auth")
       if (!token) {
-        router.push("/admin/login")
+        router.push("/superadmin/login")
         return
       }
       setIsAuthenticated(true)
@@ -61,13 +62,13 @@ export default function AdminPage() {
     if (isAuthenticated) {
       loadStats()
       loadCodes()
-      loadTournamentInfo()
+      loadSettings()
     }
   }, [isAuthenticated])
 
   const loadStats = async () => {
     try {
-      const response = await fetch("/api/admin/stats")
+      const response = await fetch("/api/superadmin/stats")
       const data = await response.json()
       setStats(data)
     } catch (error) {
@@ -77,7 +78,7 @@ export default function AdminPage() {
 
   const loadCodes = async () => {
     try {
-      const response = await fetch("/api/admin/codes")
+      const response = await fetch("/api/superadmin/codes")
       const data = await response.json()
       setCodes(data.codes || [])
     } catch (error) {
@@ -85,13 +86,15 @@ export default function AdminPage() {
     }
   }
 
-  const loadTournamentInfo = async () => {
+  const loadSettings = async () => {
     try {
-      const response = await fetch("/api/admin/tournament-info")
+      const response = await fetch("/api/superpoker/settings")
       const data = await response.json()
-      setTournamentInfo({ url: data.url || "", name: data.name || "" })
+      setSettings(data)
+      setTournamentName(data.tournament_name || "SuperPoker #63")
+      setGameUrl(data.game_url || "https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ")
     } catch (error) {
-      console.error("Failed to load tournament info:", error)
+      console.error("Failed to load settings:", error)
     }
   }
 
@@ -105,7 +108,7 @@ export default function AdminPage() {
       const formData = new FormData()
       formData.append("file", csvFile)
 
-      const response = await fetch("/api/admin/upload-csv", {
+      const response = await fetch("/api/superadmin/upload-csv", {
         method: "POST",
         body: formData,
       })
@@ -139,7 +142,7 @@ export default function AdminPage() {
         .map((code) => code.trim())
         .filter((code) => code.length > 0)
 
-      const response = await fetch("/api/admin/add-codes", {
+      const response = await fetch("/api/superadmin/add-codes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codes }),
@@ -163,7 +166,7 @@ export default function AdminPage() {
   }
 
   const handleClearAll = async () => {
-    if (!confirm("Are you sure you want to clear ALL codes and assignments? This cannot be undone.")) {
+    if (!confirm("Are you sure you want to clear ALL superpoker codes and assignments? This cannot be undone.")) {
       return
     }
 
@@ -171,14 +174,14 @@ export default function AdminPage() {
     setMessage("")
 
     try {
-      const response = await fetch("/api/admin/clear-all", {
+      const response = await fetch("/api/superadmin/clear-all", {
         method: "POST",
       })
 
       const result = await response.json()
 
       if (response.ok) {
-        setMessage("✅ All codes and assignments cleared")
+        setMessage("✅ All superpoker codes and assignments cleared")
         loadStats()
         loadCodes()
       } else {
@@ -192,35 +195,8 @@ export default function AdminPage() {
   }
 
   const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth")
-    router.push("/admin/login")
-  }
-
-  const updateTournamentInfo = async () => {
-    if (!tournamentInfo.url.trim() || !tournamentInfo.name.trim()) return
-
-    setUrlLoading(true)
-    setMessage("")
-
-    try {
-      const response = await fetch("/api/admin/tournament-info", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: tournamentInfo.url, name: tournamentInfo.name }),
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setMessage("✅ Tournament info updated successfully")
-      } else {
-        setMessage(`❌ Error: ${result.error}`)
-      }
-    } catch (error) {
-      setMessage(`❌ Failed to update tournament info: ${error}`)
-    } finally {
-      setUrlLoading(false)
-    }
+    sessionStorage.removeItem("superadmin_auth")
+    router.push("/superadmin/login")
   }
 
   const deleteCode = async (codeId: number, codeValue: string) => {
@@ -232,7 +208,7 @@ export default function AdminPage() {
     setMessage("")
 
     try {
-      const response = await fetch("/api/admin/delete-code", {
+      const response = await fetch("/api/superadmin/delete-code", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codeId }),
@@ -249,6 +225,64 @@ export default function AdminPage() {
       }
     } catch (error) {
       setMessage(`❌ Failed to delete code: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateTournamentName = async () => {
+    if (!tournamentName.trim()) return
+
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/superpoker/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          setting_key: "tournament_name",
+          setting_value: tournamentName.trim(),
+        }),
+      })
+
+      if (response.ok) {
+        setMessage("✅ Tournament name updated successfully")
+        loadSettings()
+      } else {
+        setMessage("❌ Failed to update tournament name")
+      }
+    } catch (error) {
+      setMessage(`❌ Error updating tournament name: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateGameUrl = async () => {
+    if (!gameUrl.trim()) return
+
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/superpoker/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          setting_key: "game_url",
+          setting_value: gameUrl.trim(),
+        }),
+      })
+
+      if (response.ok) {
+        setMessage("✅ Game URL updated successfully")
+        loadSettings()
+      } else {
+        setMessage("❌ Failed to update game URL")
+      }
+    } catch (error) {
+      setMessage(`❌ Error updating game URL: ${error}`)
     } finally {
       setLoading(false)
     }
@@ -271,7 +305,7 @@ export default function AdminPage() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-4xl font-bold text-pink-500">PIGGY SUMMER POKER</h1>
+            <h1 className="text-4xl font-bold text-pink-500">SUPER POKER</h1>
             <Button
               onClick={handleLogout}
               variant="outline"
@@ -329,6 +363,9 @@ export default function AdminPage() {
 
         <Tabs defaultValue="upload" className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-gray-900">
+            <TabsTrigger value="settings" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
+              Settings
+            </TabsTrigger>
             <TabsTrigger value="upload" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
               Upload CSV
             </TabsTrigger>
@@ -338,17 +375,70 @@ export default function AdminPage() {
             <TabsTrigger value="codes" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
               View Codes
             </TabsTrigger>
-            <TabsTrigger value="tournament" className="data-[state=active]:bg-pink-500 data-[state=active]:text-black">
-              Tournament INFO
-            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="settings" className="space-y-4">
+            <Card className="bg-gray-900 border-pink-500">
+              <CardHeader>
+                <CardTitle className="text-pink-400">Tournament Settings</CardTitle>
+                <CardDescription className="text-gray-400">Configure tournament name and game URL</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="tournament-name" className="text-white">
+                    Tournament Name
+                  </Label>
+                  <Input
+                    id="tournament-name"
+                    value={tournamentName}
+                    onChange={(e) => setTournamentName(e.target.value)}
+                    placeholder="Enter tournament name..."
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                  <div className="text-xs text-gray-400 mt-1">
+                    This will be displayed on the SuperPoker registration page
+                  </div>
+                </div>
+                <Button
+                  onClick={updateTournamentName}
+                  disabled={!tournamentName.trim() || loading}
+                  className="bg-pink-500 hover:bg-pink-600"
+                >
+                  {loading ? "Updating..." : "Update Tournament Name"}
+                </Button>
+
+                <div className="pt-4 border-t border-gray-700">
+                  <Label htmlFor="game-url" className="text-white">
+                    Game URL
+                  </Label>
+                  <Input
+                    id="game-url"
+                    value={gameUrl}
+                    onChange={(e) => setGameUrl(e.target.value)}
+                    placeholder="Enter game URL..."
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                  <div className="text-xs text-gray-400 mt-1">
+                    This URL will be used for the "Join Game" button on the SuperPoker page
+                  </div>
+                </div>
+                <Button
+                  onClick={updateGameUrl}
+                  disabled={!gameUrl.trim() || loading}
+                  className="bg-pink-500 hover:bg-pink-600"
+                >
+                  {loading ? "Updating..." : "Update Game URL"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
             <Card className="bg-gray-900 border-pink-500">
               <CardHeader>
                 <CardTitle className="text-pink-400">Upload CSV File</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Upload a CSV file with invite codes. Expected format: code,consumer_player
+                  Upload a CSV file with superpoker invite codes. Expected format: code,consumer_player
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -384,7 +474,7 @@ export default function AdminPage() {
             <Card className="bg-gray-900 border-pink-500">
               <CardHeader>
                 <CardTitle className="text-pink-400">Add Codes Manually</CardTitle>
-                <CardDescription className="text-gray-400">Enter invite codes, one per line</CardDescription>
+                <CardDescription className="text-gray-400">Enter superpoker invite codes, one per line</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -413,8 +503,10 @@ export default function AdminPage() {
           <TabsContent value="codes" className="space-y-4">
             <Card className="bg-gray-900 border-pink-500">
               <CardHeader>
-                <CardTitle className="text-pink-400">Current Invite Codes</CardTitle>
-                <CardDescription className="text-gray-400">View all invite codes and their status</CardDescription>
+                <CardTitle className="text-pink-400">Current SuperPoker Invite Codes</CardTitle>
+                <CardDescription className="text-gray-400">
+                  View all superpoker invite codes and their status
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="max-h-96 overflow-y-auto">
@@ -445,60 +537,6 @@ export default function AdminPage() {
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tournament" className="space-y-4">
-            <Card className="bg-gray-900 border-pink-500">
-              <CardHeader>
-                <CardTitle className="text-pink-400">Tournament Information</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Update tournament name and JOIN GAME button URL without redeploying
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="tournament-name" className="text-white">
-                    Tournament Name
-                  </Label>
-                  <Input
-                    id="tournament-name"
-                    type="text"
-                    placeholder="PIGGY SUMMER POKER"
-                    value={tournamentInfo.name}
-                    onChange={(e) => setTournamentInfo((prev) => ({ ...prev, name: e.target.value }))}
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tournament-url" className="text-white">
-                    Tournament URL
-                  </Label>
-                  <Input
-                    id="tournament-url"
-                    type="url"
-                    placeholder="https://www.pokernow.club/mtt/..."
-                    value={tournamentInfo.url}
-                    onChange={(e) => setTournamentInfo((prev) => ({ ...prev, url: e.target.value }))}
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
-                </div>
-                <div className="text-sm text-gray-400 space-y-1">
-                  <div>
-                    Current Name: <span className="text-pink-400">{tournamentInfo.name}</span>
-                  </div>
-                  <div>
-                    Current URL: <span className="text-pink-400 break-all">{tournamentInfo.url}</span>
-                  </div>
-                </div>
-                <Button
-                  onClick={updateTournamentInfo}
-                  disabled={!tournamentInfo.url.trim() || !tournamentInfo.name.trim() || urlLoading}
-                  className="bg-pink-500 hover:bg-pink-600"
-                >
-                  {urlLoading ? "Updating..." : "Update Tournament Info"}
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
