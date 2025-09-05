@@ -8,9 +8,65 @@ interface DiscordUser {
   discord_username: string
 }
 
+interface RoleCheckResult {
+  hasRequired: boolean
+  mode: "any" | "all"
+  checkedRoles: string[]
+  matchedRoles: string[]
+  missingRoles: string[]
+  discordId: string
+  error?: string
+}
+
 export default function SuperPokerClientPage() {
   const [discordUser, setDiscordUser] = useState<DiscordUser | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [roleCheck, setRoleCheck] = useState<RoleCheckResult | null>(null)
+  const [isCheckingRoles, setIsCheckingRoles] = useState(false)
+  const [walletAddress, setWalletAddress] = useState<string>("")
+
+  const loadWalletAddress = async () => {
+    if (!discordUser?.discord_id) return
+
+    try {
+      const response = await fetch(`/api/identity?discord_id=${discordUser.discord_id}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.wallet_address) {
+          setWalletAddress(data.wallet_address)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load wallet address:", error)
+    }
+  }
+
+  const checkDiscordRoles = async () => {
+    if (!walletAddress) {
+      toast.error("Wallet address not found")
+      return
+    }
+
+    setIsCheckingRoles(true)
+    try {
+      const response = await fetch(`/api/discord/check-roles?wallet=${encodeURIComponent(walletAddress)}&mode=any`)
+      const result = await response.json()
+      setRoleCheck(result)
+
+      if (result.error) {
+        toast.error(`Role check failed: ${result.error}`)
+      } else if (result.hasRequired) {
+        toast.success("Discord roles verified!")
+      } else {
+        toast.warning("Missing required Discord roles")
+      }
+    } catch (error) {
+      console.error("Role check error:", error)
+      toast.error("Failed to check Discord roles")
+    } finally {
+      setIsCheckingRoles(false)
+    }
+  }
 
   // Handle Discord OAuth callback
   useEffect(() => {
@@ -56,6 +112,8 @@ export default function SuperPokerClientPage() {
 
       if (response.ok) {
         setDiscordUser(null)
+        setRoleCheck(null)
+        setWalletAddress("")
         toast.success("Discord disconnected successfully!")
       } else {
         toast.error("Failed to disconnect Discord")
@@ -68,6 +126,12 @@ export default function SuperPokerClientPage() {
   useEffect(() => {
     loadDiscordUser()
   }, [])
+
+  useEffect(() => {
+    if (discordUser) {
+      loadWalletAddress()
+    }
+  }, [discordUser])
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -124,6 +188,55 @@ export default function SuperPokerClientPage() {
                 Welcome, <span className="text-pink-400 font-semibold">{discordUser.discord_username}</span>!
                 <br />
                 Your Super Poker registration is complete.
+              </div>
+
+              <div className="mt-8 p-4 border border-pink-500/30 rounded-xl bg-black/40">
+                <h3 className="text-lg font-bold mb-4 text-pink-400">Discord Role Check</h3>
+
+                {roleCheck ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-300">
+                      Required roles:{" "}
+                      {roleCheck.checkedRoles.length > 0 ? roleCheck.checkedRoles.join(", ") : "None specified"}
+                    </div>
+
+                    {roleCheck.error ? (
+                      <div className="text-red-400 text-sm">❌ Error: {roleCheck.error}</div>
+                    ) : roleCheck.hasRequired ? (
+                      <div className="text-green-400 text-sm">
+                        ✅ Access granted
+                        {roleCheck.matchedRoles.length > 0 && (
+                          <div className="mt-1 text-xs text-gray-400">
+                            Matched roles: {roleCheck.matchedRoles.join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-red-400 text-sm">
+                        ❌ Missing required roles
+                        {roleCheck.missingRoles.length > 0 && (
+                          <div className="mt-1 text-xs text-gray-400">Missing: {roleCheck.missingRoles.join(", ")}</div>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={checkDiscordRoles}
+                      disabled={isCheckingRoles}
+                      className="px-3 py-1 text-xs border border-gray-500/50 text-gray-300 hover:bg-gray-500/10 rounded transition-colors disabled:opacity-50"
+                    >
+                      {isCheckingRoles ? "Checking..." : "Refresh check"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={checkDiscordRoles}
+                    disabled={isCheckingRoles || !walletAddress}
+                    className="px-4 py-2 bg-pink-500/20 border border-pink-500/50 text-pink-400 hover:bg-pink-500/30 rounded transition-colors disabled:opacity-50"
+                  >
+                    {isCheckingRoles ? "Checking..." : "Check roles now"}
+                  </button>
+                )}
               </div>
             </div>
           )}
