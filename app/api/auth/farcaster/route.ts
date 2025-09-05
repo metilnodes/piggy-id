@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
 
     const authUrl = new URL("https://api.neynar.com/v2/oauth/authorize")
     authUrl.searchParams.set("client_id", process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID)
-    authUrl.searchParams.set("neynar_api_key", process.env.NEYNAR_API_KEY)
     authUrl.searchParams.set("redirect_uri", `${url.origin}/api/auth/farcaster/callback`)
     authUrl.searchParams.set("response_type", "code")
     authUrl.searchParams.set("scope", "openid farcaster:read")
