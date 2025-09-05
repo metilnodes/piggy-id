@@ -33,17 +33,6 @@ export const metadata = {
   },
 }
 
-function NeynarProvider({ children }: { children: React.ReactNode }) {
-  const clientId = process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID
-
-  if (!clientId) {
-    console.warn("[v0] NEXT_PUBLIC_NEYNAR_CLIENT_ID not found, Farcaster integration disabled")
-    return <>{children}</>
-  }
-
-  return <div data-neynar-client-id={clientId}>{children}</div>
-}
-
 export default function RootLayout({
   children,
 }: {
@@ -52,9 +41,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Web3Provider>
-          <NeynarProvider>{children}</NeynarProvider>
-        </Web3Provider>
+        <Web3Provider>{children}</Web3Provider>
       </body>
     </html>
   )
