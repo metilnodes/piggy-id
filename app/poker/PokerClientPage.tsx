@@ -498,54 +498,7 @@ export default function PokerClientPage() {
   const connectFarcaster = async () => {
     if (!address) return
 
-    // SIWN callback function
-    window.onSignInSuccess = async (data: any) => {
-      console.log("[v0] SIWN success data:", data)
-
-      try {
-        const response = await fetch("/api/auth/farcaster/siwn", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            walletAddress: address,
-            signer_uuid: data.signer_uuid,
-            fid: data.fid,
-            user: data.user,
-          }),
-        })
-
-        const result = await response.json()
-
-        if (response.ok) {
-          setToast({
-            message: "Farcaster successfully connected to your account!",
-            type: "success",
-          })
-
-          // Reload identity data
-          const identityResponse = await fetch(`/api/identity?address=${address}`)
-          const identityData = await identityResponse.json()
-          setIdentity(identityData.identity)
-        } else {
-          setToast({
-            message: result.error || "Failed to connect Farcaster account",
-            type: "error",
-          })
-        }
-      } catch (error) {
-        console.error("Error connecting Farcaster:", error)
-        setToast({
-          message: "Failed to connect Farcaster account",
-          type: "error",
-        })
-      }
-    }
-
-    // Trigger SIWN button click programmatically
-    const siwn = document.querySelector(".siwn") as any
-    if (siwn && siwn.click) {
-      siwn.click()
-    }
+    window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
   }
 
   const connectEmail = async () => {
@@ -881,23 +834,13 @@ export default function PokerClientPage() {
                           Disconnect
                         </button>
                       ) : (
-                        <>
-                          {/* Hidden SIWN button for programmatic triggering */}
-                          <div style={{ display: "none" }}>
-                            <div
-                              className="siwn"
-                              data-client_id={process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID}
-                              data-success-callback="onSignInSuccess"
-                            />
-                          </div>
-                          <button
-                            onClick={connectFarcaster}
-                            disabled={identityLoading || !tokenId}
-                            className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
-                          >
-                            Connect
-                          </button>
-                        </>
+                        <button
+                          onClick={connectFarcaster}
+                          disabled={identityLoading || !tokenId}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          Connect
+                        </button>
                       )}
                     </div>
 
