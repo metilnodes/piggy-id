@@ -218,7 +218,7 @@ export default function SuperPokerClientPage() {
           {!discordUser ? (
             <div className="space-y-6 md:space-y-8">
               <div className="text-gray-300 text-base md:text-lg mb-4 md:mb-6 px-2">
-                🎲 Ready to play? Link your Discord account to unlock registration.
+                Ready to play? Link your Discord account to unlock registration.
               </div>
 
               <button
