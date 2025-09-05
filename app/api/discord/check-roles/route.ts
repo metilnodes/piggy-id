@@ -25,11 +25,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const wallet = searchParams.get("wallet")
+    const discordId = searchParams.get("discord_id")
     const mode = (searchParams.get("mode") || "any") as "any" | "all"
     const rolesParam = searchParams.get("roles")
 
-    if (!wallet) {
-      return NextResponse.json({ error: "Wallet address is required" }, { status: 400 })
+    if (!wallet && !discordId) {
+      return NextResponse.json({ error: "Wallet address or Discord ID is required" }, { status: 400 })
     }
 
     const roleIds = rolesParam
@@ -43,33 +44,61 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No roles specified to check" }, { status: 400 })
     }
 
-    const userResult = await sql`
-      SELECT sp.discord_id 
-      FROM superpoker_users sp
-      WHERE sp.discord_id IN (
-        SELECT ui.discord_id 
-        FROM user_identities ui 
-        WHERE ui.wallet_address = ${wallet}
-      )
-      LIMIT 1
-    `
+    let finalDiscordId: string
 
-    if (userResult.length === 0) {
-      return NextResponse.json(
-        {
-          error: "Discord account not found for this wallet",
-          hasRequired: false,
-          mode,
-          checkedRoles: roleIds,
-          matchedRoles: [],
-          missingRoles: roleIds,
-          discordId: "",
-        },
-        { status: 404 },
-      )
+    if (discordId) {
+      const superpokerResult = await sql`
+        SELECT discord_id 
+        FROM superpoker_users 
+        WHERE discord_id = ${discordId}
+        LIMIT 1
+      `
+
+      if (superpokerResult.length === 0) {
+        return NextResponse.json(
+          {
+            error: "Discord account not found in superpoker system",
+            hasRequired: false,
+            mode,
+            checkedRoles: roleIds,
+            matchedRoles: [],
+            missingRoles: roleIds,
+            discordId: discordId,
+          },
+          { status: 404 },
+        )
+      }
+
+      finalDiscordId = discordId
+    } else {
+      const userResult = await sql`
+        SELECT sp.discord_id 
+        FROM superpoker_users sp
+        WHERE sp.discord_id IN (
+          SELECT ui.discord_id 
+          FROM user_identities ui 
+          WHERE ui.wallet_address = ${wallet}
+        )
+        LIMIT 1
+      `
+
+      if (userResult.length === 0) {
+        return NextResponse.json(
+          {
+            error: "Discord account not found for this wallet",
+            hasRequired: false,
+            mode,
+            checkedRoles: roleIds,
+            matchedRoles: [],
+            missingRoles: roleIds,
+            discordId: "",
+          },
+          { status: 404 },
+        )
+      }
+
+      finalDiscordId = userResult[0].discord_id
     }
-
-    const discordId = userResult[0].discord_id
 
     const botToken = process.env.DISCORD_BOT_TOKEN
     const guildId = process.env.DISCORD_GUILD_ID
@@ -89,7 +118,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const discordResponse = await fetch(`https://discord.com/api/guilds/${guildId}/members/${discordId}`, {
+    const discordResponse = await fetch(`https://discord.com/api/guilds/${guildId}/members/${finalDiscordId}`, {
       headers: {
         Authorization: `Bot ${botToken}`,
         "Content-Type": "application/json",
@@ -108,7 +137,7 @@ export async function GET(request: NextRequest) {
           checkedRoles: roleIds,
           matchedRoles: [],
           missingRoles: roleIds,
-          discordId,
+          discordId: finalDiscordId,
         },
         { status: discordResponse.status },
       )
@@ -128,7 +157,7 @@ export async function GET(request: NextRequest) {
       checkedRoles: roleIds,
       matchedRoles,
       missingRoles,
-      discordId,
+      discordId: finalDiscordId,
     }
 
     return NextResponse.json(response)
