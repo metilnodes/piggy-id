@@ -215,14 +215,16 @@ export default function SuperPokerClientPage() {
 
           {!discordUser ? (
             <div className="space-y-6">
-              <div className="text-gray-300 text-sm mb-4">Connect your Discord account to continue</div>
+              <div className="text-gray-300 text-sm mb-4">
+                🎲 Ready to play? Link your Discord account to unlock registration.
+              </div>
 
               <button
                 onClick={handleDiscordConnect}
                 disabled={isLoading}
                 className="cyber-button w-full py-3 px-6 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "CONNECTING..." : "CONNECT DISCORD TO CONTINUE"}
+                {isLoading ? "CONNECTING..." : "CONNECT DISCORD TO REGISTER"}
               </button>
             </div>
           ) : (
