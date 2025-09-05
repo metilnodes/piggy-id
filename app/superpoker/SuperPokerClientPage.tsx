@@ -30,6 +30,7 @@ export default function SuperPokerClientPage() {
   const [isCheckingRoles, setIsCheckingRoles] = useState(false)
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [isLoadingInviteCode, setIsLoadingInviteCode] = useState(false)
+  const [tournamentName, setTournamentName] = useState("SuperPoker #63")
 
   const loadInviteCode = async () => {
     if (!discordUser?.discord_id || !discordUser?.discord_username) {
@@ -106,23 +107,6 @@ export default function SuperPokerClientPage() {
     }
   }
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const success = urlParams.get("success")
-    const error = urlParams.get("error")
-
-    if (success === "discord_verified") {
-      toast.success("Discord connected successfully!")
-      loadDiscordUser()
-      // Clean URL
-      window.history.replaceState({}, "", window.location.pathname)
-    } else if (error) {
-      toast.error("Discord connection failed. Please try again.")
-      // Clean URL
-      window.history.replaceState({}, "", window.location.pathname)
-    }
-  }, [])
-
   const loadDiscordUser = async () => {
     try {
       const response = await fetch("/api/superpoker/user")
@@ -160,8 +144,38 @@ export default function SuperPokerClientPage() {
     }
   }
 
+  const loadTournamentSettings = async () => {
+    try {
+      const response = await fetch("/api/superpoker/settings")
+      if (response.ok) {
+        const settings = await response.json()
+        setTournamentName(settings.tournament_name || "SuperPoker #63")
+      }
+    } catch (error) {
+      console.error("Failed to load tournament settings:", error)
+    }
+  }
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const success = urlParams.get("success")
+    const error = urlParams.get("error")
+
+    if (success === "discord_verified") {
+      toast.success("Discord connected successfully!")
+      loadDiscordUser()
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname)
+    } else if (error) {
+      toast.error("Discord connection failed. Please try again.")
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [])
+
   useEffect(() => {
     loadDiscordUser()
+    loadTournamentSettings()
   }, [])
 
   return (
@@ -196,7 +210,7 @@ export default function SuperPokerClientPage() {
         <div className="cyber-card w-full max-w-md p-8 text-center">
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-2 neon-text">POKER REGISTRATION</h1>
-            <div className="text-pink-400 text-sm mb-6">INITIALIZE YOUR PIGGY ID</div>
+            <div className="text-pink-400 text-sm mb-6">{tournamentName}</div>
           </div>
 
           {!discordUser ? (
@@ -218,7 +232,7 @@ export default function SuperPokerClientPage() {
               <div className="text-gray-300 text-sm">
                 Welcome, <span className="text-pink-400 font-semibold">{discordUser.discord_username}</span>!
                 <br />
-                Your Super Poker registration is complete.
+                Check your roles to complete SuperPoker registration.
               </div>
 
               <div className="mt-8 p-4 border border-pink-500/30 rounded-xl bg-black/40">

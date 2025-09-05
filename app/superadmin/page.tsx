@@ -26,9 +26,15 @@ interface SuperPokerInviteCode {
   used_by?: string
 }
 
+interface SuperPokerSettings {
+  tournament_name: string
+}
+
 export default function SuperAdminPage() {
   const [stats, setStats] = useState<SuperPokerCodeStats | null>(null)
   const [codes, setCodes] = useState<SuperPokerInviteCode[]>([])
+  const [settings, setSettings] = useState<SuperPokerSettings | null>(null)
+  const [tournamentName, setTournamentName] = useState("")
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
   const [csvFile, setCsvFile] = useState<File | null>(null)
@@ -54,6 +60,7 @@ export default function SuperAdminPage() {
     if (isAuthenticated) {
       loadStats()
       loadCodes()
+      loadSettings()
     }
   }, [isAuthenticated])
 
@@ -74,6 +81,17 @@ export default function SuperAdminPage() {
       setCodes(data.codes || [])
     } catch (error) {
       console.error("Failed to load codes:", error)
+    }
+  }
+
+  const loadSettings = async () => {
+    try {
+      const response = await fetch("/api/superpoker/settings")
+      const data = await response.json()
+      setSettings(data)
+      setTournamentName(data.tournament_name || "SuperPoker #63")
+    } catch (error) {
+      console.error("Failed to load settings:", error)
     }
   }
 
@@ -209,6 +227,35 @@ export default function SuperAdminPage() {
     }
   }
 
+  const updateTournamentName = async () => {
+    if (!tournamentName.trim()) return
+
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/superpoker/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          setting_key: "tournament_name",
+          setting_value: tournamentName.trim(),
+        }),
+      })
+
+      if (response.ok) {
+        setMessage("✅ Tournament name updated successfully")
+        loadSettings()
+      } else {
+        setMessage("❌ Failed to update tournament name")
+      }
+    } catch (error) {
+      setMessage(`❌ Error updating tournament name: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -283,7 +330,10 @@ export default function SuperAdminPage() {
         )}
 
         <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-900">
+            <TabsTrigger value="settings" className="data-[state=active]:bg-pink-500">
+              Settings
+            </TabsTrigger>
             <TabsTrigger value="upload" className="data-[state=active]:bg-pink-500">
               Upload CSV
             </TabsTrigger>
@@ -294,6 +344,41 @@ export default function SuperAdminPage() {
               View Codes
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="settings" className="space-y-4">
+            <Card className="bg-gray-900 border-pink-500">
+              <CardHeader>
+                <CardTitle className="text-pink-400">Tournament Settings</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Configure tournament name and other settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="tournament-name" className="text-white">
+                    Tournament Name
+                  </Label>
+                  <Input
+                    id="tournament-name"
+                    value={tournamentName}
+                    onChange={(e) => setTournamentName(e.target.value)}
+                    placeholder="Enter tournament name..."
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                  <div className="text-xs text-gray-400 mt-1">
+                    This will be displayed on the SuperPoker registration page
+                  </div>
+                </div>
+                <Button
+                  onClick={updateTournamentName}
+                  disabled={!tournamentName.trim() || loading}
+                  className="bg-pink-500 hover:bg-pink-600"
+                >
+                  {loading ? "Updating..." : "Update Tournament Name"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
             <Card className="bg-gray-900 border-pink-500">
