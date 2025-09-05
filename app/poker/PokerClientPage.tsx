@@ -498,7 +498,82 @@ export default function PokerClientPage() {
   const connectFarcaster = async () => {
     if (!address) return
 
-    window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
+    try {
+      // Check if SIWN is loaded
+      if (typeof window !== "undefined" && (window as any).NeynarSIWN) {
+        const siwn = (window as any).NeynarSIWN
+
+        // Configure SIWN with success callback
+        siwn.signIn({
+          clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID,
+          onSuccess: async (data: any) => {
+            console.log("[v0] SIWN Success:", data)
+
+            // Send data to our backend
+            try {
+              const response = await fetch("/api/auth/farcaster/siwn", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  walletAddress: address,
+                  signer_uuid: data.signer_uuid,
+                  fid: data.fid,
+                  user: data.user,
+                }),
+              })
+
+              if (response.ok) {
+                setToast({
+                  message: "Farcaster successfully connected to your account!",
+                  type: "success",
+                })
+
+                // Reload identity data
+                const identityResponse = await fetch(`/api/identity?address=${address}`)
+                const identityData = await identityResponse.json()
+                setIdentity(identityData.identity)
+              } else {
+                const errorData = await response.json()
+                setToast({
+                  message: errorData.error || "Failed to connect Farcaster account",
+                  type: "error",
+                })
+              }
+            } catch (error) {
+              console.error("Error saving Farcaster connection:", error)
+              setToast({
+                message: "Failed to save Farcaster connection",
+                type: "error",
+              })
+            }
+          },
+          onError: (error: any) => {
+            console.error("[v0] SIWN Error:", error)
+            setToast({
+              message: "Farcaster connection failed. Please try again.",
+              type: "error",
+            })
+          },
+        })
+      } else {
+        // Fallback: create SIWN button dynamically if script not loaded
+        const script = document.createElement("script")
+        script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
+        script.onload = () => {
+          // Retry after script loads
+          setTimeout(() => connectFarcaster(), 100)
+        }
+        document.head.appendChild(script)
+      }
+    } catch (error) {
+      console.error("Farcaster SIWN error:", error)
+      setToast({
+        message: "Failed to initialize Farcaster connection",
+        type: "error",
+      })
+    }
   }
 
   const connectEmail = async () => {

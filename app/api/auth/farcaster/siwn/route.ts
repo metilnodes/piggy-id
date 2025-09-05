@@ -1,3 +1,4 @@
+// app/api/auth/farcaster/siwn/route.ts
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
 
@@ -5,66 +6,46 @@ const sql = neon(process.env.DATABASE_URL!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { walletAddress, signer_uuid, fid, user } = await req.json()
+    const { fid, signer_uuid, user } = await req.json()
 
-    if (!walletAddress || !signer_uuid || !fid || !user) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
-
-    console.log("[v0] SIWN callback data:", { walletAddress, signer_uuid, fid, user })
-
-    // Check if this Farcaster account is already connected to another wallet
-    const existingConnection = await sql`
-      SELECT wallet_address 
-      FROM user_identities 
-      WHERE platform = 'farcaster' 
-      AND platform_user_id = ${fid.toString()}
-      AND wallet_address != ${walletAddress.toLowerCase()}
-    `
-
-    if (existingConnection.length > 0) {
-      return NextResponse.json(
-        { error: "This Farcaster account is already connected to another wallet" },
-        { status: 400 },
-      )
-    }
-
-    // Store or update Farcaster connection
-    await sql`
-      INSERT INTO user_identities (
-        wallet_address, 
-        platform, 
-        platform_user_id, 
-        username, 
-        display_name, 
-        avatar_url,
-        created_at
-      ) VALUES (
-        ${walletAddress.toLowerCase()}, 
-        'farcaster', 
-        ${fid.toString()}, 
-        ${user.username}, 
-        ${user.display_name}, 
-        ${user.pfp_url},
-        NOW()
-      )
-      ON CONFLICT (wallet_address, platform) 
-      DO UPDATE SET 
-        platform_user_id = ${fid.toString()},
-        username = ${user.username},
-        display_name = ${user.display_name},
-        avatar_url = ${user.pfp_url},
-        updated_at = NOW()
-    `
-
-    console.log("[v0] Farcaster connection stored successfully")
-
-    return NextResponse.json({
-      success: true,
-      message: "Farcaster account connected successfully",
+    // (опционально) подтянуть свежие данные по fid c Neynar
+    const meRes = await fetch(`https://api.neynar.com/v2/farcaster/user?fid=${fid}`, {
+      headers: { "X-API-KEY": process.env.NEYNAR_API_KEY! },
     })
-  } catch (error) {
-    console.error("[v0] SIWN callback error:", error)
-    return NextResponse.json({ error: "Failed to connect Farcaster account" }, { status: 500 })
+    if (!meRes.ok) {
+      console.error("neynar user error", meRes.status, await meRes.text())
+      return NextResponse.json({ error: "profile_failed" }, { status: 400 })
+    }
+    const me = await meRes.json()
+    const profile = me?.user ?? user
+
+    const username = profile?.username ?? null
+    const displayName = profile?.display_name ?? username
+    const avatarUrl = profile?.pfp_url ?? null
+
+    // TODO: возьми адрес кошелька из своей сессии/стейта, здесь просто пример:
+    const wallet = (req.headers.get("x-wallet") || "").toLowerCase()
+    if (!wallet) return NextResponse.json({ error: "missing_wallet" }, { status: 400 })
+
+    await sql /*sql*/`
+      INSERT INTO user_identities
+        (wallet_address, platform, platform_user_id, username, display_name, avatar_url, created_at, updated_at)
+      VALUES
+        (${wallet}, 'farcaster', ${String(fid)}, ${username}, ${displayName}, ${avatarUrl}, NOW(), NOW())
+      ON CONFLICT (wallet_address, platform) DO UPDATE SET
+        platform_user_id = EXCLUDED.platform_user_id,
+        username        = EXCLUDED.username,
+        display_name    = EXCLUDED.display_name,
+        avatar_url      = EXCLUDED.avatar_url,
+        updated_at      = NOW();
+    `
+
+    // (опц.) сохрани signer_uuid у себя, если планируешь писать касты от лица юзера
+    // await sql`UPDATE user_identities SET signer_uuid=${signer_uuid} WHERE wallet_address=${wallet} AND platform='farcaster'`;
+
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error("farcaster siwn error", e)
+    return NextResponse.json({ error: "siwn_failed" }, { status: 400 })
   }
 }
