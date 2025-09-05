@@ -227,15 +227,25 @@ export default function SuperPokerClientPage() {
                         {roleCheck.error ? (
                           <div className="text-red-400 text-sm">❌ Error: {roleCheck.error}</div>
                         ) : roleCheck.hasRequired ? (
-                          <div className="text-green-400 text-sm">
-                            ✅ Access granted
-                            {((roleCheck.matchedRoleNames && roleCheck.matchedRoleNames.length > 0) ||
-                              (roleCheck.matchedRoles && roleCheck.matchedRoles.length > 0)) && (
-                              <div className="mt-1 text-xs text-gray-400">
-                                Matched roles:{" "}
-                                {roleCheck.matchedRoleNames?.join(", ") || roleCheck.matchedRoles.join(", ")}
-                              </div>
-                            )}
+                          <div className="space-y-3">
+                            <div className="text-green-400 text-sm">
+                              ✅ Access granted
+                              {((roleCheck.matchedRoleNames && roleCheck.matchedRoleNames.length > 0) ||
+                                (roleCheck.matchedRoles && roleCheck.matchedRoles.length > 0)) && (
+                                <div className="mt-1 text-xs text-gray-400">
+                                  Matched roles:{" "}
+                                  {roleCheck.matchedRoleNames?.join(", ") || roleCheck.matchedRoles.join(", ")}
+                                </div>
+                              )}
+                            </div>
+                            <a
+                              href="https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                            >
+                              Join Game
+                            </a>
                           </div>
                         ) : (
                           <div className="text-red-400 text-sm">
