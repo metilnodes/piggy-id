@@ -506,121 +506,79 @@ export default function PokerClientPage() {
       return
     }
 
-    console.log("[v0] Creating SIWN widget container")
-
-    // Create SIWN widget container
-    const container = document.createElement("div")
-    container.innerHTML = `
-      <div 
-        class="neynar_signin"
-        data-client_id="${process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID}"
-        data-success-callback="onSignInSuccess"
-        data-theme="dark"
-      ></div>
-    `
-
-    // Define success callback globally
-    ;(window as any).onSignInSuccess = async (data: any) => {
-      console.log("[v0] SIWN Success:", data)
-
-      try {
-        const response = await fetch("/api/auth/farcaster/siwn", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-wallet": address,
-          },
-          body: JSON.stringify({
-            fid: data.fid,
-            user: data.user,
-          }),
-        })
-
-        if (response.ok) {
-          setToast({
-            message: "Farcaster successfully connected to your account!",
-            type: "success",
-          })
-
-          // Reload identity data
-          const identityResponse = await fetch(`/api/identity?address=${address}`)
-          const identityData = await identityResponse.json()
-          setIdentity(identityData.identity)
-        } else {
-          const errorData = await response.json()
-          setToast({
-            message: errorData.error || "Failed to connect Farcaster account",
-            type: "error",
-          })
-        }
-      } catch (error) {
-        console.error("Error saving Farcaster connection:", error)
-        setToast({
-          message: "Failed to save Farcaster connection",
-          type: "error",
-        })
-      }
-
-      // Clean up container
-      if (container.parentNode) {
-        container.parentNode.removeChild(container)
-      }
-    }
-
-    const loadSIWNScript = () => {
-      return new Promise((resolve, reject) => {
-        // Check if script already exists
-        if (document.querySelector('script[src*="neynarxyz.github.io/siwn"]')) {
-          console.log("[v0] SIWN script already loaded")
-          resolve(true)
-          return
-        }
-
-        console.log("[v0] Loading SIWN script")
-        const script = document.createElement("script")
-        script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
-        script.async = true
-        script.onload = () => {
-          console.log("[v0] SIWN script loaded successfully")
-          resolve(true)
-        }
-        script.onerror = () => {
-          console.error("[v0] Failed to load SIWN script")
-          reject(new Error("Failed to load SIWN script"))
-        }
-        document.head.appendChild(script)
+    if (!(window as any).NeynarSIWN) {
+      console.error("[v0] Neynar SIWN not available")
+      setToast({
+        message: "Farcaster authentication not available. Please refresh the page.",
+        type: "error",
       })
+      return
     }
+
+    console.log("[v0] Neynar SIWN available, initializing widget")
 
     try {
-      // Load script first
-      await loadSIWNScript()
+      const siwn = (window as any).NeynarSIWN
 
-      // Append container to body
-      console.log("[v0] Appending container to body")
-      document.body.appendChild(container)
+      console.log("[v0] Calling siwn.signIn with client_id:", process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID)
 
-      // Wait a bit for the widget to initialize
-      setTimeout(() => {
-        console.log("[v0] Looking for SIWN button")
-        const siwnButton = container.querySelector(".neynar_signin") as HTMLElement
-        console.log("[v0] SIWN button found:", !!siwnButton)
+      await siwn.signIn({
+        client_id: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID,
+        success_callback: async (data: any) => {
+          console.log("[v0] SIWN Success callback triggered:", data)
 
-        if (siwnButton) {
-          console.log("[v0] Clicking SIWN button")
-          siwnButton.click()
-        } else {
-          console.error("[v0] SIWN button not found in container")
+          try {
+            const response = await fetch("/api/auth/farcaster/siwn", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-wallet": address,
+              },
+              body: JSON.stringify({
+                fid: data.fid,
+                signer_uuid: data.signer_uuid,
+                user: data.user,
+              }),
+            })
+
+            if (response.ok) {
+              setToast({
+                message: "Farcaster successfully connected to your account!",
+                type: "success",
+              })
+
+              // Reload identity data
+              const identityResponse = await fetch(`/api/identity?address=${address}`)
+              const identityData = await identityResponse.json()
+              setIdentity(identityData.identity)
+            } else {
+              const errorData = await response.json()
+              console.error("[v0] API error:", errorData)
+              setToast({
+                message: errorData.error || "Failed to connect Farcaster account",
+                type: "error",
+              })
+            }
+          } catch (error) {
+            console.error("[v0] Error saving Farcaster connection:", error)
+            setToast({
+              message: "Failed to save Farcaster connection",
+              type: "error",
+            })
+          }
+        },
+        error_callback: (error: any) => {
+          console.error("[v0] SIWN Error callback:", error)
           setToast({
-            message: "Failed to initialize Farcaster widget",
+            message: "Farcaster authentication failed",
             type: "error",
           })
-        }
-      }, 500)
+        },
+      })
     } catch (error) {
-      console.error("[v0] Error loading SIWN:", error)
+      console.error("[v0] Error initializing SIWN:", error)
       setToast({
-        message: "Failed to load Farcaster authentication",
+        message: "Failed to initialize Farcaster authentication",
         type: "error",
       })
     }
