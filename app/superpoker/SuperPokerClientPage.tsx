@@ -14,6 +14,9 @@ interface RoleCheckResult {
   checkedRoles: string[]
   matchedRoles: string[]
   missingRoles: string[]
+  checkedRoleNames?: string[]
+  matchedRoleNames?: string[]
+  missingRoleNames?: string[]
   discordId: string
   isGuildMember: boolean
   guildInviteUrl?: string
@@ -214,7 +217,11 @@ export default function SuperPokerClientPage() {
 
                         <div className="text-sm text-gray-300">
                           Required roles:{" "}
-                          {roleCheck.checkedRoles.length > 0 ? roleCheck.checkedRoles.join(", ") : "None specified"}
+                          {roleCheck.checkedRoleNames && roleCheck.checkedRoleNames.length > 0
+                            ? roleCheck.checkedRoleNames.join(", ")
+                            : roleCheck.checkedRoles.length > 0
+                              ? roleCheck.checkedRoles.join(", ")
+                              : "None specified"}
                         </div>
 
                         {roleCheck.error ? (
@@ -222,18 +229,21 @@ export default function SuperPokerClientPage() {
                         ) : roleCheck.hasRequired ? (
                           <div className="text-green-400 text-sm">
                             ✅ Access granted
-                            {roleCheck.matchedRoles.length > 0 && (
+                            {((roleCheck.matchedRoleNames && roleCheck.matchedRoleNames.length > 0) ||
+                              (roleCheck.matchedRoles && roleCheck.matchedRoles.length > 0)) && (
                               <div className="mt-1 text-xs text-gray-400">
-                                Matched roles: {roleCheck.matchedRoles.join(", ")}
+                                Matched roles:{" "}
+                                {roleCheck.matchedRoleNames?.join(", ") || roleCheck.matchedRoles.join(", ")}
                               </div>
                             )}
                           </div>
                         ) : (
                           <div className="text-red-400 text-sm">
                             ❌ Missing required roles
-                            {roleCheck.missingRoles.length > 0 && (
+                            {((roleCheck.missingRoleNames && roleCheck.missingRoleNames.length > 0) ||
+                              (roleCheck.missingRoles && roleCheck.missingRoles.length > 0)) && (
                               <div className="mt-1 text-xs text-gray-400">
-                                Missing: {roleCheck.missingRoles.join(", ")}
+                                Missing: {roleCheck.missingRoleNames?.join(", ") || roleCheck.missingRoles.join(", ")}
                               </div>
                             )}
                           </div>

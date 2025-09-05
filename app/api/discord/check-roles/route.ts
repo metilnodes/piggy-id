@@ -17,10 +17,34 @@ interface RoleCheckResponse {
   checkedRoles: string[]
   matchedRoles: string[]
   missingRoles: string[]
+  checkedRoleNames: string[]
+  matchedRoleNames: string[]
+  missingRoleNames: string[]
   discordId: string
   isGuildMember: boolean
   guildInviteUrl?: string
   error?: string
+}
+
+function parseRoleNames(): Record<string, string> {
+  const roleNamesEnv = process.env.DISCORD_ROLE_NAMES || ""
+  const roleNames: Record<string, string> = {}
+
+  if (roleNamesEnv) {
+    const pairs = roleNamesEnv.split(",")
+    for (const pair of pairs) {
+      const [id, name] = pair.split(":").map((s) => s.trim())
+      if (id && name) {
+        roleNames[id] = name
+      }
+    }
+  }
+
+  return roleNames
+}
+
+function getRoleName(roleId: string, roleNames: Record<string, string>): string {
+  return roleNames[roleId] || `Role ${roleId}`
 }
 
 export async function GET(request: NextRequest) {
@@ -46,6 +70,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No roles specified to check" }, { status: 400 })
     }
 
+    const roleNames = parseRoleNames()
+
     let finalDiscordId: string
 
     if (discordId) {
@@ -65,6 +91,9 @@ export async function GET(request: NextRequest) {
             checkedRoles: roleIds,
             matchedRoles: [],
             missingRoles: roleIds,
+            checkedRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
+            matchedRoleNames: [],
+            missingRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
             discordId: discordId,
             isGuildMember: false,
           },
@@ -94,6 +123,9 @@ export async function GET(request: NextRequest) {
             checkedRoles: roleIds,
             matchedRoles: [],
             missingRoles: roleIds,
+            checkedRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
+            matchedRoleNames: [],
+            missingRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
             discordId: "",
             isGuildMember: false,
           },
@@ -116,6 +148,9 @@ export async function GET(request: NextRequest) {
           checkedRoles: roleIds,
           matchedRoles: [],
           missingRoles: roleIds,
+          checkedRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
+          matchedRoleNames: [],
+          missingRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
           discordId,
           isGuildMember: false,
         },
@@ -137,6 +172,9 @@ export async function GET(request: NextRequest) {
         checkedRoles: roleIds,
         matchedRoles: [],
         missingRoles: roleIds,
+        checkedRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
+        matchedRoleNames: [],
+        missingRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
         discordId: finalDiscordId,
         isGuildMember: false,
         guildInviteUrl: "https://discord.gg/superform",
@@ -156,6 +194,9 @@ export async function GET(request: NextRequest) {
           checkedRoles: roleIds,
           matchedRoles: [],
           missingRoles: roleIds,
+          checkedRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
+          matchedRoleNames: [],
+          missingRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
           discordId: finalDiscordId,
           isGuildMember: false,
         },
@@ -177,8 +218,11 @@ export async function GET(request: NextRequest) {
       checkedRoles: roleIds,
       matchedRoles,
       missingRoles,
+      checkedRoleNames: roleIds.map((id) => getRoleName(id, roleNames)),
+      matchedRoleNames: matchedRoles.map((id) => getRoleName(id, roleNames)),
+      missingRoleNames: missingRoles.map((id) => getRoleName(id, roleNames)),
       discordId: finalDiscordId,
-      isGuildMember: true, // User is confirmed guild member
+      isGuildMember: true,
     }
 
     return NextResponse.json(response)
@@ -192,6 +236,9 @@ export async function GET(request: NextRequest) {
         checkedRoles: [],
         matchedRoles: [],
         missingRoles: [],
+        checkedRoleNames: [],
+        matchedRoleNames: [],
+        missingRoleNames: [],
         discordId: "",
         isGuildMember: false,
       },
