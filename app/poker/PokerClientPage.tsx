@@ -498,7 +498,15 @@ export default function PokerClientPage() {
   }
 
   const connectFarcaster = async () => {
-    if (!address) return
+    console.log("[v0] connectFarcaster called, address:", address)
+    console.log("[v0] NEXT_PUBLIC_NEYNAR_CLIENT_ID:", process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID)
+
+    if (!address) {
+      console.log("[v0] No address found, returning")
+      return
+    }
+
+    console.log("[v0] Creating SIWN widget container")
 
     // Create SIWN widget container
     const container = document.createElement("div")
@@ -509,7 +517,6 @@ export default function PokerClientPage() {
         data-success-callback="onSignInSuccess"
         data-theme="dark"
       ></div>
-      <script src="https://neynarxyz.github.io/siwn/raw/1.2.0/index.js" async></script>
     `
 
     // Define success callback globally
@@ -560,16 +567,63 @@ export default function PokerClientPage() {
       }
     }
 
-    // Append container to body to trigger SIWN widget
-    document.body.appendChild(container)
+    const loadSIWNScript = () => {
+      return new Promise((resolve, reject) => {
+        // Check if script already exists
+        if (document.querySelector('script[src*="neynarxyz.github.io/siwn"]')) {
+          console.log("[v0] SIWN script already loaded")
+          resolve(true)
+          return
+        }
 
-    // Trigger the SIWN button click programmatically
-    setTimeout(() => {
-      const siwnButton = container.querySelector(".neynar_signin") as HTMLElement
-      if (siwnButton) {
-        siwnButton.click()
-      }
-    }, 100)
+        console.log("[v0] Loading SIWN script")
+        const script = document.createElement("script")
+        script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
+        script.async = true
+        script.onload = () => {
+          console.log("[v0] SIWN script loaded successfully")
+          resolve(true)
+        }
+        script.onerror = () => {
+          console.error("[v0] Failed to load SIWN script")
+          reject(new Error("Failed to load SIWN script"))
+        }
+        document.head.appendChild(script)
+      })
+    }
+
+    try {
+      // Load script first
+      await loadSIWNScript()
+
+      // Append container to body
+      console.log("[v0] Appending container to body")
+      document.body.appendChild(container)
+
+      // Wait a bit for the widget to initialize
+      setTimeout(() => {
+        console.log("[v0] Looking for SIWN button")
+        const siwnButton = container.querySelector(".neynar_signin") as HTMLElement
+        console.log("[v0] SIWN button found:", !!siwnButton)
+
+        if (siwnButton) {
+          console.log("[v0] Clicking SIWN button")
+          siwnButton.click()
+        } else {
+          console.error("[v0] SIWN button not found in container")
+          setToast({
+            message: "Failed to initialize Farcaster widget",
+            type: "error",
+          })
+        }
+      }, 500)
+    } catch (error) {
+      console.error("[v0] Error loading SIWN:", error)
+      setToast({
+        message: "Failed to load Farcaster authentication",
+        type: "error",
+      })
+    }
   }
 
   const connectEmail = async () => {
