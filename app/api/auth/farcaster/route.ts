@@ -14,9 +14,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect("/poker?error=farcaster_config_missing")
     }
 
+    if (!process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID) {
+      console.error("NEXT_PUBLIC_NEYNAR_CLIENT_ID not configured")
+      return NextResponse.redirect("/poker?error=farcaster_config_missing")
+    }
+
     const state = Buffer.from(JSON.stringify({ wallet })).toString("base64")
 
     const authUrl = new URL("https://api.neynar.com/v2/oauth/authorize")
+    authUrl.searchParams.set("client_id", process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID)
     authUrl.searchParams.set("neynar_api_key", process.env.NEYNAR_API_KEY)
     authUrl.searchParams.set("redirect_uri", `${url.origin}/api/auth/farcaster/callback`)
     authUrl.searchParams.set("response_type", "code")
