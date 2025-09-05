@@ -14,15 +14,22 @@ export async function GET(req: NextRequest) {
     const { wallet } = JSON.parse(Buffer.from(state, "base64").toString() || "{}")
     if (!wallet) return NextResponse.redirect("/poker?error=farcaster_state_failed")
 
-    // 1) Обмен кода на токен в Neynar
+    const apiKey = process.env.NEYNAR_API_KEY
+    if (!apiKey) {
+      console.error("Missing Neynar API key")
+      return NextResponse.redirect("/poker?error=farcaster_config_missing")
+    }
+
+    // 1) Обмен кода на токен в Neynar using API key
     const tokenRes = await fetch("https://api.neynar.com/v2/oauth/token", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": apiKey, // Use API key in header for SIWN
+      },
       body: JSON.stringify({
-        client_id: process.env.NEYNAR_CLIENT_ID,
-        client_secret: process.env.NEYNAR_CLIENT_SECRET,
-        code,
         grant_type: "authorization_code",
+        code,
         redirect_uri: `${url.origin}/api/auth/farcaster/callback`,
       }),
     })

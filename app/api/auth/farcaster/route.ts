@@ -9,20 +9,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect("/poker?error=farcaster_wallet_missing")
     }
 
-    const clientId = process.env.NEYNAR_CLIENT_ID
-    const clientSecret = process.env.NEYNAR_CLIENT_SECRET
+    const apiKey = process.env.NEYNAR_API_KEY
 
-    if (!clientId || !clientSecret) {
-      console.error("Missing Neynar credentials")
+    if (!apiKey) {
+      console.error("Missing Neynar API key")
       return NextResponse.redirect("/poker?error=farcaster_config_missing")
     }
 
     // Create state parameter with wallet address
     const state = Buffer.from(JSON.stringify({ wallet })).toString("base64")
 
-    // Build Neynar authorization URL
     const authUrl = new URL("https://api.neynar.com/v2/oauth/authorize")
-    authUrl.searchParams.set("client_id", clientId)
+    authUrl.searchParams.set("client_id", apiKey)
     authUrl.searchParams.set("redirect_uri", `${url.origin}/api/auth/farcaster/callback`)
     authUrl.searchParams.set("response_type", "code")
     authUrl.searchParams.set("scope", "openid farcaster:read")
