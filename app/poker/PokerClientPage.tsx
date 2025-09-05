@@ -16,6 +16,10 @@ interface UserIdentity {
   twitter_id?: string
   twitter_username?: string
   email?: string
+  farcaster_id?: string
+  farcaster_username?: string
+  farcaster_display_name?: string
+  farcaster_avatar_url?: string
 }
 
 export default function PokerClientPage() {
@@ -275,6 +279,30 @@ export default function PokerClientPage() {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
+    if (urlParams.get("farcaster_connected") === "true") {
+      const username = urlParams.get("username")
+      setToast({
+        message: "Farcaster successfully connected to your account!",
+        type: "success",
+      })
+
+      // Reload identity data after successful Farcaster connection
+      if (address && isConnected) {
+        const loadIdentity = async () => {
+          try {
+            const response = await fetch(`/api/identity?address=${address}`)
+            const data = await response.json()
+            setIdentity(data.identity)
+          } catch (error) {
+            console.error("Error loading identity:", error)
+          }
+        }
+        loadIdentity()
+      }
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
     if (urlParams.get("error")) {
       const error = urlParams.get("error")
       const help = urlParams.get("help")
@@ -336,6 +364,19 @@ export default function PokerClientPage() {
       } else if (error === "verification_failed") {
         errorMessage = "Email verification failed. Please try again."
         setEmailVerificationPending(false)
+      } else if (error === "farcaster_already_connected") {
+        errorMessage = "This Farcaster account is already connected to another wallet."
+      } else if (error === "farcaster_auth_failed") {
+        errorMessage = "Farcaster authorization failed. Please try again."
+      } else if (error === "farcaster_token_failed") {
+        errorMessage = "Farcaster token exchange failed. Please try again."
+      } else if (error === "farcaster_profile_failed") {
+        errorMessage = "Failed to fetch Farcaster profile. Please try again."
+      } else if (error === "farcaster_connection_failed") {
+        errorMessage = "Farcaster connection failed. Please try again."
+      } else if (error === "farcaster_config_missing") {
+        errorMessage =
+          "Farcaster connection failed: Missing configuration. NEYNAR_CLIENT_ID and NEYNAR_CLIENT_SECRET must be set."
       }
 
       setToast({
@@ -440,6 +481,13 @@ export default function PokerClientPage() {
 
     // Redirect to Twitter OAuth
     window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
+  }
+
+  const connectFarcaster = async () => {
+    if (!address) return
+
+    // Redirect to Farcaster OAuth via Neynar
+    window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
   }
 
   const connectEmail = async () => {
@@ -739,6 +787,44 @@ export default function PokerClientPage() {
                       ) : (
                         <button
                           onClick={connectTwitter}
+                          disabled={identityLoading || !tokenId}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          Connect
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Farcaster */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        {/* Add Farcaster logo */}
+                        <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279.279.434.279.681-.093.495-.279.681l-3 3z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-pink-400 font-mono text-sm">Farcaster</div>
+                          {identity?.farcaster_username && (
+                            <div className="flex items-center gap-2">
+                              <div className="text-green-400 font-mono text-xs">{identity.farcaster_username}</div>
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {identity?.farcaster_id ? (
+                        <button
+                          onClick={() => disconnectPlatform("farcaster")}
+                          disabled={identityLoading}
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                        >
+                          Disconnect
+                        </button>
+                      ) : (
+                        <button
+                          onClick={connectFarcaster}
                           disabled={identityLoading || !tokenId}
                           className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
                         >

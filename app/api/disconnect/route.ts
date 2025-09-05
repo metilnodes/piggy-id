@@ -42,6 +42,11 @@ export async function POST(request: NextRequest) {
         DELETE FROM email_verifications 
         WHERE wallet_address = ${walletLc}
       `
+    } else if (platform === "farcaster") {
+      await sql`
+        DELETE FROM user_identities 
+        WHERE wallet_address = ${walletLc} AND platform = 'farcaster'
+      `
     } else {
       return NextResponse.json({ error: "Invalid platform" }, { status: 400 })
     }
