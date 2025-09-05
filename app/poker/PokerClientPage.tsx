@@ -486,8 +486,7 @@ export default function PokerClientPage() {
   const connectFarcaster = async () => {
     if (!address) return
 
-    // This will be handled by the Neynar SDK button
-    console.log("[v0] Farcaster connection will be handled by Neynar SDK")
+    window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
   }
 
   const connectEmail = async () => {
@@ -823,7 +822,13 @@ export default function PokerClientPage() {
                           Disconnect
                         </button>
                       ) : (
-                        <div className="text-yellow-400 font-mono text-xs">SDK Setup Required</div>
+                        <button
+                          onClick={connectFarcaster}
+                          disabled={identityLoading || !tokenId}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          Connect
+                        </button>
                       )}
                     </div>
 
@@ -832,10 +837,6 @@ export default function PokerClientPage() {
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
                         {(() => {
-                          console.log("[v0] Email display logic - identity?.email:", identity?.email)
-                          console.log("[v0] Email display logic - emailEditing:", emailEditing)
-                          console.log("[v0] Email display logic - emailVerificationPending:", emailVerificationPending)
-
                           if (identity?.email && !emailEditing) {
                             return (
                               <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
