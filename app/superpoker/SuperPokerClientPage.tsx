@@ -275,14 +275,6 @@ export default function SuperPokerClientPage() {
                                 </div>
                               )}
                             </div>
-                            <a
-                              href="https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-block px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
-                            >
-                              Join Game
-                            </a>
                           </div>
                         ) : (
                           <div className="space-y-3">
@@ -358,6 +350,19 @@ export default function SuperPokerClientPage() {
                       )}
                     </div>
                   )}
+                </div>
+              )}
+
+              {roleCheck?.hasRequired && inviteCode && (
+                <div className="mt-6 text-center">
+                  <a
+                    href="https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-8 py-3 border-2 border-pink-500 text-pink-400 hover:bg-pink-500/10 hover:text-pink-300 font-bold text-lg rounded-lg transition-all duration-200 bg-transparent uppercase tracking-wider"
+                  >
+                    JOIN GAME
+                  </a>
                 </div>
               )}
             </div>
