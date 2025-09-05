@@ -31,6 +31,7 @@ export default function SuperPokerClientPage() {
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [isLoadingInviteCode, setIsLoadingInviteCode] = useState(false)
   const [tournamentName, setTournamentName] = useState("SuperPoker #63")
+  const [gameUrl, setGameUrl] = useState("https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ")
 
   const loadInviteCode = async () => {
     if (!discordUser?.discord_id || !discordUser?.discord_username) {
@@ -150,6 +151,7 @@ export default function SuperPokerClientPage() {
       if (response.ok) {
         const settings = await response.json()
         setTournamentName(settings.tournament_name || "SuperPoker #63")
+        setGameUrl(settings.game_url || "https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ")
       }
     } catch (error) {
       console.error("Failed to load tournament settings:", error)
@@ -367,7 +369,7 @@ export default function SuperPokerClientPage() {
               {roleCheck?.hasRequired && inviteCode && (
                 <div className="mt-8 text-center">
                   <a
-                    href="https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ"
+                    href={gameUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block px-12 py-4 border-2 border-pink-500 text-pink-400 hover:bg-pink-500/10 hover:text-pink-300 font-bold text-2xl rounded-lg transition-all duration-200 bg-transparent uppercase tracking-wider"

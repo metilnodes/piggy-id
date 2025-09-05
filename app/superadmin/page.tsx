@@ -28,6 +28,7 @@ interface SuperPokerInviteCode {
 
 interface SuperPokerSettings {
   tournament_name: string
+  game_url: string
 }
 
 export default function SuperAdminPage() {
@@ -35,6 +36,7 @@ export default function SuperAdminPage() {
   const [codes, setCodes] = useState<SuperPokerInviteCode[]>([])
   const [settings, setSettings] = useState<SuperPokerSettings | null>(null)
   const [tournamentName, setTournamentName] = useState("")
+  const [gameUrl, setGameUrl] = useState("")
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState("")
   const [csvFile, setCsvFile] = useState<File | null>(null)
@@ -90,6 +92,7 @@ export default function SuperAdminPage() {
       const data = await response.json()
       setSettings(data)
       setTournamentName(data.tournament_name || "SuperPoker #63")
+      setGameUrl(data.game_url || "https://www.pokernow.club/mtt/superpoker-63-Db6XiyrgdQ")
     } catch (error) {
       console.error("Failed to load settings:", error)
     }
@@ -256,6 +259,35 @@ export default function SuperAdminPage() {
     }
   }
 
+  const updateGameUrl = async () => {
+    if (!gameUrl.trim()) return
+
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/superpoker/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          setting_key: "game_url",
+          setting_value: gameUrl.trim(),
+        }),
+      })
+
+      if (response.ok) {
+        setMessage("✅ Game URL updated successfully")
+        loadSettings()
+      } else {
+        setMessage("❌ Failed to update game URL")
+      }
+    } catch (error) {
+      setMessage(`❌ Error updating game URL: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -349,9 +381,7 @@ export default function SuperAdminPage() {
             <Card className="bg-gray-900 border-pink-500">
               <CardHeader>
                 <CardTitle className="text-pink-400">Tournament Settings</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Configure tournament name and other settings
-                </CardDescription>
+                <CardDescription className="text-gray-400">Configure tournament name and game URL</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -375,6 +405,29 @@ export default function SuperAdminPage() {
                   className="bg-pink-500 hover:bg-pink-600"
                 >
                   {loading ? "Updating..." : "Update Tournament Name"}
+                </Button>
+
+                <div className="pt-4 border-t border-gray-700">
+                  <Label htmlFor="game-url" className="text-white">
+                    Game URL
+                  </Label>
+                  <Input
+                    id="game-url"
+                    value={gameUrl}
+                    onChange={(e) => setGameUrl(e.target.value)}
+                    placeholder="Enter game URL..."
+                    className="bg-gray-800 border-gray-600 text-white"
+                  />
+                  <div className="text-xs text-gray-400 mt-1">
+                    This URL will be used for the "Join Game" button on the SuperPoker page
+                  </div>
+                </div>
+                <Button
+                  onClick={updateGameUrl}
+                  disabled={!gameUrl.trim() || loading}
+                  className="bg-pink-500 hover:bg-pink-600"
+                >
+                  {loading ? "Updating..." : "Update Game URL"}
                 </Button>
               </CardContent>
             </Card>
