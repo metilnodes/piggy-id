@@ -4,8 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const { password } = await request.json()
 
-    // Get superadmin password from environment variable
-    const superAdminPassword = process.env.ADMIN_PASSWORD // Using same password as regular admin
+    const superAdminPassword = process.env.SUPERADMIN_PASSWORD
 
     if (!superAdminPassword) {
       return NextResponse.json({ error: "SuperAdmin password not configured" }, { status: 500 })
