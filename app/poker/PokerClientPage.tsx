@@ -43,13 +43,15 @@ export default function PokerClientPage() {
 
   // Load Neynar SIWN script on component mount and set up global callback
   useEffect(() => {
+    if (typeof window === "undefined") return // Ensure client-side only
+
     const script = document.createElement("script")
     script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
     script.async = true
-    document.head.appendChild(script)(
-      // Set up global success callback
-      window as any,
-    ).onSignInSuccess = async (data: any) => {
+    document.head.appendChild(script)
+
+    // Set up global success callback
+    ;(window as any).onSignInSuccess = async (data: any) => {
       if (!address) return
 
       try {
@@ -869,7 +871,7 @@ export default function PokerClientPage() {
                         {/* Add Farcaster logo */}
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279.279.434.279.681-.093.495-.279.681l-3 3z" />
+                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.279.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279.279.434.279.681-.093.495-.279.681l-3 3z" />
                           </svg>
                         </div>
                         <div className="flex-1">
