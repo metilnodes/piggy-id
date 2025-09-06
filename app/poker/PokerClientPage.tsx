@@ -41,19 +41,63 @@ export default function PokerClientPage() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
-  // Load Neynar SIWN script on component mount
+  // Load Neynar SIWN script on component mount and set up global callback
   useEffect(() => {
     const script = document.createElement("script")
     script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
     script.async = true
-    document.head.appendChild(script)
+    document.head.appendChild(script)(
+      // Set up global success callback
+      window as any,
+    ).onSignInSuccess = async (data: any) => {
+      if (!address) return
+
+      try {
+        const response = await fetch("/api/auth/farcaster/siwn", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-wallet": address,
+          },
+          body: JSON.stringify({
+            fid: data.fid,
+            signer_uuid: data.signer_uuid,
+            user: data.user,
+          }),
+        })
+
+        if (response.ok) {
+          setToast({
+            message: "Farcaster successfully connected to your account!",
+            type: "success",
+          })
+
+          // Reload identity data
+          const identityResponse = await fetch(`/api/identity?address=${address}`)
+          const identityData = await identityResponse.json()
+          setIdentity(identityData.identity)
+        } else {
+          const errorData = await response.json()
+          setToast({
+            message: errorData.error || "Failed to connect Farcaster account",
+            type: "error",
+          })
+        }
+      } catch (error) {
+        setToast({
+          message: "Failed to save Farcaster connection",
+          type: "error",
+        })
+      }
+    }
 
     return () => {
       if (document.head.contains(script)) {
         document.head.removeChild(script)
       }
+      delete (window as any).onSignInSuccess
     }
-  }, [])
+  }, [address])
 
   useEffect(() => {
     const loadTournamentInfo = async () => {
@@ -498,90 +542,23 @@ export default function PokerClientPage() {
   }
 
   const connectFarcaster = async () => {
-    console.log("[v0] connectFarcaster called, address:", address)
-    console.log("[v0] NEXT_PUBLIC_NEYNAR_CLIENT_ID:", process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID)
+    if (!address) return
 
-    if (!address) {
-      console.log("[v0] No address found, returning")
-      return
-    }
+    const container = document.createElement("div")
+    container.innerHTML = `
+      <div
+        class="neynar_signin"
+        data-client_id="${process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID}"
+        data-success-callback="onSignInSuccess"
+        data-theme="dark"
+      ></div>
+    `
+    document.body.appendChild(container)
 
-    if (!(window as any).NeynarSIWN) {
-      console.error("[v0] Neynar SIWN not available")
-      setToast({
-        message: "Farcaster authentication not available. Please refresh the page.",
-        type: "error",
-      })
-      return
-    }
-
-    console.log("[v0] Neynar SIWN available, initializing widget")
-
-    try {
-      const siwn = (window as any).NeynarSIWN
-
-      console.log("[v0] Calling siwn.signIn with client_id:", process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID)
-
-      await siwn.signIn({
-        client_id: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID,
-        success_callback: async (data: any) => {
-          console.log("[v0] SIWN Success callback triggered:", data)
-
-          try {
-            const response = await fetch("/api/auth/farcaster/siwn", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-wallet": address,
-              },
-              body: JSON.stringify({
-                fid: data.fid,
-                signer_uuid: data.signer_uuid,
-                user: data.user,
-              }),
-            })
-
-            if (response.ok) {
-              setToast({
-                message: "Farcaster successfully connected to your account!",
-                type: "success",
-              })
-
-              // Reload identity data
-              const identityResponse = await fetch(`/api/identity?address=${address}`)
-              const identityData = await identityResponse.json()
-              setIdentity(identityData.identity)
-            } else {
-              const errorData = await response.json()
-              console.error("[v0] API error:", errorData)
-              setToast({
-                message: errorData.error || "Failed to connect Farcaster account",
-                type: "error",
-              })
-            }
-          } catch (error) {
-            console.error("[v0] Error saving Farcaster connection:", error)
-            setToast({
-              message: "Failed to save Farcaster connection",
-              type: "error",
-            })
-          }
-        },
-        error_callback: (error: any) => {
-          console.error("[v0] SIWN Error callback:", error)
-          setToast({
-            message: "Farcaster authentication failed",
-            type: "error",
-          })
-        },
-      })
-    } catch (error) {
-      console.error("[v0] Error initializing SIWN:", error)
-      setToast({
-        message: "Failed to initialize Farcaster authentication",
-        type: "error",
-      })
-    }
+    setTimeout(() => {
+      const btn = container.querySelector(".neynar_signin") as HTMLElement
+      btn?.click()
+    }, 50)
   }
 
   const connectEmail = async () => {
