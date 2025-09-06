@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
-import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 import { X, Trophy, Medal, Star, Crown } from "lucide-react"
 
 type AuthStatus = "disconnected" | "verifying" | "no-nft" | "authorized"
@@ -56,7 +55,7 @@ const mockData: Record<string, LeaderboardEntry[]> = {
     { rank: 2, player: "NeonGamer", score: 19500, reward: "500 PIGGY", rewardType: "silver" },
     { rank: 3, player: "CyberPig#1337", score: 18200, reward: "250 PIGGY", rewardType: "bronze" },
     { rank: 4, player: "GlitchKing", score: 15800, reward: "100 PIGGY", rewardType: "points" },
-    { rank: 5, player: "DataRunner", score: 14200, reward: "50 PIGGY", rewardType: "points" },
+    { rank: 5, player: "PixelMaster", score: 14200, reward: "50 PIGGY", rewardType: "points" },
   ],
   day4: [
     { rank: 1, player: "CyberPig#1337", score: 25800, reward: "1000 PIGGY", rewardType: "gold" },
@@ -266,6 +265,8 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [piggyId, setPiggyId] = useState<number | null>(null)
+  const [piggyIdLoading, setPiggyIdLoading] = useState(false)
 
   // Load Neynar SIWN script on component mount
   useEffect(() => {
@@ -282,6 +283,34 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
       }
     }
   }, [isOpen])
+
+  useEffect(() => {
+    const loadPiggyId = async () => {
+      if (!address || !isConnected || !isOpen) {
+        setPiggyId(null)
+        return
+      }
+
+      setPiggyIdLoading(true)
+
+      try {
+        const response = await fetch(`/api/user-identity/get?wallet=${address}`)
+        if (response.ok) {
+          const data = await response.json()
+          setPiggyId(data.user.token_id)
+        } else {
+          setPiggyId(null)
+        }
+      } catch (error) {
+        console.error("Error loading Piggy ID:", error)
+        setPiggyId(null)
+      } finally {
+        setPiggyIdLoading(false)
+      }
+    }
+
+    loadPiggyId()
+  }, [address, isConnected, isOpen])
 
   useEffect(() => {
     const loadIdentity = async () => {
@@ -643,16 +672,15 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.037-.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 1.114.077.077 0 0 0 3.598 1.15C1.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418z" />
                             </svg>
                           </div>
                           <div className="flex-1">
                             <div className="text-pink-400 font-mono text-sm">Discord</div>
-                            {identity?.discord_username && (
-                              <div className="flex items-center gap-2">
-                                <div className="text-green-400 font-mono text-xs">{identity.discord_username}</div>
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              </div>
+                            {identity?.discord_username ? (
+                              <div className="text-pink-300 font-mono text-xs">{identity.discord_username}</div>
+                            ) : (
+                              <div className="text-gray-500 font-mono text-xs">Not connected</div>
                             )}
                           </div>
                         </div>
@@ -660,7 +688,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                           <button
                             onClick={() => disconnectPlatform("discord")}
                             disabled={identityLoading}
-                            className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-mono bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 disabled:opacity-50"
                           >
                             Disconnect
                           </button>
@@ -668,7 +696,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                           <button
                             onClick={connectDiscord}
                             disabled={identityLoading}
-                            className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-mono bg-indigo-600/20 text-indigo-400 border border-indigo-600/30 rounded hover:bg-indigo-600/30 disabled:opacity-50"
                           >
                             Connect
                           </button>
@@ -680,24 +708,23 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                             </svg>
                           </div>
                           <div className="flex-1">
                             <div className="text-pink-400 font-mono text-sm">Twitter</div>
-                            {identity?.twitter_username && (
-                              <div className="flex items-center gap-2">
-                                <div className="text-green-400 font-mono text-xs">{identity.twitter_username}</div>
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              </div>
+                            {identity?.twitter_username ? (
+                              <div className="text-pink-300 font-mono text-xs">@{identity.twitter_username}</div>
+                            ) : (
+                              <div className="text-gray-500 font-mono text-xs">Not connected</div>
                             )}
                           </div>
                         </div>
-                        {identity?.twitter_id ? (
+                        {identity?.twitter_username ? (
                           <button
                             onClick={() => disconnectPlatform("twitter")}
                             disabled={identityLoading}
-                            className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-mono bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 disabled:opacity-50"
                           >
                             Disconnect
                           </button>
@@ -705,7 +732,83 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                           <button
                             onClick={connectTwitter}
                             disabled={identityLoading}
-                            className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-mono bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded hover:bg-blue-600/30 disabled:opacity-50"
+                          >
+                            Connect
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Email */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-pink-400 font-mono text-sm">Email</div>
+                            {identity?.email ? (
+                              <div className="text-pink-300 font-mono text-xs">{identity.email}</div>
+                            ) : emailVerificationPending ? (
+                              <div className="text-yellow-400 font-mono text-xs">Verification pending</div>
+                            ) : (
+                              <div className="text-gray-500 font-mono text-xs">Not connected</div>
+                            )}
+                          </div>
+                        </div>
+                        {identity?.email ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={editEmail}
+                              disabled={identityLoading}
+                              className="px-3 py-1 text-xs font-mono bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded hover:bg-blue-600/30 disabled:opacity-50"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => disconnectPlatform("email")}
+                              disabled={identityLoading}
+                              className="px-3 py-1 text-xs font-mono bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 disabled:opacity-50"
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        ) : emailEditing ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              placeholder="Enter email"
+                              className="px-2 py-1 text-xs font-mono bg-black border border-pink-500/30 rounded text-pink-300 placeholder-gray-500 w-32"
+                            />
+                            <button
+                              onClick={connectEmail}
+                              disabled={identityLoading || !email.trim()}
+                              className="px-3 py-1 text-xs font-mono bg-green-600/20 text-green-400 border border-green-600/30 rounded hover:bg-green-600/30 disabled:opacity-50"
+                            >
+                              Send
+                            </button>
+                            <button
+                              onClick={cancelEmailEdit}
+                              disabled={identityLoading}
+                              className="px-3 py-1 text-xs font-mono bg-gray-600/20 text-gray-400 border border-gray-600/30 rounded hover:bg-gray-600/30 disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setEmailEditing(true)}
+                            disabled={identityLoading}
+                            className="px-3 py-1 text-xs font-mono bg-green-600/20 text-green-400 border border-green-600/30 rounded hover:bg-green-600/30 disabled:opacity-50"
                           >
                             Connect
                           </button>
@@ -717,24 +820,23 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279.279.434.279.681-.093.495-.279.681l-3 3z" />
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                             </svg>
                           </div>
                           <div className="flex-1">
                             <div className="text-pink-400 font-mono text-sm">Farcaster</div>
-                            {identity?.farcaster_username && (
-                              <div className="flex items-center gap-2">
-                                <div className="text-green-400 font-mono text-xs">{identity.farcaster_username}</div>
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              </div>
+                            {identity?.farcaster_username ? (
+                              <div className="text-pink-300 font-mono text-xs">@{identity.farcaster_username}</div>
+                            ) : (
+                              <div className="text-gray-500 font-mono text-xs">Not connected</div>
                             )}
                           </div>
                         </div>
-                        {identity?.farcaster_id ? (
+                        {identity?.farcaster_username ? (
                           <button
                             onClick={() => disconnectPlatform("farcaster")}
                             disabled={identityLoading}
-                            className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-mono bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 disabled:opacity-50"
                           >
                             Disconnect
                           </button>
@@ -742,87 +844,11 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                           <button
                             onClick={connectFarcaster}
                             disabled={identityLoading}
-                            className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-mono bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded hover:bg-purple-600/30 disabled:opacity-50"
                           >
                             Connect
                           </button>
                         )}
-                      </div>
-
-                      {/* Email */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
-                          {(() => {
-                            if (identity?.email && !emailEditing) {
-                              return (
-                                <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
-                                  {identity.email}
-                                </div>
-                              )
-                            } else if (emailVerificationPending) {
-                              return (
-                                <div className="text-yellow-400 bg-black/70 px-2 py-1 rounded border border-yellow-500/30 font-mono text-xs">
-                                  Verification pending - check your email
-                                </div>
-                              )
-                            } else {
-                              return (
-                                <input
-                                  type="email"
-                                  value={email}
-                                  onChange={(e) => setEmail(e.target.value)}
-                                  placeholder="Enter your email"
-                                  className="w-full bg-black border border-pink-500/30 text-pink-300 font-mono text-sm px-2 py-1 rounded focus:border-pink-500 focus:outline-none"
-                                />
-                              )
-                            }
-                          })()}
-                        </div>
-                        <div className="flex gap-2">
-                          {identity?.email && !emailEditing ? (
-                            <>
-                              <button onClick={editEmail} className="cyber-button px-4 py-1 text-sm font-mono">
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => disconnectPlatform("email")}
-                                disabled={identityLoading}
-                                className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
-                              >
-                                Disconnect
-                              </button>
-                            </>
-                          ) : emailVerificationPending ? (
-                            <button
-                              onClick={() => {
-                                setEmailVerificationPending(false)
-                                setEmail("")
-                              }}
-                              className="border border-yellow-500 text-yellow-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
-                            >
-                              Resend
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={connectEmail}
-                                disabled={identityLoading || !email.trim()}
-                                className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
-                              >
-                                {identityLoading ? "Sending..." : "Connect"}
-                              </button>
-                              {emailEditing && (
-                                <button
-                                  onClick={cancelEmailEdit}
-                                  className="border border-gray-500 text-gray-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                            </>
-                          )}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -830,6 +856,16 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
               </div>
             </div>
           )}
+        </div>
+
+        {/* Back to Lobby Button */}
+        <div className="p-6 pt-0 border-t border-pink-500/30">
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-6 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-lg font-mono font-bold hover:bg-pink-500/30 hover:text-pink-300 transition-all"
+          >
+            &lt; BACK TO LOBBY
+          </button>
         </div>
       </div>
     </div>
@@ -912,12 +948,26 @@ export default function PiggyVegasPage() {
     setAuthStatus("verifying")
 
     try {
+      const { getOwnedTokenIds } = await import("@/lib/piggy/checkHolder")
       const ownedTokens = await getOwnedTokenIds(address)
       const firstToken = ownedTokens.length > 0 ? ownedTokens[0] : null
 
       if (firstToken !== null) {
         setTokenId(firstToken)
         setAuthStatus("authorized")
+
+        try {
+          await fetch("/api/user-identity/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              walletAddress: address,
+              tokenId: Number(firstToken),
+            }),
+          })
+        } catch (dbError) {
+          console.error("Error saving user to database:", dbError)
+        }
 
         // Save session
         const session: UserSession = {
@@ -949,285 +999,143 @@ export default function PiggyVegasPage() {
     <div className="min-h-screen bg-background cyber-grid relative">
       {/* Overlay Gate */}
       {showOverlay && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="cyber-card p-8 max-w-md w-full mx-4 text-center">
-            <h2 className="text-2xl font-bold text-primary mb-6 font-mono glitch neon-text" data-text="PIGGY VEGAS">
-              PIGGY VEGAS
-            </h2>
-
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          <div className="text-center space-y-8 p-8">
             {authStatus === "disconnected" && (
-              <div className="space-y-4">
-                <p className="text-foreground font-mono">Connect wallet to enter Piggy Vegas</p>
-                <div className="inline-block">
-                  <ConnectButton.Custom>
-                    {({ account, chain, openConnectModal, mounted }) => {
-                      return (
-                        <div
-                          {...(!mounted && {
-                            "aria-hidden": true,
-                            style: {
-                              opacity: 0,
-                              pointerEvents: "none",
-                              userSelect: "none",
-                            },
-                          })}
-                        >
-                          <button onClick={openConnectModal} className="cyber-button px-6 py-3 font-mono font-bold">
-                            CONNECT WALLET
-                          </button>
-                        </div>
-                      )
-                    }}
-                  </ConnectButton.Custom>
+              <>
+                <h2 className="text-4xl font-bold text-pink-500 glitch neon-text font-mono" data-text="ACCESS REQUIRED">
+                  ACCESS REQUIRED
+                </h2>
+                <p className="text-xl text-muted-foreground font-mono">
+                  Connect your wallet to verify Piggy ID ownership
+                </p>
+                <div className="cyber-button">
+                  <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
                 </div>
-              </div>
+              </>
             )}
 
             {authStatus === "verifying" && (
-              <div className="space-y-4">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-                <p className="text-foreground font-mono">Checking your Piggy ID...</p>
-              </div>
+              <>
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto"></div>
+                <h2 className="text-4xl font-bold text-pink-500 glitch neon-text font-mono" data-text="VERIFYING">
+                  VERIFYING
+                </h2>
+                <p className="text-xl text-muted-foreground font-mono">Checking your Piggy ID...</p>
+              </>
             )}
 
             {authStatus === "no-nft" && (
-              <div className="space-y-4">
-                <p className="text-foreground font-mono mb-4">You need a Piggy ID NFT to access Piggy Vegas</p>
-                <a
-                  href="http://id.piggyworld.xyz"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cyber-button inline-block px-6 py-3 font-mono font-bold mb-4"
-                >
-                  Mint Piggy ID to play
-                </a>
-                <div>
+              <>
+                <h2 className="text-4xl font-bold text-red-500 glitch neon-text font-mono" data-text="ACCESS DENIED">
+                  ACCESS DENIED
+                </h2>
+                <p className="text-xl text-muted-foreground font-mono">You need a Piggy ID NFT to access Piggy Vegas</p>
+                <div className="space-y-4">
+                  <button
+                    onClick={() => window.open("https://opensea.io/collection/piggy-id", "_blank")}
+                    className="block w-full py-3 px-6 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-lg font-mono font-bold hover:bg-pink-500/30 hover:text-pink-300 transition-all"
+                  >
+                    MINT PIGGY ID TO PLAY
+                  </button>
                   <button
                     onClick={refreshCheck}
                     disabled={loading}
-                    className="border border-muted text-muted-foreground hover:text-foreground hover:border-foreground px-4 py-2 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                    className="block w-full py-3 px-6 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-lg font-mono font-bold hover:bg-cyan-500/30 hover:text-cyan-300 transition-all disabled:opacity-50"
                   >
-                    {loading ? "Checking..." : "Refresh check"}
+                    REFRESH CHECK
                   </button>
                 </div>
-              </div>
+              </>
             )}
 
             {authStatus === "authorized" && (
-              <div className="space-y-4">
-                <div className="text-primary font-mono">
-                  Your Piggy ID: <span className="text-accent-foreground">#{tokenId?.toString()}</span>
-                </div>
-                <p className="text-green-400 font-mono font-bold">Access granted — welcome to Piggy Vegas!</p>
-              </div>
+              <>
+                <div className="text-6xl mb-4">🐷</div>
+                <h2 className="text-4xl font-bold text-green-500 glitch neon-text font-mono" data-text="ACCESS GRANTED">
+                  ACCESS GRANTED
+                </h2>
+                <p className="text-xl text-muted-foreground font-mono">Welcome, Piggy ID #{tokenId?.toString()}!</p>
+                <div className="animate-pulse text-pink-400 font-mono">Entering Piggy Vegas...</div>
+              </>
             )}
           </div>
         </div>
       )}
 
-      {/* Main Lobby Content */}
-      <div className="min-h-screen p-8">
-        <header className="text-center mb-12">
-          <h1 className="text-6xl font-bold text-primary glitch neon-text mb-4 font-mono" data-text="PIGGY VEGAS">
+      {/* Main Casino Lobby */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1
+            className="text-6xl md:text-8xl font-bold text-pink-500 glitch neon-text font-mono mb-4"
+            data-text="PIGGY VEGAS"
+          >
             PIGGY VEGAS
           </h1>
           <DailyCountdown />
-        </header>
+        </div>
 
-        {/* Gaming Locations Grid */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+        {/* Gaming Locations */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
           {/* Wheel of Fortune */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-orange-500 hover:border-orange-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-orange-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎡</span>
-              </div>
-              <h3 className="text-lg font-bold text-orange-400 font-mono">WHEEL OF</h3>
-              <h3 className="text-lg font-bold text-orange-400 font-mono -mt-2">FORTUNE</h3>
-              <div className="pt-2">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
+          <button className="group cyber-card p-8 text-center hover:scale-105 transition-all duration-300 border-2 border-orange-500/50 hover:border-orange-400 hover:shadow-lg hover:shadow-orange-400/20">
+            <div className="text-4xl mb-4 group-hover:animate-spin">🎡</div>
+            <h3 className="text-xl font-bold text-orange-400 font-mono mb-2">WHEEL OF</h3>
+            <h3 className="text-xl font-bold text-orange-400 font-mono">FORTUNE</h3>
+          </button>
 
           {/* Slots */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-yellow-500 hover:border-yellow-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎰</span>
-              </div>
-              <h3 className="text-lg font-bold text-yellow-400 font-mono">SLOTS</h3>
-              <div className="pt-6">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
+          <button className="group cyber-card p-8 text-center hover:scale-105 transition-all duration-300 border-2 border-yellow-500/50 hover:border-yellow-400 hover:shadow-lg hover:shadow-yellow-400/20">
+            <div className="text-4xl mb-4 group-hover:animate-pulse">🎰</div>
+            <h3 className="text-xl font-bold text-yellow-400 font-mono">SLOTS</h3>
+          </button>
 
           {/* Dice */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-green-500 hover:border-green-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎲</span>
-              </div>
-              <h3 className="text-lg font-bold text-green-400 font-mono">DICE</h3>
-              <div className="pt-6">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
+          <button className="group cyber-card p-8 text-center hover:scale-105 transition-all duration-300 border-2 border-green-500/50 hover:border-green-400 hover:shadow-lg hover:shadow-green-400/20">
+            <div className="text-4xl mb-4 group-hover:animate-bounce">🎲</div>
+            <h3 className="text-xl font-bold text-green-400 font-mono">DICE</h3>
+          </button>
 
           {/* Blackjack */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-blue-500 hover:border-blue-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🂡</span>
-              </div>
-              <h3 className="text-lg font-bold text-blue-400 font-mono">BLACKJACK</h3>
-              <div className="pt-6">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
+          <button className="group cyber-card p-8 text-center hover:scale-105 transition-all duration-300 border-2 border-blue-500/50 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-400/20">
+            <div className="text-4xl mb-4 group-hover:animate-pulse">🃏</div>
+            <h3 className="text-xl font-bold text-blue-400 font-mono">BLACKJACK</h3>
+          </button>
 
           {/* Poker */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-purple-500 hover:border-purple-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎮</span>
-              </div>
-              <h3 className="text-lg font-bold text-purple-400 font-mono">POKER</h3>
-              <p className="text-xs text-purple-300 font-mono">(FRI ONLY)</p>
-              <div className="pt-2">
-                <a
-                  href="/poker"
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold group-hover:scale-110 transition-transform text-sm"
-                >
-                  ENTER ROOM
-                </a>
-              </div>
-            </div>
-          </div>
+          <button className="group cyber-card p-8 text-center hover:scale-105 transition-all duration-300 border-2 border-purple-500/50 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-400/20">
+            <div className="text-4xl mb-4 group-hover:animate-pulse">🎮</div>
+            <h3 className="text-xl font-bold text-purple-400 font-mono mb-2">POKER</h3>
+            <h3 className="text-sm font-bold text-purple-400 font-mono">(FRI ONLY)</h3>
+          </button>
         </div>
 
-        {/* Bottom Navigation Buttons */}
-        <div className="max-w-md mx-auto flex justify-center gap-4 mt-16">
+        {/* Bottom Navigation */}
+        <div className="flex justify-center space-x-6">
           <button
             onClick={() => setShowLeaderboard(true)}
-            className="cyber-card px-6 py-3 border-pink-500 hover:border-pink-400 transition-colors"
+            className="cyber-button px-8 py-4 bg-pink-500/20 text-pink-400 border border-pink-500/30 rounded-lg font-mono font-bold hover:bg-pink-500/30 hover:text-pink-300 transition-all"
           >
-            <span className="text-pink-400 font-mono font-bold text-sm">LEADERBOARD</span>
+            LEADERBOARD
           </button>
-
-          <button className="cyber-card px-6 py-3 border-blue-500 hover:border-blue-400 transition-colors">
-            <span className="text-blue-400 font-mono font-bold text-sm">RULES</span>
+          <button className="cyber-button px-8 py-4 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg font-mono font-bold hover:bg-blue-500/30 hover:text-blue-300 transition-all">
+            RULES
           </button>
-
-          <button className="cyber-card px-6 py-3 border-orange-500 hover:border-orange-400 transition-colors">
-            <span className="text-orange-400 font-mono font-bold text-sm">PRIZES</span>
+          <button className="cyber-button px-8 py-4 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-lg font-mono font-bold hover:bg-orange-500/30 hover:text-orange-300 transition-all">
+            PRIZES
           </button>
-
           <button
             onClick={() => setShowProfile(true)}
-            className="cyber-card px-6 py-3 border-cyan-500 hover:border-cyan-400 transition-colors"
+            className="cyber-button px-8 py-4 bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-lg font-mono font-bold hover:bg-cyan-500/30 hover:text-cyan-300 transition-all"
           >
-            <span className="text-cyan-400 font-mono font-bold text-sm">PROFILE</span>
+            PROFILE
           </button>
         </div>
-
-        {/* Footer */}
-        <footer className="text-center mt-12 text-muted-foreground font-mono text-sm">
-          <p>Powered by Piggy ID • Play Responsibly • 18+</p>
-        </footer>
       </div>
 
-      {/* Wallet Connection Button (Top Right) */}
-      <div className="fixed top-4 right-4 z-40">
-        <ConnectButton.Custom>
-          {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
-            const ready = mounted
-            const connected = ready && account && chain
-
-            return (
-              <div
-                {...(!ready && {
-                  "aria-hidden": true,
-                  style: {
-                    opacity: 0,
-                    pointerEvents: "none",
-                    userSelect: "none",
-                  },
-                })}
-              >
-                {(() => {
-                  if (!connected) {
-                    return (
-                      <button
-                        onClick={openConnectModal}
-                        className="bg-background border border-primary text-primary font-mono text-sm px-4 py-2 rounded hover:bg-primary hover:text-primary-foreground transition-colors"
-                      >
-                        CONNECT WALLET
-                      </button>
-                    )
-                  }
-
-                  if (chain.unsupported) {
-                    return (
-                      <button
-                        onClick={openChainModal}
-                        className="bg-background border border-destructive text-destructive font-mono text-sm px-4 py-2 rounded hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                      >
-                        WRONG NETWORK
-                      </button>
-                    )
-                  }
-
-                  return (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={openChainModal}
-                        className="bg-background border border-primary text-primary font-mono text-xs px-3 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors"
-                      >
-                        {chain.name}
-                      </button>
-
-                      <button
-                        onClick={openAccountModal}
-                        className="bg-background border border-primary text-primary font-mono text-xs px-3 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors"
-                      >
-                        {account.displayName}
-                      </button>
-                    </div>
-                  )
-                })()}
-              </div>
-            )
-          }}
-        </ConnectButton.Custom>
-      </div>
-
-      {/* Leaderboard Modal */}
+      {/* Modals */}
       <LeaderboardModal isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
-
       <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
     </div>
   )
