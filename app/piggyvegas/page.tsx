@@ -360,7 +360,11 @@ export default function PiggyVegasPage() {
           </button>
 
           <button className="cyber-card px-6 py-3 border-orange-500 hover:border-orange-400 transition-colors">
-            <span className="text-orange-400 font-mono font-bold text-sm">PIGGY PRIZES</span>
+            <span className="text-orange-400 font-mono font-bold text-sm">PRIZES</span>
+          </button>
+
+          <button className="cyber-card px-6 py-3 border-cyan-500 hover:border-cyan-400 transition-colors">
+            <span className="text-cyan-400 font-mono font-bold text-sm">PROFILE</span>
           </button>
         </div>
 
