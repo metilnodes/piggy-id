@@ -13,6 +13,49 @@ interface UserSession {
   timestamp: number
 }
 
+function DailyCountdown() {
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 })
+  const [dayNumber, setDayNumber] = useState(1)
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date()
+      const utcNow = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
+
+      // Calculate next 4 PM GMT
+      const next4PM = new Date(utcNow)
+      next4PM.setUTCHours(16, 0, 0, 0) // 4 PM GMT
+
+      // If it's already past 4 PM today, move to tomorrow
+      if (utcNow.getTime() >= next4PM.getTime()) {
+        next4PM.setUTCDate(next4PM.getUTCDate() + 1)
+      }
+
+      const timeDiff = next4PM.getTime() - utcNow.getTime()
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60))
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60))
+
+      setTimeLeft({ hours, minutes })
+
+      // Calculate day number (you can adjust this logic based on your start date)
+      const startDate = new Date("2024-01-01T16:00:00Z") // Adjust this to your actual start date
+      const daysSinceStart = Math.floor((utcNow.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      setDayNumber(Math.max(1, daysSinceStart))
+    }
+
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <p className="text-xl text-muted-foreground font-mono">
+      Day {dayNumber} ends in {timeLeft.hours}h {timeLeft.minutes.toString().padStart(2, "0")}m
+    </p>
+  )
+}
+
 export default function PiggyVegasPage() {
   const { address, isConnected } = useAccount()
   const [authStatus, setAuthStatus] = useState<AuthStatus>("disconnected")
@@ -208,7 +251,7 @@ export default function PiggyVegasPage() {
           <h1 className="text-6xl font-bold text-primary glitch neon-text mb-4 font-mono" data-text="PIGGY VEGAS">
             PIGGY VEGAS
           </h1>
-          <p className="text-xl text-muted-foreground font-mono">Choose your game and enter the action</p>
+          <DailyCountdown />
         </header>
 
         {/* Gaming Locations Grid */}
