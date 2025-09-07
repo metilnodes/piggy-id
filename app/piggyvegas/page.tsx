@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
@@ -850,13 +851,13 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
 }
 
 export default function Page() {
+  const router = useRouter()
   const { address, isConnected } = useAccount()
   const [authStatus, setAuthStatus] = useState<AuthStatus>("disconnected")
   const [loading, setLoading] = useState<boolean>(false)
   const [tokenId, setTokenId] = useState<string | null>(null)
   const [showOverlay, setShowOverlay] = useState<boolean>(true)
   const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false)
-  const [showProfile, setShowProfile] = useState<boolean>(false)
   const [showPrizes, setShowPrizes] = useState<boolean>(false)
 
   // Check for existing session on mount
@@ -973,6 +974,10 @@ export default function Page() {
 
   const refreshCheck = () => {
     checkNFTOwnership()
+  }
+
+  const handleProfileClick = () => {
+    router.push("/piggyvegas/profile")
   }
 
   return (
@@ -1188,7 +1193,7 @@ export default function Page() {
           </button>
 
           <button
-            onClick={() => setShowProfile(true)}
+            onClick={handleProfileClick}
             className="cyber-card px-6 py-3 border-cyan-500 hover:border-cyan-400 transition-colors"
           >
             <span className="text-cyan-400 font-mono font-bold text-sm">PROFILE</span>
@@ -1268,9 +1273,6 @@ export default function Page() {
 
       {/* Leaderboard Modal */}
       <LeaderboardModal isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
-
-      {/* Profile Modal */}
-      <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
 
       {/* Prizes Modal */}
       {showPrizes && <PrizesModal onClose={() => setShowPrizes(false)} />}
