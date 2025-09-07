@@ -1065,7 +1065,6 @@ export default function Page() {
                 <span className="text-2xl">🎮</span>
               </div>
               <h3 className="text-lg font-bold text-purple-400 font-mono">POKER</h3>
-              <p className="text-xs text-purple-300 font-mono">(FRI ONLY)</p>
               <div className="pt-2">
                 <a
                   href="/poker"
