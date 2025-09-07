@@ -48,14 +48,21 @@ export default function ProfilePage() {
         return
       }
 
+      console.log("[v0] Loading identity for address:", address)
       setIdentityLoading(true)
 
       try {
         const response = await fetch(`/api/identity?address=${address}`)
         const data = await response.json()
+
+        console.log("[v0] Identity API response:", data)
+        console.log("[v0] Identity data:", data.identity)
+        console.log("[v0] Email field in identity:", data.identity?.email)
+        console.log("[v0] Identity object keys:", data.identity ? Object.keys(data.identity) : "null")
+
         setIdentity(data.identity)
       } catch (error) {
-        console.error("Error loading identity:", error)
+        console.error("[v0] Error loading identity:", error)
       } finally {
         setIdentityLoading(false)
       }
@@ -64,7 +71,6 @@ export default function ProfilePage() {
     loadIdentity()
   }, [address, isConnected])
 
-  // Handle URL parameters for OAuth callbacks
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
 
@@ -77,12 +83,17 @@ export default function ProfilePage() {
         type: "success",
       })
 
+      // Reload identity data after successful email verification
       if (address && isConnected) {
         const loadIdentity = async () => {
           try {
+            console.log("[v0] Reloading identity after email verification...")
             await new Promise((resolve) => setTimeout(resolve, 1000))
             const response = await fetch(`/api/identity?address=${address}`)
             const data = await response.json()
+            console.log("[v0] Updated identity data after email verification:", data.identity)
+            console.log("[v0] Email field after verification:", data.identity?.email)
+            console.log("[v0] All identity fields:", JSON.stringify(data.identity, null, 2))
             setIdentity(data.identity)
           } catch (error) {
             console.error("Error loading identity:", error)
@@ -90,15 +101,18 @@ export default function ProfilePage() {
         }
         loadIdentity()
       }
+      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
     if (urlParams.get("success") === "discord_verified") {
+      const username = urlParams.get("username")
       setToast({
         message: "Discord successfully connected to your account!",
         type: "success",
       })
 
+      // Reload identity data after successful Discord connection
       if (address && isConnected) {
         const loadIdentity = async () => {
           try {
@@ -111,15 +125,18 @@ export default function ProfilePage() {
         }
         loadIdentity()
       }
+      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
     if (urlParams.get("success") === "twitter_verified") {
+      const username = urlParams.get("username")
       setToast({
         message: "Twitter successfully connected to your account!",
         type: "success",
       })
 
+      // Reload identity data after successful Twitter connection
       if (address && isConnected) {
         const loadIdentity = async () => {
           try {
@@ -132,15 +149,18 @@ export default function ProfilePage() {
         }
         loadIdentity()
       }
+      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
     if (urlParams.get("farcaster_connected") === "true") {
+      const username = urlParams.get("username")
       setToast({
         message: "Farcaster successfully connected to your account!",
         type: "success",
       })
 
+      // Reload identity data after successful Farcaster connection
       if (address && isConnected) {
         const loadIdentity = async () => {
           try {
@@ -153,19 +173,84 @@ export default function ProfilePage() {
         }
         loadIdentity()
       }
+      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
 
     if (urlParams.get("error")) {
       const error = urlParams.get("error")
+      const help = urlParams.get("help")
+      const step = urlParams.get("step")
       let errorMessage = "Connection failed. Please try again."
 
       if (error === "discord_already_connected") {
         errorMessage = "This Discord account is already connected to another wallet."
       } else if (error === "twitter_already_connected") {
         errorMessage = "This Twitter account is already connected to another wallet."
+      } else if (error === "discord_auth_failed") {
+        errorMessage = "Discord authorization failed. Please try again."
+      } else if (error === "twitter_auth_failed") {
+        errorMessage = "Twitter authorization failed. Please try again."
+      } else if (error === "twitter_invalid_client") {
+        errorMessage =
+          help === "check_oauth2_credentials"
+            ? "Twitter connection failed: Invalid credentials. Make sure you're using OAuth 2.0 Client ID/Secret (not OAuth 1.0a API Key/Secret) and they're set correctly in your environment variables."
+            : "Twitter connection failed: Invalid client credentials."
+      } else if (error === "twitter_invalid_grant") {
+        errorMessage =
+          help === "check_callback_url"
+            ? "Twitter connection failed: Callback URL mismatch. Verify the callback URL in your X Developer Portal matches exactly: " +
+              window.location.origin +
+              "/api/auth/twitter/callback"
+            : "Twitter connection failed: Invalid authorization grant."
+      } else if (error === "twitter_unauthorized") {
+        errorMessage =
+          help === "check_dev_portal_settings"
+            ? "Twitter connection failed: Unauthorized client. Enable 'User authentication settings' in your X Developer Portal and ensure your app has the required permissions."
+            : "Twitter connection failed: Unauthorized client."
+      } else if (error === "twitter_invalid_request") {
+        errorMessage =
+          help === "check_parameters"
+            ? "Twitter connection failed: Invalid request parameters. Check your X Developer Portal configuration and callback URL format."
+            : "Twitter connection failed: Invalid request."
+      } else if (error === "twitter_400_error") {
+        errorMessage =
+          help === "check_configuration"
+            ? "Twitter connection failed: Bad request (400). Common causes: wrong OAuth credentials, callback URL mismatch, or incorrect app configuration in X Developer Portal."
+            : "Twitter connection failed: Bad request."
+      } else if (error === "twitter_profile_forbidden") {
+        errorMessage =
+          help === "check_scopes_and_account"
+            ? "Twitter connection failed: Profile access forbidden. Ensure 'users.read' scope is granted and your developer account has the required access level."
+            : "Twitter connection failed: Profile access forbidden."
+      } else if (error === "twitter_config_missing") {
+        errorMessage =
+          "Twitter connection failed: Missing configuration. TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET must be set in environment variables."
+      } else if (error === "twitter_invalid_client_format") {
+        errorMessage =
+          "Twitter connection failed: Invalid Client ID format. Make sure you're using OAuth 2.0 Client ID (not OAuth 1.0a API Key)."
+      } else if (error === "invalid_token") {
+        errorMessage = "Invalid verification token. Please request a new verification email."
+        setEmailVerificationPending(false)
+      } else if (error === "token_expired") {
+        errorMessage = "Verification token expired. Please request a new verification email."
+        setEmailVerificationPending(false)
+      } else if (error === "verification_failed") {
+        errorMessage = "Email verification failed. Please try again."
+        setEmailVerificationPending(false)
       } else if (error === "farcaster_already_connected") {
         errorMessage = "This Farcaster account is already connected to another wallet."
+      } else if (error === "farcaster_auth_failed") {
+        errorMessage = "Farcaster authorization failed. Please try again."
+      } else if (error === "farcaster_token_failed") {
+        errorMessage = "Farcaster token exchange failed. Please try again."
+      } else if (error === "farcaster_profile_failed") {
+        errorMessage = "Failed to fetch Farcaster profile. Please try again."
+      } else if (error === "farcaster_connection_failed") {
+        errorMessage = "Farcaster connection failed. Please try again."
+      } else if (error === "farcaster_config_missing") {
+        errorMessage =
+          "Farcaster connection failed: Missing configuration. NEYNAR_CLIENT_ID and NEYNAR_CLIENT_SECRET must be set."
       }
 
       setToast({
@@ -173,6 +258,7 @@ export default function ProfilePage() {
         type: "error",
       })
 
+      // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }, [address, isConnected])
@@ -184,6 +270,7 @@ export default function ProfilePage() {
     }
   }, [toast])
 
+  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -254,16 +341,25 @@ export default function ProfilePage() {
 
   const connectDiscord = async () => {
     if (!address) return
+
+    console.log("[v0] Discord Connect button clicked")
+    console.log("[v0] Wallet address:", address)
+    console.log("[v0] Redirecting to Discord OAuth...")
+
+    // Redirect to Discord OAuth
     window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}`
   }
 
   const connectTwitter = async () => {
     if (!address) return
+
+    // Redirect to Twitter OAuth
     window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
   }
 
   const connectFarcaster = async () => {
     if (!address) return
+
     window.location.href = `/api/auth/farcaster?wallet=${encodeURIComponent(address)}`
   }
 
@@ -339,6 +435,7 @@ export default function ProfilePage() {
           type: "success",
         })
 
+        // Reload identity data
         const identityResponse = await fetch(`/api/identity?address=${address}`)
         const identityData = await identityResponse.json()
         setIdentity(identityData.identity)
@@ -414,16 +511,11 @@ export default function ProfilePage() {
                   <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR PIGGY ID</h3>
                   <div className="text-pink-400 font-mono">
                     {identity?.token_id ? (
-                      <span className="text-pink-300">#{identity.token_id}</span>
+                      <span className="text-pink-300">#{identity.token_id.toString()}</span>
                     ) : (
-                      <span className="text-yellow-400">Loading...</span>
+                      <span className="text-red-400">You don't have PIGGY ID</span>
                     )}
                   </div>
-                </div>
-
-                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
-                  <h3 className="text-pink-500 font-mono font-bold mb-2">Wallet Address</h3>
-                  <div className="text-pink-400 font-mono text-sm break-all">{address}</div>
                 </div>
               </div>
             )}
@@ -457,7 +549,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center">
                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.037-.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.037-.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .078.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                           </svg>
                         </div>
                         <div className="flex-1">
