@@ -496,7 +496,9 @@ export default function ProfilePage() {
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="cyber-card rounded-lg p-6">
-            <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">PROFILE INFO &gt; YOUR PIGGY ID</h2>
+            <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
+              PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
+            </h2>
 
             {!isConnected ? (
               <div className="text-center py-8">
@@ -507,13 +509,16 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Styled YOUR PIGGY ID section to match poker page layout exactly */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR PIGGY ID</h3>
-                  <div className="text-pink-400 font-mono">
+                  <div className="text-pink-400 font-mono text-lg">
                     {identity?.token_id ? (
                       <span className="text-pink-300">#{identity.token_id.toString()}</span>
+                    ) : identityLoading ? (
+                      <span className="text-yellow-400">Loading...</span>
                     ) : (
-                      <span className="text-red-400">You don't have PIGGY ID</span>
+                      <span className="text-red-400">No Piggy ID found</span>
                     )}
                   </div>
                 </div>
@@ -549,7 +554,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center">
                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.037-.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .078.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .078.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                           </svg>
                         </div>
                         <div className="flex-1">
