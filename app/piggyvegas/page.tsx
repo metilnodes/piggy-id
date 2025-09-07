@@ -991,8 +991,9 @@ export default function Page() {
               <div className="w-16 h-16 mx-auto bg-orange-500/20 rounded-full flex items-center justify-center mb-4">
                 <span className="text-2xl">🎡</span>
               </div>
-              <h3 className="text-lg font-bold text-orange-400 font-mono">WHEEL OF</h3>
-              <h3 className="text-lg font-bold text-orange-400 font-mono -mt-2">FORTUNE</h3>
+              <div className="h-12 flex items-center justify-center">
+                <h3 className="text-base font-bold text-orange-400 font-mono">WHEEL OF FORTUNE</h3>
+              </div>
               <div className="pt-2">
                 <button
                   disabled
@@ -1010,8 +1011,10 @@ export default function Page() {
               <div className="w-16 h-16 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
                 <span className="text-2xl">🎰</span>
               </div>
-              <h3 className="text-lg font-bold text-yellow-400 font-mono">SLOTS</h3>
-              <div className="pt-6">
+              <div className="h-12 flex items-center justify-center">
+                <h3 className="text-lg font-bold text-yellow-400 font-mono">SLOTS</h3>
+              </div>
+              <div className="pt-2">
                 <button
                   disabled
                   className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
@@ -1028,8 +1031,10 @@ export default function Page() {
               <div className="w-16 h-16 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4">
                 <span className="text-2xl">🎲</span>
               </div>
-              <h3 className="text-lg font-bold text-green-400 font-mono">DICE</h3>
-              <div className="pt-6">
+              <div className="h-12 flex items-center justify-center">
+                <h3 className="text-lg font-bold text-green-400 font-mono">DICE</h3>
+              </div>
+              <div className="pt-2">
                 <button
                   disabled
                   className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
@@ -1046,8 +1051,10 @@ export default function Page() {
               <div className="w-16 h-16 mx-auto bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
                 <span className="text-2xl">🂡</span>
               </div>
-              <h3 className="text-lg font-bold text-blue-400 font-mono">BLACKJACK</h3>
-              <div className="pt-6">
+              <div className="h-12 flex items-center justify-center">
+                <h3 className="text-lg font-bold text-blue-400 font-mono">BLACKJACK</h3>
+              </div>
+              <div className="pt-2">
                 <button
                   disabled
                   className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
@@ -1064,7 +1071,9 @@ export default function Page() {
               <div className="w-16 h-16 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
                 <span className="text-2xl">🎮</span>
               </div>
-              <h3 className="text-lg font-bold text-purple-400 font-mono">POKER</h3>
+              <div className="h-12 flex items-center justify-center">
+                <h3 className="text-lg font-bold text-purple-400 font-mono">POKER</h3>
+              </div>
               <div className="pt-2">
                 <a
                   href="/poker"
