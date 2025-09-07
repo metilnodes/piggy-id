@@ -395,12 +395,6 @@ export default function ProfilePage() {
           <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="PIGGY PROFILE">
             PIGGY PROFILE
           </h1>
-          <button
-            onClick={() => router.push("/piggyvegas")}
-            className="cyber-button px-6 py-2 font-mono text-sm hover:scale-105 transition-transform"
-          >
-            ← BACK TO LOBBY
-          </button>
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -537,7 +531,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279.279.434.279.681-.093.495-.279.681l-3 3z" />
+                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279-.279.434-.279.681-.093.495-.279.681l-3 3z" />
                           </svg>
                         </div>
                         <div className="flex-1">
@@ -648,6 +642,17 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 pb-8">
+          <div className="max-w-6xl mx-auto">
+            <button
+              onClick={() => router.push("/piggyvegas")}
+              className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
+            >
+              ← BACK TO LOBBY
+            </button>
           </div>
         </div>
       </div>

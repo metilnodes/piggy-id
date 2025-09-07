@@ -202,8 +202,16 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Footer */}
-        <div className="p-6 pt-0 text-center">
-          <p className="text-sm text-gray-400">Rankings update every hour • Next update in 23 minutes</p>
+        <div className="p-6 pt-0">
+          <p className="text-sm text-gray-400 text-center mb-4">
+            Rankings update every hour • Next update in 23 minutes
+          </p>
+          <button
+            onClick={handleClose}
+            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
+          >
+            ← BACK TO LOBBY
+          </button>
         </div>
       </div>
     </div>
