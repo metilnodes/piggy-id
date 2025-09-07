@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
-import { X, Trophy, Medal, Star, Crown, Coins, Gift } from "lucide-react"
+import { X, Trophy, Medal, Star, Crown } from "lucide-react"
+import { PrizesModal } from "./PrizesModal"
 
 type AuthStatus = "disconnected" | "verifying" | "no-nft" | "authorized"
 
@@ -266,12 +267,6 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
-  const [authStatus, setAuthStatus] = useState<AuthStatus>("disconnected")
-  const [loading, setLoading] = useState<boolean>(false)
-  const [tokenId, setTokenId] = useState<string | null>(null)
-  const [showOverlay, setShowOverlay] = useState<boolean>(true)
-  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false)
-  const [showProfile, setShowProfile] = useState<boolean>(false)
 
   // Load Neynar SIWN script on component mount
   useEffect(() => {
@@ -299,9 +294,17 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
       setIdentityLoading(true)
 
       try {
-        const response = await fetch(`/api/identity?address=${address}`)
+        const response = await fetch(`/api/user-identity/get?address=${address}`)
         const data = await response.json()
-        setIdentity(data.identity)
+
+        if (data.success && data.identity) {
+          setIdentity(data.identity)
+        } else {
+          // If no identity found, try the old API for backward compatibility
+          const fallbackResponse = await fetch(`/api/identity?address=${address}`)
+          const fallbackData = await fallbackResponse.json()
+          setIdentity(fallbackData.identity)
+        }
       } catch (error) {
         console.error("Error loading identity:", error)
       } finally {
@@ -541,6 +544,300 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
     }
   }
 
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-2xl mx-4 bg-black border-2 border-cyan-500 rounded-lg shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-cyan-500/30">
+          <h1 className="text-3xl font-bold text-cyan-500 glitch neon-text font-mono" data-text="PROFILE">
+            PROFILE
+          </h1>
+          <button
+            onClick={onClose}
+            className="p-2 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Piggy ID Section */}
+          <div className="cyber-card p-4 border-cyan-500/30">
+            <h3 className="text-lg font-bold text-cyan-400 font-mono mb-2">YOUR PIGGY ID</h3>
+            {identityLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full"></div>
+                <span className="text-gray-400 font-mono">Loading...</span>
+              </div>
+            ) : identity?.token_id ? (
+              <div className="text-2xl font-bold text-white font-mono">#{identity.token_id}</div>
+            ) : (
+              <div className="text-gray-400 font-mono">No Piggy ID found</div>
+            )}
+          </div>
+
+          {/* Wallet Section */}
+          <div className="cyber-card p-4 border-cyan-500/30">
+            <h3 className="text-lg font-bold text-cyan-400 font-mono mb-2">WALLET</h3>
+            <div className="text-white font-mono break-all">{address || "Not connected"}</div>
+          </div>
+
+          {/* Social Connections */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-cyan-400 font-mono">SOCIAL CONNECTIONS</h3>
+
+            {/* Discord */}
+            <div className="cyber-card p-4 border-cyan-500/30 flex items-center justify-between">
+              <div>
+                <div className="font-bold text-white font-mono">Discord</div>
+                {identity?.discord_username ? (
+                  <div className="text-sm text-gray-400 font-mono">{identity.discord_username}</div>
+                ) : (
+                  <div className="text-sm text-gray-500 font-mono">Not connected</div>
+                )}
+              </div>
+              {identity?.discord_username ? (
+                <button
+                  onClick={() => disconnectPlatform("discord")}
+                  disabled={identityLoading}
+                  className="px-3 py-1 text-xs border border-red-500 text-red-400 hover:bg-red-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                >
+                  Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={connectDiscord}
+                  disabled={identityLoading}
+                  className="px-3 py-1 text-xs border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+
+            {/* Twitter */}
+            <div className="cyber-card p-4 border-cyan-500/30 flex items-center justify-between">
+              <div>
+                <div className="font-bold text-white font-mono">Twitter</div>
+                {identity?.twitter_username ? (
+                  <div className="text-sm text-gray-400 font-mono">@{identity.twitter_username}</div>
+                ) : (
+                  <div className="text-sm text-gray-500 font-mono">Not connected</div>
+                )}
+              </div>
+              {identity?.twitter_username ? (
+                <button
+                  onClick={() => disconnectPlatform("twitter")}
+                  disabled={identityLoading}
+                  className="px-3 py-1 text-xs border border-red-500 text-red-400 hover:bg-red-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                >
+                  Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={connectTwitter}
+                  disabled={identityLoading}
+                  className="px-3 py-1 text-xs border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+
+            {/* Farcaster */}
+            <div className="cyber-card p-4 border-cyan-500/30 flex items-center justify-between">
+              <div>
+                <div className="font-bold text-white font-mono">Farcaster</div>
+                {identity?.farcaster_username ? (
+                  <div className="text-sm text-gray-400 font-mono">@{identity.farcaster_username}</div>
+                ) : (
+                  <div className="text-sm text-gray-500 font-mono">Not connected</div>
+                )}
+              </div>
+              {identity?.farcaster_username ? (
+                <button
+                  onClick={() => disconnectPlatform("farcaster")}
+                  disabled={identityLoading}
+                  className="px-3 py-1 text-xs border border-red-500 text-red-400 hover:bg-red-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                >
+                  Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={connectFarcaster}
+                  disabled={identityLoading}
+                  className="px-3 py-1 text-xs border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="cyber-card p-4 border-cyan-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-bold text-white font-mono">Email</div>
+                {identity?.email && !emailEditing && (
+                  <button
+                    onClick={editEmail}
+                    disabled={identityLoading}
+                    className="px-3 py-1 text-xs border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {emailEditing ? (
+                <div className="space-y-2">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="w-full px-3 py-2 bg-black border border-cyan-500/30 text-white font-mono rounded focus:border-cyan-500 focus:outline-none"
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={connectEmail}
+                      disabled={identityLoading || !email.trim()}
+                      className="px-3 py-1 text-xs border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                    >
+                      {identityLoading ? "Sending..." : "Send Verification"}
+                    </button>
+                    <button
+                      onClick={cancelEmailEdit}
+                      disabled={identityLoading}
+                      className="px-3 py-1 text-xs border border-gray-500 text-gray-400 hover:bg-gray-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : identity?.email ? (
+                <div className="text-sm text-gray-400 font-mono">{identity.email}</div>
+              ) : emailVerificationPending ? (
+                <div className="text-sm text-yellow-400 font-mono">Verification email sent. Check your inbox.</div>
+              ) : (
+                <div>
+                  <div className="text-sm text-gray-500 font-mono mb-2">Not connected</div>
+                  <button
+                    onClick={() => setEmailEditing(true)}
+                    disabled={identityLoading}
+                    className="px-3 py-1 text-xs border border-cyan-500 text-cyan-400 hover:bg-cyan-500/10 rounded font-mono transition-colors disabled:opacity-50"
+                  >
+                    Add Email
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 pt-0">
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 border-2 border-cyan-500 text-cyan-400 font-mono text-lg py-4 rounded-lg hover:bg-cyan-500/30 hover:text-cyan-300 transition-all duration-300 shadow-lg shadow-cyan-500/20"
+          >
+            ← BACK TO LOBBY
+          </button>
+        </div>
+
+        {/* Toast */}
+        {toast && (
+          <div
+            className={`fixed top-4 right-4 p-4 rounded-lg border-2 ${
+              toast.type === "success"
+                ? "bg-green-500/20 border-green-500 text-green-400"
+                : "bg-red-500/20 border-red-500 text-red-400"
+            } font-mono text-sm z-60`}
+          >
+            {toast.message}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function Page() {
+  const { address, isConnected } = useAccount()
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("disconnected")
+  const [loading, setLoading] = useState<boolean>(false)
+  const [tokenId, setTokenId] = useState<string | null>(null)
+  const [showOverlay, setShowOverlay] = useState<boolean>(true)
+  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false)
+  const [showProfile, setShowProfile] = useState<boolean>(false)
+  const [showPrizes, setShowPrizes] = useState<boolean>(false)
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = () => {
+      const sessionData = localStorage.getItem("piggyvegas_session")
+      if (sessionData) {
+        try {
+          const session: UserSession = JSON.parse(sessionData)
+          const now = Date.now()
+          const sessionAge = now - session.timestamp
+          const maxAge = 24 * 60 * 60 * 1000 // 24 hours
+
+          if (sessionAge < maxAge && session.address.toLowerCase() === address?.toLowerCase()) {
+            setTokenId(session.tokenId)
+            setAuthStatus("authorized")
+            setShowOverlay(false)
+            return
+          }
+        } catch (error) {
+          console.error("Error parsing session data:", error)
+        }
+      }
+
+      // If no valid session and wallet is connected, check NFT ownership
+      if (isConnected && address) {
+        checkNFTOwnership()
+      } else {
+        setAuthStatus("disconnected")
+      }
+    }
+
+    checkSession()
+  }, [address, isConnected])
+
+  // Watch for wallet changes
+  useEffect(() => {
+    if (isConnected && address) {
+      const sessionData = localStorage.getItem("piggyvegas_session")
+      if (sessionData) {
+        try {
+          const session: UserSession = JSON.parse(sessionData)
+          if (session.address.toLowerCase() !== address.toLowerCase()) {
+            // Wallet changed, re-check NFT ownership
+            localStorage.removeItem("piggyvegas_session")
+            setShowOverlay(true)
+            checkNFTOwnership()
+          }
+        } catch (error) {
+          console.error("Error parsing session data:", error)
+          checkNFTOwnership()
+        }
+      } else {
+        checkNFTOwnership()
+      }
+    } else {
+      setAuthStatus("disconnected")
+      setShowOverlay(true)
+      localStorage.removeItem("piggyvegas_session")
+    }
+  }, [address, isConnected])
+
   const checkNFTOwnership = async () => {
     if (!isConnected || !address) {
       setAuthStatus("disconnected")
@@ -567,18 +864,16 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         localStorage.setItem("piggyvegas_session", JSON.stringify(session))
 
         try {
-          await fetch("/api/identity", {
+          await fetch("/api/user-identity/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               walletAddress: address,
               tokenId: firstToken.toString(),
-              type: "piggyvegas_auth",
-              data: { timestamp: Date.now() },
             }),
           })
         } catch (error) {
-          console.error("Failed to save authentication to database:", error)
+          console.error("Failed to save user to database:", error)
         }
 
         // Show success message then hide overlay
@@ -797,7 +1092,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           </button>
 
           <button
-            onClick={() => setShowProfile(true)}
+            onClick={() => setShowPrizes(true)}
             className="cyber-card px-6 py-3 border-orange-500 hover:border-orange-400 transition-colors"
           >
             <span className="text-orange-400 font-mono font-bold text-sm">PRIZES</span>
@@ -887,295 +1182,9 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
 
       {/* Profile Modal */}
       <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
+
+      {/* Prizes Modal */}
+      {showPrizes && <PrizesModal onClose={() => setShowPrizes(false)} />}
     </div>
   )
-}
-
-const PrizesModal = ({ onClose }: { onClose: () => void }) => {
-  const [activeTab, setActiveTab] = useState("daily")
-  const [isVisible, setIsVisible] = useState(false)
-
-  const mockPrizes: Record<string, any[]> = {
-    daily: [
-      {
-        id: 1,
-        name: "Daily Winner",
-        description: "Win any game today",
-        requirement: "1 Win",
-        reward: "100 PIGGY",
-        rarity: "common",
-        claimed: false,
-      },
-      {
-        id: 2,
-        name: "Hot Streak",
-        description: "Win 3 games in a row",
-        requirement: "3 Consecutive Wins",
-        reward: "300 PIGGY",
-        rarity: "rare",
-        claimed: true,
-      },
-      {
-        id: 3,
-        name: "Perfect Day",
-        description: "Win 5 games without losing",
-        requirement: "5 Wins, 0 Losses",
-        reward: "500 PIGGY + NFT",
-        rarity: "epic",
-        claimed: false,
-      },
-    ],
-    weekly: [
-      {
-        id: 4,
-        name: "Weekly Champion",
-        description: "Top the weekly leaderboard",
-        requirement: "Rank #1 Weekly",
-        reward: "2000 PIGGY",
-        rarity: "epic",
-        claimed: false,
-      },
-      {
-        id: 5,
-        name: "Consistency King",
-        description: "Play every day this week",
-        requirement: "7 Days Active",
-        reward: "1000 PIGGY",
-        rarity: "rare",
-        claimed: false,
-      },
-      {
-        id: 6,
-        name: "High Roller",
-        description: "Earn 50,000 points in a week",
-        requirement: "50,000 Points",
-        reward: "1500 PIGGY",
-        rarity: "epic",
-        claimed: false,
-      },
-    ],
-    special: [
-      {
-        id: 7,
-        name: "Legendary Pig",
-        description: "Ultimate achievement",
-        requirement: "Complete All Challenges",
-        reward: "10,000 PIGGY + Rare NFT",
-        rarity: "legendary",
-        claimed: false,
-      },
-      {
-        id: 8,
-        name: "First Blood",
-        description: "Be the first to win today",
-        requirement: "First Daily Win",
-        reward: "200 PIGGY",
-        rarity: "rare",
-        claimed: true,
-      },
-      {
-        id: 9,
-        name: "Night Owl",
-        description: "Play between 2-4 AM GMT",
-        requirement: "Late Night Gaming",
-        reward: "150 PIGGY",
-        rarity: "common",
-        claimed: false,
-      },
-    ],
-    achievements: [
-      {
-        id: 10,
-        name: "Poker Master",
-        description: "Win 100 poker games",
-        requirement: "100 Poker Wins",
-        reward: "5000 PIGGY",
-        rarity: "epic",
-        claimed: false,
-      },
-      {
-        id: 11,
-        name: "Dice Roller",
-        description: "Roll double 6s five times",
-        requirement: "5x Double 6s",
-        reward: "800 PIGGY",
-        rarity: "rare",
-        claimed: false,
-      },
-      {
-        id: 12,
-        name: "Slot Machine",
-        description: "Hit jackpot on slots",
-        requirement: "Slots Jackpot",
-        reward: "3000 PIGGY",
-        rarity: "epic",
-        claimed: false,
-      },
-    ],
-  }
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case "legendary":
-        return "text-yellow-400 border-yellow-400/30 bg-yellow-500/10"
-      case "epic":
-        return "text-purple-400 border-purple-400/30 bg-purple-500/10"
-      case "rare":
-        return "text-blue-400 border-blue-400/30 bg-blue-500/10"
-      default:
-        return "text-green-400 border-green-400/30 bg-green-500/10"
-    }
-  }
-
-  const getRarityIcon = (rarity: string) => {
-    switch (rarity) {
-      case "legendary":
-        return <Crown className="w-5 h-5 text-yellow-400" />
-      case "epic":
-        return <Trophy className="w-5 h-5 text-purple-400" />
-      case "rare":
-        return <Star className="w-5 h-5 text-blue-400" />
-      default:
-        return <Coins className="w-5 h-5 text-green-400" />
-    }
-  }
-
-  useEffect(() => {
-    setIsVisible(true)
-  }, [])
-
-  const handleClose = () => {
-    setIsVisible(false)
-    setTimeout(() => {
-      onClose()
-    }, 300)
-  }
-
-  const tabs = [
-    { id: "daily", label: "Daily" },
-    { id: "weekly", label: "Weekly" },
-    { id: "special", label: "Special" },
-    { id: "achievements", label: "Achievements", isSpecial: true },
-  ]
-
-  return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={handleClose} />
-
-      {/* Modal */}
-      <div
-        className={`relative w-full max-w-4xl mx-4 bg-black border-2 border-pink-500 rounded-lg shadow-2xl transform transition-all duration-300 ${
-          isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-pink-500/30">
-          <h1 className="text-3xl font-bold text-pink-500 glitch neon-text" data-text="PRIZES">
-            PRIZES
-          </h1>
-          <button
-            onClick={handleClose}
-            className="p-2 text-pink-500 hover:text-pink-400 hover:bg-pink-500/10 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="p-6 pb-0">
-          <div className="flex space-x-1 overflow-x-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? tab.isSpecial
-                      ? "bg-yellow-500/20 text-yellow-400 border-yellow-400 shadow-lg shadow-yellow-400/20"
-                      : "bg-pink-500/20 text-pink-400 border-pink-400 shadow-lg shadow-pink-400/20"
-                    : "text-gray-400 border-transparent hover:text-pink-400 hover:border-pink-400/50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
-          <div className="space-y-3">
-            {mockPrizes[activeTab]?.map((prize, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-lg border transition-all hover:shadow-lg ${getRarityColor(prize.rarity)} ${
-                  prize.claimed ? "opacity-50" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-1">{getRarityIcon(prize.rarity)}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-bold text-white">{prize.name}</h3>
-                        {prize.claimed && (
-                          <span className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
-                            CLAIMED
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-300 mt-1">{prize.description}</p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        <span className="font-medium">Requirement:</span> {prize.requirement}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="flex items-center space-x-1">
-                      <Gift className="w-4 h-4 text-pink-400" />
-                      <span className="font-bold text-pink-400">{prize.reward}</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1 capitalize">{prize.rarity}</div>
-                  </div>
-                </div>
-
-                {!prize.claimed && (
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <button className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border border-pink-500/50 text-pink-400 font-medium py-2 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300">
-                      Claim Prize
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 pt-0">
-          <p className="text-sm text-gray-400 text-center mb-4">
-            New prizes added daily • Check back for exclusive rewards
-          </p>
-          <button
-            onClick={handleClose}
-            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
-          >
-            ← BACK TO LOBBY
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function Page() {
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [showProfile, setShowProfile] = useState(false)
-  const [showPrizes, setShowPrizes] = useState(false)
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { X, Gift, Trophy, Star, Crown, Coins, Gem } from "lucide-react"
-import { useRouter } from "next/navigation"
 
 interface PrizeEntry {
   id: number
@@ -149,8 +148,11 @@ const getCategoryIcon = (category: string) => {
   }
 }
 
-export default function PrizesPage() {
-  const router = useRouter()
+interface PrizesModalProps {
+  onClose: () => void
+}
+
+export function PrizesModal({ onClose }: PrizesModalProps) {
   const [activeTab, setActiveTab] = useState("daily")
   const [isVisible, setIsVisible] = useState(false)
 
@@ -161,7 +163,7 @@ export default function PrizesPage() {
   const handleClose = () => {
     setIsVisible(false)
     setTimeout(() => {
-      router.push("/piggyvegas")
+      onClose()
     }, 300)
   }
 
@@ -189,7 +191,7 @@ export default function PrizesPage() {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-pink-500/30">
-          <h1 className="text-3xl font-bold text-pink-500 glitch neon-text" data-text="PRIZES">
+          <h1 className="text-3xl font-bold text-pink-500 glitch neon-text font-mono" data-text="PRIZES">
             PRIZES
           </h1>
           <button
@@ -207,7 +209,7 @@ export default function PrizesPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                className={`px-4 py-2 text-sm font-medium font-mono rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
                   activeTab === tab.id
                     ? tab.isSpecial
                       ? "bg-yellow-500/20 text-yellow-400 border-yellow-400 shadow-lg shadow-yellow-400/20"
@@ -232,17 +234,17 @@ export default function PrizesPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     {getCategoryIcon(prize.category)}
-                    <span className="text-xs uppercase font-bold opacity-70">{prize.rarity}</span>
+                    <span className="text-xs uppercase font-bold font-mono opacity-70">{prize.rarity}</span>
                   </div>
                   <Trophy className="w-4 h-4 opacity-50" />
                 </div>
 
-                <h3 className="font-bold text-white mb-2">{prize.name}</h3>
-                <p className="text-sm text-gray-300 mb-3 line-clamp-2">{prize.description}</p>
+                <h3 className="font-bold text-white mb-2 font-mono">{prize.name}</h3>
+                <p className="text-sm text-gray-300 mb-3 line-clamp-2 font-mono">{prize.description}</p>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold">{prize.value}</span>
-                  <span className="text-xs px-2 py-1 rounded-full bg-black/30 border border-current/20">
+                  <span className="text-lg font-bold font-mono">{prize.value}</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-black/30 border border-current/20 font-mono">
                     {prize.category.toUpperCase()}
                   </span>
                 </div>
@@ -253,7 +255,7 @@ export default function PrizesPage() {
 
         {/* Footer */}
         <div className="p-6 pt-0">
-          <p className="text-sm text-gray-400 text-center mb-4">
+          <p className="text-sm text-gray-400 text-center mb-4 font-mono">
             New prizes added weekly • Check back for limited-time events
           </p>
           <button
