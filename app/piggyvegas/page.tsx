@@ -1202,7 +1202,7 @@ export default function Page() {
 
         {/* Footer */}
         <footer className="text-center mt-12 text-muted-foreground font-mono text-sm">
-          <p>Powered by Piggy World • Play Responsibly • 18+</p>
+          <p>Powered by Piggy World • Virtual Currency Only • Play Responsibly • 18+</p>
         </footer>
       </div>
 
