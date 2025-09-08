@@ -612,11 +612,10 @@ export default function ProfilePage() {
                         </button>
                       ) : (
                         <button
-                          onClick={connectTwitter}
-                          disabled={identityLoading}
-                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                          disabled={true}
+                          className="border border-gray-500 text-gray-400 px-4 py-1 text-sm font-mono rounded cursor-not-allowed opacity-50"
                         >
-                          Connect
+                          SOON
                         </button>
                       )}
                     </div>
@@ -649,11 +648,10 @@ export default function ProfilePage() {
                         </button>
                       ) : (
                         <button
-                          onClick={connectFarcaster}
-                          disabled={identityLoading}
-                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                          disabled={true}
+                          className="border border-gray-500 text-gray-400 px-4 py-1 text-sm font-mono rounded cursor-not-allowed opacity-50"
                         >
-                          Connect
+                          SOON
                         </button>
                       )}
                     </div>
