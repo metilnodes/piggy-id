@@ -388,7 +388,8 @@ export default function ProfilePage() {
           </h1>
         </div>
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
               PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
@@ -403,10 +404,9 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Styled YOUR PIGGY ID section to match poker page layout exactly */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR PIGGY ID</h3>
-                  <div className="text-pink-400 font-mono text-lg">
+                  <div className="text-pink-400 font-mono">
                     {identity?.token_id ? (
                       <span className="text-pink-300">#{identity.token_id.toString()}</span>
                     ) : identityLoading ? (
@@ -420,6 +420,7 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {/* Right Column - Connections Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
