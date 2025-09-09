@@ -373,6 +373,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           walletAddress: address,
           email: email.trim(),
+          source: "piggyvegas",
         }),
       })
 

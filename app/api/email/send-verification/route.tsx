@@ -10,7 +10,7 @@ const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, walletAddress } = await request.json()
+    const { email, walletAddress, source = "poker" } = await request.json()
 
     if (!email || !walletAddress) {
       return NextResponse.json({ error: "Email and wallet address required" }, { status: 400 })
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Send verification email
     const origin = request.nextUrl.origin
-    const verificationUrl = `${origin}/api/email/verify?token=${token}`
+    const verificationUrl = `${origin}/api/email/verify?token=${token}&source=${source}`
 
     await resend.emails.send({
       from: "noreply@piggyworld.xyz",

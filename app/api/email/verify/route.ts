@@ -9,8 +9,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get("token")?.trim()
+    const source = searchParams.get("source") || "poker"
+
     if (!token) {
-      return NextResponse.redirect(new URL("/poker?error=verification_failed", request.url))
+      const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+      return NextResponse.redirect(new URL(`${redirectPage}?error=verification_failed`, request.url))
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex")
@@ -25,7 +28,8 @@ export async function GET(request: NextRequest) {
       LIMIT 1
     `
     if (rows.length === 0) {
-      return NextResponse.redirect(new URL("/poker?error=verification_expired", request.url))
+      const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+      return NextResponse.redirect(new URL(`${redirectPage}?error=verification_expired`, request.url))
     }
 
     const { email, wallet_address } = rows[0]
@@ -61,8 +65,12 @@ export async function GET(request: NextRequest) {
         AND expires_at < NOW()
     `
 
-    return NextResponse.redirect(new URL("/poker?success=email_verified", request.url))
+    const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+    return NextResponse.redirect(new URL(`${redirectPage}?success=email_verified`, request.url))
   } catch (e) {
-    return NextResponse.redirect(new URL("/poker?error=verification_failed", request.url))
+    const { searchParams } = new URL(request.url)
+    const source = searchParams.get("source") || "poker"
+    const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+    return NextResponse.redirect(new URL(`${redirectPage}?error=verification_failed`, request.url))
   }
 }
