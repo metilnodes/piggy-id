@@ -494,7 +494,7 @@ export default function ProfilePage() {
           </h1>
         </div>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="max-w-6xl mx-auto">
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
               PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
@@ -738,15 +738,13 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 pb-8">
-          <div className="max-w-6xl mx-auto">
-            <button
-              onClick={() => router.push("/piggyvegas")}
-              className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
-            >
-              ← BACK TO LOBBY
-            </button>
-          </div>
+        <div className="max-w-6xl mx-auto mt-8">
+          <button
+            onClick={() => router.push("/piggyvegas")}
+            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
+          >
+            ← BACK TO LOBBY
+          </button>
         </div>
       </div>
     </div>
