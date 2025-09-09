@@ -346,8 +346,7 @@ export default function ProfilePage() {
     console.log("[v0] Wallet address:", address)
     console.log("[v0] Redirecting to Discord OAuth...")
 
-    // Redirect to Discord OAuth
-    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}`
+    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}&source=piggyvegas`
   }
 
   const connectTwitter = async () => {

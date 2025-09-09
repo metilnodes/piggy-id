@@ -88,14 +88,20 @@ export async function GET(request: NextRequest) {
           updated_at       = NOW()
       `
 
-      return NextResponse.redirect(`${origin}/poker?success=discord_verified`)
+      if (source === "piggyvegas") {
+        return NextResponse.redirect(`${origin}/piggyvegas/profile?success=discord_verified`)
+      } else {
+        return NextResponse.redirect(`${origin}/poker?success=discord_verified`)
+      }
     }
   } catch (e) {
     console.error("[discord callback] error:", e)
     const redirectPage = state
       ? JSON.parse(Buffer.from(state, "base64").toString()).source === "superpoker"
         ? "superpoker"
-        : "poker"
+        : JSON.parse(Buffer.from(state, "base64").toString()).source === "piggyvegas"
+          ? "piggyvegas/profile"
+          : "poker"
       : "poker"
     return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed`)
   }
