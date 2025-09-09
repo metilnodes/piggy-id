@@ -72,195 +72,89 @@ export default function ProfilePage() {
   }, [address, isConnected])
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
+    const handleUrlParams = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      let toastMessage = null
+      let shouldReloadIdentity = false
 
-    if (urlParams.get("success") === "email_verified") {
-      setEmailVerificationPending(false)
-      setEmailEditing(false)
-      setEmail("")
-      setToast({
-        message: "Email successfully verified and connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful email verification
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            console.log("[v0] Reloading identity after email verification...")
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            console.log("[v0] Updated identity data after email verification:", data.identity)
-            console.log("[v0] Email field after verification:", data.identity?.email)
-            console.log("[v0] All identity fields:", JSON.stringify(data.identity, null, 2))
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("success") === "discord_verified") {
-      const username = urlParams.get("username")
-      setToast({
-        message: "Discord successfully connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful Discord connection
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("success") === "twitter_verified") {
-      const username = urlParams.get("username")
-      setToast({
-        message: "Twitter successfully connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful Twitter connection
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("farcaster_connected") === "true") {
-      const username = urlParams.get("username")
-      setToast({
-        message: "Farcaster successfully connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful Farcaster connection
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("error")) {
-      const error = urlParams.get("error")
-      const help = urlParams.get("help")
-      const step = urlParams.get("step")
-      let errorMessage = "Connection failed. Please try again."
-
-      if (error === "discord_already_connected") {
-        errorMessage = "This Discord account is already connected to another wallet."
-      } else if (error === "twitter_already_connected") {
-        errorMessage = "This Twitter account is already connected to another wallet."
-      } else if (error === "discord_auth_failed") {
-        errorMessage = "Discord authorization failed. Please try again."
-      } else if (error === "twitter_auth_failed") {
-        errorMessage = "Twitter authorization failed. Please try again."
-      } else if (error === "twitter_invalid_client") {
-        errorMessage =
-          help === "check_oauth2_credentials"
-            ? "Twitter connection failed: Invalid credentials. Make sure you're using OAuth 2.0 Client ID/Secret (not OAuth 1.0a API Key/Secret) and they're set correctly in your environment variables."
-            : "Twitter connection failed: Invalid client credentials."
-      } else if (error === "twitter_invalid_grant") {
-        errorMessage =
-          help === "check_callback_url"
-            ? "Twitter connection failed: Callback URL mismatch. Verify the callback URL in your X Developer Portal matches exactly: " +
-              window.location.origin +
-              "/api/auth/twitter/callback"
-            : "Twitter connection failed: Invalid authorization grant."
-      } else if (error === "twitter_unauthorized") {
-        errorMessage =
-          help === "check_dev_portal_settings"
-            ? "Twitter connection failed: Unauthorized client. Enable 'User authentication settings' in your X Developer Portal and ensure your app has the required permissions."
-            : "Twitter connection failed: Unauthorized client."
-      } else if (error === "twitter_invalid_request") {
-        errorMessage =
-          help === "check_parameters"
-            ? "Twitter connection failed: Invalid request parameters. Check your X Developer Portal configuration and callback URL format."
-            : "Twitter connection failed: Invalid request."
-      } else if (error === "twitter_400_error") {
-        errorMessage =
-          help === "check_configuration"
-            ? "Twitter connection failed: Bad request (400). Common causes: wrong OAuth credentials, callback URL mismatch, or incorrect app configuration in X Developer Portal."
-            : "Twitter connection failed: Bad request."
-      } else if (error === "twitter_profile_forbidden") {
-        errorMessage =
-          help === "check_scopes_and_account"
-            ? "Twitter connection failed: Profile access forbidden. Ensure 'users.read' scope is granted and your developer account has the required access level."
-            : "Twitter connection failed: Profile access forbidden."
-      } else if (error === "twitter_config_missing") {
-        errorMessage =
-          "Twitter connection failed: Missing configuration. TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET must be set in environment variables."
-      } else if (error === "twitter_invalid_client_format") {
-        errorMessage =
-          "Twitter connection failed: Invalid Client ID format. Make sure you're using OAuth 2.0 Client ID (not OAuth 1.0a API Key)."
-      } else if (error === "invalid_token") {
-        errorMessage = "Invalid verification token. Please request a new verification email."
+      if (urlParams.get("success") === "email_verified") {
         setEmailVerificationPending(false)
-      } else if (error === "token_expired") {
-        errorMessage = "Verification token expired. Please request a new verification email."
-        setEmailVerificationPending(false)
-      } else if (error === "verification_failed") {
-        errorMessage = "Email verification failed. Please try again."
-        setEmailVerificationPending(false)
-      } else if (error === "farcaster_already_connected") {
-        errorMessage = "This Farcaster account is already connected to another wallet."
-      } else if (error === "farcaster_auth_failed") {
-        errorMessage = "Farcaster authorization failed. Please try again."
-      } else if (error === "farcaster_token_failed") {
-        errorMessage = "Farcaster token exchange failed. Please try again."
-      } else if (error === "farcaster_profile_failed") {
-        errorMessage = "Failed to fetch Farcaster profile. Please try again."
-      } else if (error === "farcaster_connection_failed") {
-        errorMessage = "Farcaster connection failed. Please try again."
-      } else if (error === "farcaster_config_missing") {
-        errorMessage =
-          "Farcaster connection failed: Missing configuration. NEYNAR_CLIENT_ID and NEYNAR_CLIENT_SECRET must be set."
+        setEmailEditing(false)
+        setEmail("")
+        toastMessage = {
+          message: "Email successfully verified and connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("success") === "discord_verified") {
+        toastMessage = {
+          message: "Discord successfully connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("success") === "twitter_verified") {
+        toastMessage = {
+          message: "Twitter successfully connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("farcaster_connected") === "true") {
+        toastMessage = {
+          message: "Farcaster successfully connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("error")) {
+        const error = urlParams.get("error")
+        const help = urlParams.get("help")
+        let errorMessage = "Connection failed. Please try again."
+
+        if (error === "discord_already_connected") {
+          errorMessage = "This Discord account is already connected to another wallet."
+        } else if (error === "twitter_already_connected") {
+          errorMessage = "This Twitter account is already connected to another wallet."
+        } else if (error === "discord_auth_failed") {
+          errorMessage = "Discord authorization failed. Please try again."
+        } else if (error === "twitter_auth_failed") {
+          errorMessage = "Twitter authorization failed. Please try again."
+        } else if (error === "invalid_token") {
+          errorMessage = "Invalid verification token. Please request a new verification email."
+          setEmailVerificationPending(false)
+        } else if (error === "token_expired") {
+          errorMessage = "Verification token expired. Please request a new verification email."
+          setEmailVerificationPending(false)
+        } else if (error === "verification_failed") {
+          errorMessage = "Email verification failed. Please try again."
+          setEmailVerificationPending(false)
+        }
+
+        toastMessage = {
+          message: errorMessage,
+          type: "error" as const,
+        }
       }
 
-      setToast({
-        message: errorMessage,
-        type: "error",
-      })
+      if (toastMessage) {
+        setToast(toastMessage)
+      }
 
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
+      if (shouldReloadIdentity && address && isConnected) {
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          const response = await fetch(`/api/identity?address=${address}`)
+          const data = await response.json()
+          setIdentity(data.identity)
+        } catch (error) {
+          console.error("Error loading identity:", error)
+        }
+      }
+
+      if (urlParams.toString()) {
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
     }
+
+    handleUrlParams()
   }, [address, isConnected])
 
   useEffect(() => {
