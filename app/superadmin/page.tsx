@@ -442,6 +442,13 @@ export default function SuperAdminPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex justify-center mb-4">
+                  <img
+                    src="/images/superadmin-csv-guide.png"
+                    alt="CSV Upload Process Guide"
+                    className="max-w-full h-auto rounded-lg border border-gray-700"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="csv-file" className="text-white">
                     Select CSV File
