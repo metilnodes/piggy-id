@@ -444,8 +444,13 @@ export default function SuperAdminPage() {
                   <img
                     src="/csv-upload-info.png"
                     alt="CSV upload process information"
-                    className="w-full max-w-md mx-auto rounded border border-gray-600"
+                    className="w-full max-w-lg mx-auto rounded border border-gray-600"
                   />
+                  <div className="mt-3 text-center">
+                    <p className="text-red-500 text-sm font-medium">
+                      Don't forget to upload the invite code for every new game and update the link in Settings!
+                    </p>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
