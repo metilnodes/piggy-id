@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
-import { getProviderSafe } from "@/lib/wallet/getProvider"
-import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
-
-type Status = "idle" | "checking" | "ready" | "error"
+import { useRouter } from "next/navigation"
 
 interface UserIdentity {
   wallet_address: string
@@ -22,18 +19,9 @@ interface UserIdentity {
   farcaster_avatar_url?: string
 }
 
-export default function PokerClientPage() {
+export default function ProfilePage() {
   const { address, isConnected } = useAccount()
-  const [status, setStatus] = useState<Status>("idle")
-  const [error, setError] = useState<string>("")
-  const [tokenId, setTokenId] = useState<bigint | null>(null)
-  const [invite, setInvite] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [tournamentUrl, setTournamentUrl] = useState<string>(
-    "https://www.pokernow.club/mtt/piggy-summer-poker-NV9_BmueuR",
-  )
-  const [tournamentName, setTournamentName] = useState<string>("PIGGY SUMMER POKER")
-
+  const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
   const [email, setEmail] = useState<string>("")
   const [emailEditing, setEmailEditing] = useState<boolean>(false)
@@ -52,132 +40,6 @@ export default function PokerClientPage() {
       document.head.removeChild(script)
     }
   }, [])
-
-  useEffect(() => {
-    const loadTournamentInfo = async () => {
-      try {
-        const response = await fetch("/api/tournament-info")
-        const data = await response.json()
-        if (data.url) {
-          setTournamentUrl(data.url)
-        }
-        if (data.name) {
-          setTournamentName(data.name)
-        }
-      } catch (error) {
-        console.error("Failed to load tournament info:", error)
-      }
-    }
-
-    loadTournamentInfo()
-  }, [])
-
-  useEffect(() => {
-    const loadTournamentUrl = async () => {
-      try {
-        const response = await fetch("/api/tournament-url")
-        const data = await response.json()
-        if (data.url) {
-          setTournamentUrl(data.url)
-        }
-      } catch (error) {
-        console.error("Failed to load tournament URL:", error)
-        // Keep default URL if fetch fails
-      }
-    }
-
-    loadTournamentUrl()
-  }, [])
-
-  // Safe wallet initialization
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        setStatus("checking")
-        const provider = await getProviderSafe()
-        if (mounted) setStatus("ready")
-      } catch (e: any) {
-        console.error("Wallet init error:", e)
-        if (mounted) {
-          setError(e?.message || "Wallet init failed")
-          setStatus("error")
-        }
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const fetchInviteCode = async (tokenId: number, walletAddress: string): Promise<string | null> => {
-    try {
-      const response = await fetch("/api/poker/invite-code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ tokenId, walletAddress }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.inviteCode
-    } catch (error) {
-      console.error("Error fetching invite code:", error)
-      return null
-    }
-  }
-
-  // NFT and invite code checking
-  useEffect(() => {
-    let active = true
-
-    const checkNFTAndAssignCode = async () => {
-      if (!isConnected || !address || status !== "ready") {
-        setTokenId(null)
-        setInvite(null)
-        return
-      }
-
-      setLoading(true)
-      setInvite(null)
-
-      try {
-        const ownedTokens = await getOwnedTokenIds(address)
-        const firstToken = ownedTokens.length > 0 ? ownedTokens[0] : null
-
-        if (!active) return
-        setTokenId(firstToken)
-
-        if (firstToken !== null) {
-          setInvite("loading")
-          const code = await fetchInviteCode(Number(firstToken), address)
-          if (!active) return
-          setInvite(code || "error")
-        } else {
-          setInvite(null)
-        }
-      } catch (error) {
-        console.error("Error checking NFT ownership:", error)
-        if (active) {
-          setError("Failed to check NFT ownership")
-          setInvite("error")
-        }
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    checkNFTAndAssignCode()
-
-    return () => {
-      active = false
-    }
-  }, [address, isConnected, status])
 
   useEffect(() => {
     const loadIdentity = async () => {
@@ -210,195 +72,89 @@ export default function PokerClientPage() {
   }, [address, isConnected])
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
+    const handleUrlParams = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      let toastMessage = null
+      let shouldReloadIdentity = false
 
-    if (urlParams.get("success") === "email_verified") {
-      setEmailVerificationPending(false)
-      setEmailEditing(false)
-      setEmail("")
-      setToast({
-        message: "Email successfully verified and connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful email verification
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            console.log("[v0] Reloading identity after email verification...")
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            console.log("[v0] Updated identity data after email verification:", data.identity)
-            console.log("[v0] Email field after verification:", data.identity?.email)
-            console.log("[v0] All identity fields:", JSON.stringify(data.identity, null, 2))
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("success") === "discord_verified") {
-      const username = urlParams.get("username")
-      setToast({
-        message: "Discord successfully connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful Discord connection
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("success") === "twitter_verified") {
-      const username = urlParams.get("username")
-      setToast({
-        message: "Twitter successfully connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful Twitter connection
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("farcaster_connected") === "true") {
-      const username = urlParams.get("username")
-      setToast({
-        message: "Farcaster successfully connected to your account!",
-        type: "success",
-      })
-
-      // Reload identity data after successful Farcaster connection
-      if (address && isConnected) {
-        const loadIdentity = async () => {
-          try {
-            const response = await fetch(`/api/identity?address=${address}`)
-            const data = await response.json()
-            setIdentity(data.identity)
-          } catch (error) {
-            console.error("Error loading identity:", error)
-          }
-        }
-        loadIdentity()
-      }
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-
-    if (urlParams.get("error")) {
-      const error = urlParams.get("error")
-      const help = urlParams.get("help")
-      const step = urlParams.get("step")
-      let errorMessage = "Connection failed. Please try again."
-
-      if (error === "discord_already_connected") {
-        errorMessage = "This Discord account is already connected to another wallet."
-      } else if (error === "twitter_already_connected") {
-        errorMessage = "This Twitter account is already connected to another wallet."
-      } else if (error === "discord_auth_failed") {
-        errorMessage = "Discord authorization failed. Please try again."
-      } else if (error === "twitter_auth_failed") {
-        errorMessage = "Twitter authorization failed. Please try again."
-      } else if (error === "twitter_invalid_client") {
-        errorMessage =
-          help === "check_oauth2_credentials"
-            ? "Twitter connection failed: Invalid credentials. Make sure you're using OAuth 2.0 Client ID/Secret (not OAuth 1.0a API Key/Secret) and they're set correctly in your environment variables."
-            : "Twitter connection failed: Invalid client credentials."
-      } else if (error === "twitter_invalid_grant") {
-        errorMessage =
-          help === "check_callback_url"
-            ? "Twitter connection failed: Callback URL mismatch. Verify the callback URL in your X Developer Portal matches exactly: " +
-              window.location.origin +
-              "/api/auth/twitter/callback"
-            : "Twitter connection failed: Invalid authorization grant."
-      } else if (error === "twitter_unauthorized") {
-        errorMessage =
-          help === "check_dev_portal_settings"
-            ? "Twitter connection failed: Unauthorized client. Enable 'User authentication settings' in your X Developer Portal and ensure your app has the required permissions."
-            : "Twitter connection failed: Unauthorized client."
-      } else if (error === "twitter_invalid_request") {
-        errorMessage =
-          help === "check_parameters"
-            ? "Twitter connection failed: Invalid request parameters. Check your X Developer Portal configuration and callback URL format."
-            : "Twitter connection failed: Invalid request."
-      } else if (error === "twitter_400_error") {
-        errorMessage =
-          help === "check_configuration"
-            ? "Twitter connection failed: Bad request (400). Common causes: wrong OAuth credentials, callback URL mismatch, or incorrect app configuration in X Developer Portal."
-            : "Twitter connection failed: Bad request."
-      } else if (error === "twitter_profile_forbidden") {
-        errorMessage =
-          help === "check_scopes_and_account"
-            ? "Twitter connection failed: Profile access forbidden. Ensure 'users.read' scope is granted and your developer account has the required access level."
-            : "Twitter connection failed: Profile access forbidden."
-      } else if (error === "twitter_config_missing") {
-        errorMessage =
-          "Twitter connection failed: Missing configuration. TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET must be set in environment variables."
-      } else if (error === "twitter_invalid_client_format") {
-        errorMessage =
-          "Twitter connection failed: Invalid Client ID format. Make sure you're using OAuth 2.0 Client ID (not OAuth 1.0a API Key)."
-      } else if (error === "invalid_token") {
-        errorMessage = "Invalid verification token. Please request a new verification email."
+      if (urlParams.get("success") === "email_verified") {
         setEmailVerificationPending(false)
-      } else if (error === "token_expired") {
-        errorMessage = "Verification token expired. Please request a new verification email."
-        setEmailVerificationPending(false)
-      } else if (error === "verification_failed") {
-        errorMessage = "Email verification failed. Please try again."
-        setEmailVerificationPending(false)
-      } else if (error === "farcaster_already_connected") {
-        errorMessage = "This Farcaster account is already connected to another wallet."
-      } else if (error === "farcaster_auth_failed") {
-        errorMessage = "Farcaster authorization failed. Please try again."
-      } else if (error === "farcaster_token_failed") {
-        errorMessage = "Farcaster token exchange failed. Please try again."
-      } else if (error === "farcaster_profile_failed") {
-        errorMessage = "Failed to fetch Farcaster profile. Please try again."
-      } else if (error === "farcaster_connection_failed") {
-        errorMessage = "Farcaster connection failed. Please try again."
-      } else if (error === "farcaster_config_missing") {
-        errorMessage =
-          "Farcaster connection failed: Missing configuration. NEYNAR_CLIENT_ID and NEYNAR_CLIENT_SECRET must be set."
+        setEmailEditing(false)
+        setEmail("")
+        toastMessage = {
+          message: "Email successfully verified and connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("success") === "discord_verified") {
+        toastMessage = {
+          message: "Discord successfully connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("success") === "twitter_verified") {
+        toastMessage = {
+          message: "Twitter successfully connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("farcaster_connected") === "true") {
+        toastMessage = {
+          message: "Farcaster successfully connected to your account!",
+          type: "success" as const,
+        }
+        shouldReloadIdentity = true
+      } else if (urlParams.get("error")) {
+        const error = urlParams.get("error")
+        const help = urlParams.get("help")
+        let errorMessage = "Connection failed. Please try again."
+
+        if (error === "discord_already_connected") {
+          errorMessage = "This Discord account is already connected to another wallet."
+        } else if (error === "twitter_already_connected") {
+          errorMessage = "This Twitter account is already connected to another wallet."
+        } else if (error === "discord_auth_failed") {
+          errorMessage = "Discord authorization failed. Please try again."
+        } else if (error === "twitter_auth_failed") {
+          errorMessage = "Twitter authorization failed. Please try again."
+        } else if (error === "invalid_token") {
+          errorMessage = "Invalid verification token. Please request a new verification email."
+          setEmailVerificationPending(false)
+        } else if (error === "token_expired") {
+          errorMessage = "Verification token expired. Please request a new verification email."
+          setEmailVerificationPending(false)
+        } else if (error === "verification_failed") {
+          errorMessage = "Email verification failed. Please try again."
+          setEmailVerificationPending(false)
+        }
+
+        toastMessage = {
+          message: errorMessage,
+          type: "error" as const,
+        }
       }
 
-      setToast({
-        message: errorMessage,
-        type: "error",
-      })
+      if (toastMessage) {
+        setToast(toastMessage)
+      }
 
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname)
+      if (shouldReloadIdentity && address && isConnected) {
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          const response = await fetch(`/api/identity?address=${address}`)
+          const data = await response.json()
+          setIdentity(data.identity)
+        } catch (error) {
+          console.error("Error loading identity:", error)
+        }
+      }
+
+      if (urlParams.toString()) {
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
     }
+
+    handleUrlParams()
   }, [address, isConnected])
 
   useEffect(() => {
@@ -484,8 +240,7 @@ export default function PokerClientPage() {
     console.log("[v0] Wallet address:", address)
     console.log("[v0] Redirecting to Discord OAuth...")
 
-    // Redirect to Discord OAuth
-    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}`
+    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}&source=piggyvegas`
   }
 
   const connectTwitter = async () => {
@@ -512,6 +267,7 @@ export default function PokerClientPage() {
         body: JSON.stringify({
           walletAddress: address,
           email: email.trim(),
+          source: "piggyvegas",
         }),
       })
 
@@ -627,16 +383,16 @@ export default function PokerClientPage() {
 
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text={tournamentName}>
-            {tournamentName}
+          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="PIGGY PROFILE">
+            PIGGY PROFILE
           </h1>
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Existing Poker Registration Window */}
+          {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
-              POKER REGISTRATION &gt; INITIALIZE YOUR PIGGY ID
+              PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
             </h2>
 
             {!isConnected ? (
@@ -646,67 +402,25 @@ export default function PokerClientPage() {
                   <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
                 </div>
               </div>
-            ) : loading ? (
-              <div className="text-center py-8">
-                <p className="text-pink-400 font-mono">{">"} CHECKING NFT OWNERSHIP...</p>
-              </div>
             ) : (
               <div className="space-y-6">
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">YOUR PIGGY ID</h3>
                   <div className="text-pink-400 font-mono">
-                    {tokenId !== null ? (
-                      <span className="text-pink-300">#{tokenId.toString()}</span>
+                    {identity?.token_id ? (
+                      <span className="text-pink-300">#{identity.token_id.toString()}</span>
+                    ) : identityLoading ? (
+                      <span className="text-yellow-400">Loading...</span>
                     ) : (
-                      <span className="text-red-400">You don't have PIGGY ID</span>
+                      <span className="text-red-400">No Piggy ID found</span>
                     )}
                   </div>
-                </div>
-
-                {tokenId !== null && (
-                  <div className="border border-pink-500/30 rounded p-4 bg-black/50">
-                    <h3 className="text-pink-500 font-mono font-bold mb-2">Your invite code</h3>
-                    <div className="text-pink-400 font-mono">
-                      {invite === "loading" ? (
-                        <span className="text-yellow-400">Loading invite code...</span>
-                      ) : invite === "error" ? (
-                        <span className="text-red-400">Error loading invite code</span>
-                      ) : invite ? (
-                        <span className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30">
-                          {invite}
-                        </span>
-                      ) : (
-                        <span className="text-yellow-400">Generating invite code...</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-center pt-4">
-                  {tokenId !== null ? (
-                    <a
-                      href={tournamentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
-                    >
-                      JOIN GAME
-                    </a>
-                  ) : (
-                    <a
-                      href="https://id.piggyworld.xyz/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="cyber-button inline-block px-8 py-3 text-lg font-mono font-bold hover:scale-105 transition-transform"
-                    >
-                      Mint your Piggy ID
-                    </a>
-                  )}
                 </div>
               </div>
             )}
           </div>
 
+          {/* Right Column - Connections Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
@@ -757,7 +471,7 @@ export default function PokerClientPage() {
                       ) : (
                         <button
                           onClick={connectDiscord}
-                          disabled={identityLoading || !tokenId}
+                          disabled={identityLoading}
                           className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
                         >
                           Connect
@@ -768,7 +482,6 @@ export default function PokerClientPage() {
                     {/* Twitter */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
-                        {/* Add Twitter logo */}
                         <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
@@ -805,10 +518,9 @@ export default function PokerClientPage() {
                     {/* Farcaster */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
-                        {/* Add Farcaster logo */}
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
                           <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279.279.434.279.681-.093.495-.279.681l-3 3z" />
+                            <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279-.279.434-.279.681-.093.495-.279.681l-3 3z" />
                           </svg>
                         </div>
                         <div className="flex-1">
@@ -844,10 +556,6 @@ export default function PokerClientPage() {
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
                         {(() => {
-                          console.log("[v0] Email display logic - identity?.email:", identity?.email)
-                          console.log("[v0] Email display logic - emailEditing:", emailEditing)
-                          console.log("[v0] Email display logic - emailVerificationPending:", emailVerificationPending)
-
                           if (identity?.email && !emailEditing) {
                             return (
                               <div className="text-green-400 bg-black/70 px-2 py-1 rounded border border-green-500/30 font-mono text-xs">
@@ -923,6 +631,15 @@ export default function PokerClientPage() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto mt-8">
+          <button
+            onClick={() => router.push("/piggyvegas")}
+            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
+          >
+            ← BACK TO LOBBY
+          </button>
         </div>
       </div>
     </div>
