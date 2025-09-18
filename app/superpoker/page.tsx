@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     description: "Register for Super Poker tournament with Discord authentication",
     images: [
       {
-        url: "/images/superpoker-preview.jpg",
+        url: "/superpokerpreview.jpg",
         width: 1200,
         height: 1200,
         alt: "Super Poker - Pigs playing poker tournament",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Super Poker Registration | Piggy ID",
     description: "Register for Super Poker tournament with Discord authentication",
-    images: ["/images/superpoker-preview.jpg"],
+    images: ["/superpokerpreview.jpg"],
   },
 }
 
