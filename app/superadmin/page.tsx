@@ -440,6 +440,18 @@ export default function SuperAdminPage() {
                 <CardDescription className="text-gray-400">
                   Upload a CSV file with superpoker invite codes. Expected format: code,consumer_player
                 </CardDescription>
+                <div className="mt-4 mb-4">
+                  <img
+                    src="/csv-upload-info.png"
+                    alt="CSV upload process information"
+                    className="w-full max-w-lg mx-auto rounded border border-gray-600"
+                  />
+                  <div className="mt-3 text-center">
+                    <p className="text-red-500 text-sm font-medium">
+                      Don't forget to upload the invite code for every new game and update the link in Settings!
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-center mb-4">
