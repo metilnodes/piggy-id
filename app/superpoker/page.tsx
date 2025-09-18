@@ -15,6 +15,7 @@ export const metadata: Metadata = {
         alt: "Super Poker - Pigs playing poker tournament",
       },
     ],
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",

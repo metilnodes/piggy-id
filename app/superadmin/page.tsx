@@ -461,6 +461,11 @@ export default function SuperAdminPage() {
                     className="max-w-full h-auto rounded-lg border border-gray-700"
                   />
                 </div>
+                <div className="text-center mb-4">
+                  <p className="text-red-500 font-medium">
+                    Don't forget to upload the invite code for every new game and update the link in Settings!
+                  </p>
+                </div>
                 <div>
                   <Label htmlFor="csv-file" className="text-white">
                     Select CSV File
