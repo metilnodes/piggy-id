@@ -32,7 +32,7 @@ export default function PokerClientPage() {
   const [tournamentUrl, setTournamentUrl] = useState<string>(
     "https://www.pokernow.club/mtt/piggy-summer-poker-NV9_BmueuR",
   )
-  const [tournamentName, setTournamentName] = useState<string>("PIGGY SUMMER POKER")
+  const [tournamentName, setTournamentName] = useState<string>("PIGGY POKER")
 
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
   const [email, setEmail] = useState<string>("")
