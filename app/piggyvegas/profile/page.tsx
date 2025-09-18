@@ -74,39 +74,45 @@ export default function ProfilePage() {
   useEffect(() => {
     const handleUrlParams = async () => {
       const urlParams = new URLSearchParams(window.location.search)
-      let toastMessage = null
-      let shouldReloadIdentity = false
+
+      // Process all parameters first, then batch state updates
+      const updates = {
+        toast: null as { message: string; type: "success" | "error" } | null,
+        shouldReloadIdentity: false,
+        emailVerificationPending: emailVerificationPending,
+        emailEditing: emailEditing,
+        email: email,
+      }
 
       if (urlParams.get("success") === "email_verified") {
-        setEmailVerificationPending(false)
-        setEmailEditing(false)
-        setEmail("")
-        toastMessage = {
+        updates.emailVerificationPending = false
+        updates.emailEditing = false
+        updates.email = ""
+        updates.toast = {
           message: "Email successfully verified and connected to your account!",
           type: "success" as const,
         }
-        shouldReloadIdentity = true
+        updates.shouldReloadIdentity = true
       } else if (urlParams.get("success") === "discord_verified") {
-        toastMessage = {
+        updates.toast = {
           message: "Discord successfully connected to your account!",
           type: "success" as const,
         }
-        shouldReloadIdentity = true
+        updates.shouldReloadIdentity = true
       } else if (urlParams.get("success") === "twitter_verified") {
-        toastMessage = {
+        updates.toast = {
           message: "Twitter successfully connected to your account!",
           type: "success" as const,
         }
-        shouldReloadIdentity = true
+        updates.shouldReloadIdentity = true
       } else if (urlParams.get("farcaster_connected") === "true") {
-        toastMessage = {
+        updates.toast = {
           message: "Farcaster successfully connected to your account!",
           type: "success" as const,
         }
-        shouldReloadIdentity = true
+        updates.shouldReloadIdentity = true
       } else if (urlParams.get("error")) {
         const error = urlParams.get("error")
-        const help = urlParams.get("help")
         let errorMessage = "Connection failed. Please try again."
 
         if (error === "discord_already_connected") {
@@ -119,26 +125,40 @@ export default function ProfilePage() {
           errorMessage = "Twitter authorization failed. Please try again."
         } else if (error === "invalid_token") {
           errorMessage = "Invalid verification token. Please request a new verification email."
-          setEmailVerificationPending(false)
+          updates.emailVerificationPending = false
         } else if (error === "token_expired") {
           errorMessage = "Verification token expired. Please request a new verification email."
-          setEmailVerificationPending(false)
+          updates.emailVerificationPending = false
         } else if (error === "verification_failed") {
           errorMessage = "Email verification failed. Please try again."
-          setEmailVerificationPending(false)
+          updates.emailVerificationPending = false
         }
 
-        toastMessage = {
+        updates.toast = {
           message: errorMessage,
           type: "error" as const,
         }
       }
 
-      if (toastMessage) {
-        setToast(toastMessage)
+      // Apply all state updates in sequence to avoid conflicts
+      if (updates.toast) {
+        setToast(updates.toast)
       }
 
-      if (shouldReloadIdentity && address && isConnected) {
+      if (updates.emailVerificationPending !== emailVerificationPending) {
+        setEmailVerificationPending(updates.emailVerificationPending)
+      }
+
+      if (updates.emailEditing !== emailEditing) {
+        setEmailEditing(updates.emailEditing)
+      }
+
+      if (updates.email !== email) {
+        setEmail(updates.email)
+      }
+
+      // Handle identity reload after state updates
+      if (updates.shouldReloadIdentity && address && isConnected) {
         try {
           await new Promise((resolve) => setTimeout(resolve, 500))
           const response = await fetch(`/api/identity?address=${address}`)
@@ -149,13 +169,16 @@ export default function ProfilePage() {
         }
       }
 
+      // Clean up URL after processing
       if (urlParams.toString()) {
-        window.history.replaceState({}, document.title, window.location.pathname)
+        setTimeout(() => {
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }, 100)
       }
     }
 
     handleUrlParams()
-  }, [address, isConnected])
+  }, [address, isConnected]) // Removed state dependencies to prevent loops
 
   useEffect(() => {
     if (toast) {
