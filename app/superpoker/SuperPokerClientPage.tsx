@@ -188,8 +188,8 @@ export default function SuperPokerClientPage() {
       {discordUser && (
         <div className="fixed top-4 left-4 right-4 md:top-6 md:right-6 md:left-auto z-50">
           <div className="flex items-center gap-2 md:gap-3 bg-black/90 border border-pink-500/30 rounded px-3 py-2 md:px-5 md:py-3 backdrop-blur-sm">
-            <div className="w-6 h-6 md:w-8 md:h-8 bg-[#5865F2] rounded flex items-center justify-center flex-shrink-0">
-              <img src="/images/discord-icon.png" alt="Discord" className="w-3 h-3 md:w-5 md:h-5" />
+            <div className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center flex-shrink-0">
+              <img src="/images/discord-icon.png" alt="Discord" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             <span className="text-sm md:text-base hidden sm:inline">Discord</span>
             <div className="w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full flex-shrink-0"></div>
