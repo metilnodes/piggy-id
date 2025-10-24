@@ -50,7 +50,7 @@ export async function getOwnedTokenIds(address: string): Promise<bigint[]> {
     if (balance === 0n) return []
 
     const ownedTokens: bigint[] = []
-    const maxTokenId = 500 // Check more tokens to catch higher IDs like 164
+    const maxTokenId = 800 // Check more tokens to catch higher IDs like 164
 
     console.log("[v0] Checking token IDs 1 to", maxTokenId)
 
