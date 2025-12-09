@@ -140,7 +140,7 @@ function DailyCountdown() {
 }
 
 function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<"earners" | "creators">("earners")
+  const [activeTab, setActiveTab] = useState<"oinkers" | "piggyMakers">("oinkers")
   const [searchQuery, setSearchQuery] = useState("")
   const [piggyPrice, setPiggyPrice] = useState<number | null>(null)
 
@@ -155,8 +155,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       .catch((err) => console.error("Error fetching PIGGY price:", err))
   }, [])
 
-  // Mock data for Earners
-  const earnersData = [
+  // Mock data for Oinkers (formerly Earners)
+  const oinkersData = [
     {
       rank: 1,
       user: "0xmoti.eth",
@@ -165,12 +165,6 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasX: true,
       completedTasks: 3117,
       claimedUsd: 680.11,
-      claimedIn: "2860 oinks", // Changed from "claims" to "oinks"
-      tokens: [
-        { icon: "🔵", amount: "190.80", color: "text-blue-400" },
-        { icon: "🟣", amount: "0.07", color: "text-purple-400" },
-        { icon: "🟡", amount: "42224.88", color: "text-yellow-400" },
-      ],
     },
     {
       rank: 2,
@@ -180,12 +174,6 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasX: true,
       completedTasks: 4766,
       claimedUsd: 516.02,
-      claimedIn: "4325 oinks", // Changed from "claims" to "oinks"
-      tokens: [
-        { icon: "🔵", amount: "0.07", color: "text-blue-400" },
-        { icon: "🟢", amount: "4692706", color: "text-green-400" },
-        { icon: "🟣", amount: "38.80", color: "text-purple-400" },
-      ],
     },
     {
       rank: 3,
@@ -195,12 +183,6 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasX: true,
       completedTasks: 3370,
       claimedUsd: 461.73,
-      claimedIn: "3195 oinks", // Changed from "claims" to "oinks"
-      tokens: [
-        { icon: "🔵", amount: "236.37", color: "text-blue-400" },
-        { icon: "🟢", amount: "0.05", color: "text-green-400" },
-        { icon: "🟡", amount: "8706.60", color: "text-yellow-400" },
-      ],
     },
     {
       rank: 4,
@@ -210,12 +192,6 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasX: true,
       completedTasks: 3160,
       claimedUsd: 346.07,
-      claimedIn: "3076 oinks", // Changed from "claims" to "oinks"
-      tokens: [
-        { icon: "🟣", amount: "35710.57", color: "text-purple-400" },
-        { icon: "🔵", amount: "0.03", color: "text-blue-400" },
-        { icon: "🟢", amount: "70.07", color: "text-green-400" },
-      ],
     },
     {
       rank: 5,
@@ -225,27 +201,17 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasX: true,
       completedTasks: 3657,
       claimedUsd: 325.16,
-      claimedIn: "3374 oinks", // Changed from "claims" to "oinks"
-      tokens: [
-        { icon: "🟡", amount: "227940.04", color: "text-yellow-400" },
-        { icon: "🔵", amount: "0.09", color: "text-blue-400" },
-        { icon: "🟢", amount: "57.26", color: "text-green-400" },
-      ],
     },
   ]
 
-  // Mock data for Creators
-  const creatorsData = [
+  // Mock data for Piggy Makers (formerly Creators)
+  const piggyMakersData = [
     {
       rank: 1,
       user: "0xBb26...7F06",
       avatar: "/creator-avatar.png",
-      totalOinks: 978, // renamed from totalGigs to totalOinks
-      totalUsd: 9798.5,
-      tokens: [
-        { icon: "🔵", color: "text-blue-400" },
-        { icon: "🟣", color: "text-purple-400" },
-      ],
+      created: 978,
+      totalSpent: 9798.5,
     },
     {
       rank: 2,
@@ -253,16 +219,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       avatar: "/creator-avatar-2.jpg",
       hasFarcaster: true,
       hasX: true,
-      totalOinks: 182, // renamed from totalGigs to totalOinks
-      totalUsd: 2608.97,
-      tokens: [
-        { icon: "🔵", color: "text-blue-400" },
-        { icon: "🟡", color: "text-yellow-400" },
-        { icon: "🟣", color: "text-purple-400" },
-        { icon: "🟢", color: "text-green-400" },
-        { icon: "🔴", color: "text-red-400" },
-      ],
-      moreTokens: 2,
+      created: 182,
+      totalSpent: 2608.97,
     },
     {
       rank: 3,
@@ -270,22 +228,15 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       avatar: "/creator-avatar-3.jpg",
       hasFarcaster: true,
       hasX: true,
-      totalOinks: 100, // renamed from totalGigs to totalOinks
-      totalUsd: 1192.07,
-      tokens: [
-        { icon: "🟣", color: "text-purple-400" },
-        { icon: "🔵", color: "text-blue-400" },
-        { icon: "🟢", color: "text-green-400" },
-        { icon: "🔴", color: "text-red-400" },
-      ],
-      moreTokens: 7,
+      created: 100,
+      totalSpent: 1192.07,
     },
   ]
 
-  const filteredEarners = earnersData.filter((earner) => earner.user.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredOinkers = oinkersData.filter((oinker) => oinker.user.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  const filteredCreators = creatorsData.filter((creator) =>
-    creator.user.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredPiggyMakers = piggyMakersData.filter((maker) =>
+    maker.user.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   if (!isOpen) return null
@@ -308,27 +259,26 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b border-gray-800">
           <button
-            onClick={() => setActiveTab("earners")}
+            onClick={() => setActiveTab("oinkers")}
             className={`flex-1 px-6 py-4 text-sm font-bold font-mono tracking-wider transition-all ${
-              activeTab === "earners"
+              activeTab === "oinkers"
                 ? "bg-pink-600/30 text-pink-400 border-b-2 border-pink-500"
                 : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
             }`}
           >
-            EARNERS
+            OINKERS
           </button>
           <button
-            onClick={() => setActiveTab("creators")}
+            onClick={() => setActiveTab("piggyMakers")}
             className={`flex-1 px-6 py-4 text-sm font-bold font-mono tracking-wider transition-all ${
-              activeTab === "creators"
+              activeTab === "piggyMakers"
                 ? "bg-pink-600/30 text-pink-400 border-b-2 border-pink-500"
                 : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
             }`}
           >
-            CREATORS
+            PIGGY MAKERS
           </button>
         </div>
 
@@ -345,8 +295,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             />
           </div>
 
-          {/* Earners Tab */}
-          {activeTab === "earners" && (
+          {activeTab === "oinkers" && (
             <div className="mt-6 space-y-4">
               {/* Table Header */}
               <div className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono border-b border-gray-800">
@@ -357,35 +306,35 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
               {/* Table Content */}
               <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
-                {filteredEarners.map((earner) => {
-                  const piggyAmount = piggyPrice ? (earner.claimedUsd / piggyPrice).toFixed(2) : "..."
+                {filteredOinkers.map((oinker) => {
+                  const piggyAmount = piggyPrice ? (oinker.claimedUsd / piggyPrice).toFixed(2) : "..."
 
                   return (
                     <div
-                      key={earner.rank}
+                      key={oinker.rank}
                       className="grid grid-cols-[2fr,1fr,1fr] gap-4 items-center px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
                     >
                       {/* Left: User Info */}
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <img
-                            src={earner.avatar || "/placeholder.svg"}
-                            alt={earner.user}
+                            src={oinker.avatar || "/placeholder.svg"}
+                            alt={oinker.user}
                             className="w-12 h-12 rounded-full border-2 border-pink-500/50"
                           />
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                            {earner.rank}
+                            {oinker.rank}
                           </div>
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className="text-white font-medium">{earner.user}</span>
-                            {earner.hasFarcaster && (
+                            <span className="text-white font-medium">{oinker.user}</span>
+                            {oinker.hasFarcaster && (
                               <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
                                 F
                               </div>
                             )}
-                            {earner.hasX && (
+                            {oinker.hasX && (
                               <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
                                 <X className="w-3 h-3 text-black" />
                               </div>
@@ -396,13 +345,11 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
                       {/* Center: Completed Tasks */}
                       <div className="text-center">
-                        <div className="text-white font-bold text-lg">{earner.completedTasks}</div>
+                        <div className="text-white font-bold text-lg">{oinker.completedTasks}</div>
                       </div>
 
-                      {/* Right: Claimed */}
                       <div className="flex flex-col items-end">
-                        <div className="text-white font-bold text-xl">${earner.claimedUsd.toFixed(2)}</div>
-                        <div className="text-gray-500 text-xs">in {earner.claimedIn}</div>
+                        <div className="text-white font-bold text-xl">${oinker.claimedUsd.toFixed(2)}</div>
                         <div className="flex items-center gap-1 mt-1">
                           <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
                           <span className="text-pink-400 font-mono text-sm">{piggyAmount} $PIGGY</span>
@@ -415,57 +362,66 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </div>
           )}
 
-          {/* Creators Tab */}
-          {activeTab === "creators" && (
-            <div className="space-y-4">
+          {activeTab === "piggyMakers" && (
+            <div className="mt-6 space-y-4">
               {/* Info Text */}
               <div className="text-gray-500 text-sm font-mono">
-                Showing {filteredCreators.length} of total {creatorsData.length} oink creators
+                Showing {filteredPiggyMakers.length} of total {piggyMakersData.length} oink creators
               </div>
 
+              {/* Table Header */}
+              <div className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono border-b border-gray-800">
+                <div>PIGGY MAKER</div>
+                <div className="text-center">CREATED</div>
+                <div className="text-right">TOTAL SPENT</div>
+              </div>
+
+              {/* Table Content */}
               <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
-                {filteredCreators.map((creator) => {
-                  const piggyAmount = piggyPrice ? (creator.totalUsd / piggyPrice).toFixed(2) : "..."
+                {filteredPiggyMakers.map((maker) => {
+                  const piggyAmount = piggyPrice ? (maker.totalSpent / piggyPrice).toFixed(2) : "..."
 
                   return (
                     <div
-                      key={creator.rank}
-                      className="flex items-center justify-between px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
+                      key={maker.rank}
+                      className="grid grid-cols-[2fr,1fr,1fr] gap-4 items-center px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
                     >
-                      {/* Left: User Info */}
+                      {/* Left: Piggy Maker Info */}
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <img
-                            src={creator.avatar || "/placeholder.svg"}
-                            alt={creator.user}
+                            src={maker.avatar || "/placeholder.svg"}
+                            alt={maker.user}
                             className="w-12 h-12 rounded-full border-2 border-pink-500/50"
                           />
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                            {creator.rank}
+                            {maker.rank}
                           </div>
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
-                            <span className="text-white font-medium">{creator.user}</span>
-                            {creator.hasFarcaster && (
+                            <span className="text-white font-medium">{maker.user}</span>
+                            {maker.hasFarcaster && (
                               <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
                                 F
                               </div>
                             )}
-                            {creator.hasX && (
+                            {maker.hasX && (
                               <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
                                 <X className="w-3 h-3 text-black" />
                               </div>
                             )}
                           </div>
-                          <div className="text-gray-500 text-sm font-mono">Total oinks {creator.totalOinks}</div>
                         </div>
                       </div>
 
-                      {/* Right: Total USD with PIGGY conversion */}
+                      {/* Center: Created (oinks count) */}
+                      <div className="text-center">
+                        <div className="text-white font-bold text-lg">{maker.created}</div>
+                      </div>
+
                       <div className="flex flex-col items-end">
-                        <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Total USD</div>
-                        <div className="text-white font-bold text-xl">${creator.totalUsd.toFixed(2)}</div>
+                        <div className="text-white font-bold text-xl">${maker.totalSpent.toFixed(2)}</div>
                         <div className="flex items-center gap-1 mt-1">
                           <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
                           <span className="text-pink-400 font-mono text-sm">{piggyAmount} $PIGGY</span>
