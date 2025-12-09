@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
-import { withWeb3Provider } from "@/providers/web3-provider"
+import { Web3Provider } from "@/providers/web3-provider"
 
 interface UserIdentity {
   wallet_address: string
@@ -20,7 +20,7 @@ interface UserIdentity {
   farcaster_avatar_url?: string
 }
 
-function ProfilePage() {
+function ProfilePageInner() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -670,4 +670,10 @@ function ProfilePage() {
   )
 }
 
-export default withWeb3Provider(ProfilePage)
+export default function ProfilePage() {
+  return (
+    <Web3Provider>
+      <ProfilePageInner />
+    </Web3Provider>
+  )
+}

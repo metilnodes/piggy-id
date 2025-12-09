@@ -8,9 +8,19 @@ import { type ReactNode, useState, useEffect } from "react"
 import { WagmiProvider, http } from "wagmi"
 import { base } from "wagmi/chains"
 
+const DISABLE_WALLETCONNECT_IN_PREVIEW = true // Set to false to enable WalletConnect
+
+function isV0Preview() {
+  if (typeof window === "undefined") return false
+  return window.location.hostname.includes("vusercontent.net") || window.location.hostname.includes("v0.app")
+}
+
 export const wagmiConfig = getDefaultConfig({
   appName: "Piggy ID",
-  projectId: "7993ad87-497c-4979-a096-079dab6949fa",
+  projectId:
+    DISABLE_WALLETCONNECT_IN_PREVIEW && isV0Preview()
+      ? "" // Empty projectId disables WalletConnect
+      : "7993ad87-497c-4979-a096-079dab6949fa",
   chains: [base],
   transports: {
     [base.id]: http("https://mainnet.base.org"),
@@ -18,57 +28,43 @@ export const wagmiConfig = getDefaultConfig({
   ssr: true,
 })
 
-function isV0Preview() {
-  if (typeof window === "undefined") return false
-  return window.location.hostname.includes("vusercontent.net") || window.location.hostname.includes("v0.app")
-}
-
 function V0PreviewWarning() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    setShow(isV0Preview())
+    setShow(DISABLE_WALLETCONNECT_IN_PREVIEW && isV0Preview())
   }, [])
 
   if (!show) return null
 
   return (
     <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 max-w-2xl w-full mx-4">
-      <div className="bg-yellow-900/95 border-2 border-yellow-500 rounded-lg p-4 shadow-lg">
+      <div className="bg-blue-900/95 border-2 border-blue-500 rounded-lg p-4 shadow-lg">
         <div className="flex items-start gap-3">
-          <div className="text-yellow-400 text-2xl">⚠️</div>
+          <div className="text-blue-400 text-2xl">ℹ️</div>
           <div className="flex-1">
-            <h3 className="text-yellow-400 font-mono font-bold mb-2">V0 Preview Mode</h3>
-            <p className="text-yellow-200 text-sm font-mono mb-2">
-              WalletConnect may not work due to CORS restrictions in preview environment.
+            <h3 className="text-blue-400 font-mono font-bold mb-2">V0 Preview Mode</h3>
+            <p className="text-blue-200 text-sm font-mono mb-2">
+              WalletConnect временно отключен для корректного отображения preview.
             </p>
-            <details className="text-yellow-200 text-xs font-mono">
-              <summary className="cursor-pointer hover:text-yellow-100 mb-2">How to fix for production</summary>
-              <ol className="list-decimal list-inside space-y-1 ml-2 mt-2">
-                <li>
-                  Go to{" "}
-                  <a
-                    href="https://cloud.walletconnect.com/app/project?projectId=7993ad87-497c-4979-a096-079dab6949fa"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-white"
-                  >
-                    WalletConnect Cloud Dashboard
-                  </a>
-                </li>
-                <li>
-                  Add these origins:
-                  <ul className="list-disc list-inside ml-4 mt-1">
-                    <li>https://*.vusercontent.net (for v0 preview)</li>
-                    <li>http://localhost:* (for local dev)</li>
-                    <li>Your production domain</li>
-                  </ul>
-                </li>
-                <li>This only affects preview - production will work fine</li>
-              </ol>
+            <details className="text-blue-200 text-xs font-mono">
+              <summary className="cursor-pointer hover:text-blue-100 mb-2">Как включить обратно</summary>
+              <div className="ml-2 mt-2 space-y-2">
+                <p>
+                  В файле <code className="bg-blue-950 px-1">providers/web3-provider.tsx</code>:
+                </p>
+                <pre className="bg-blue-950 p-2 rounded text-xs overflow-x-auto">
+                  const DISABLE_WALLETCONNECT_IN_PREVIEW = false
+                </pre>
+                <p className="mt-2">Или добавьте домены в WalletConnect Cloud:</p>
+                <ul className="list-disc list-inside ml-2">
+                  <li>https://*.vusercontent.net</li>
+                  <li>http://localhost:*</li>
+                </ul>
+              </div>
             </details>
           </div>
-          <button onClick={() => setShow(false)} className="text-yellow-400 hover:text-yellow-200 text-xl leading-none">
+          <button onClick={() => setShow(false)} className="text-blue-400 hover:text-blue-200 text-xl leading-none">
             ×
           </button>
         </div>
