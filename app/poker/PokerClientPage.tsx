@@ -5,6 +5,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { getProviderSafe } from "@/lib/wallet/getProvider"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
+import { Web3Provider } from "@/providers/web3-provider"
 
 type Status = "idle" | "checking" | "ready" | "error"
 
@@ -22,7 +23,7 @@ interface UserIdentity {
   farcaster_avatar_url?: string
 }
 
-export default function PokerClientPage() {
+function PokerClientPageInner() {
   const { address, isConnected } = useAccount()
   const [status, setStatus] = useState<Status>("idle")
   const [error, setError] = useState<string>("")
@@ -926,5 +927,13 @@ export default function PokerClientPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PokerClientPage() {
+  return (
+    <Web3Provider>
+      <PokerClientPageInner />
+    </Web3Provider>
   )
 }

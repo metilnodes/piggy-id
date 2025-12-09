@@ -7,6 +7,7 @@ import { useAccount } from "wagmi"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 import { X, Trophy, Medal, Star, Crown } from "lucide-react"
 import { PrizesModal } from "./PrizesModal"
+import { Web3Provider } from "@/providers/web3-provider"
 
 type AuthStatus = "disconnected" | "verifying" | "no-nft" | "authorized"
 
@@ -850,7 +851,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
   )
 }
 
-export default function Page() {
+function PiggyVegasPageInner() {
   const router = useRouter()
   const { address, isConnected } = useAccount()
   const [authStatus, setAuthStatus] = useState<AuthStatus>("disconnected")
@@ -1277,5 +1278,13 @@ export default function Page() {
       {/* Prizes Modal */}
       {showPrizes && <PrizesModal onClose={() => setShowPrizes(false)} />}
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Web3Provider>
+      <PiggyVegasPageInner />
+    </Web3Provider>
   )
 }
