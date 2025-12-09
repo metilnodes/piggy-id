@@ -20,7 +20,6 @@ interface UserIdentity {
 }
 
 export default function ProfilePage() {
-  const [mounted, setMounted] = useState(false)
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -40,10 +39,6 @@ export default function ProfilePage() {
     return () => {
       document.head.removeChild(script)
     }
-  }, [])
-
-  useEffect(() => {
-    setMounted(true)
   }, [])
 
   useEffect(() => {
@@ -376,10 +371,6 @@ export default function ProfilePage() {
     } finally {
       setIdentityLoading(false)
     }
-  }
-
-  if (!mounted) {
-    return null
   }
 
   return (
