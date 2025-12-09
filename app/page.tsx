@@ -10,6 +10,7 @@ import { Download, Upload, Zap, Wallet } from "lucide-react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 import { canvasToBlob } from "@/utils/nft-utils"
+import { Web3Provider } from "@/providers/web3-provider"
 
 // Type definitions
 type MintingStep = "idle" | "uploading" | "wallet_required" | "approval_required" | "minting" | "complete"
@@ -95,7 +96,7 @@ const PIGGY_TOKEN_ABI = [
   },
 ]
 
-const PiggyIdGenerator = () => {
+function PiggyIdGeneratorInner() {
   // Get Pinata gateway URL from environment variable
   const pinataGatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "https://olive-familiar-gerbil-797.mypinata.cloud"
 
@@ -1071,4 +1072,10 @@ const PiggyIdGenerator = () => {
   )
 }
 
-export default PiggyIdGenerator
+export default function PiggyIdGenerator() {
+  return (
+    <Web3Provider>
+      <PiggyIdGeneratorInner />
+    </Web3Provider>
+  )
+}
