@@ -1,24 +1,9 @@
 "use client"
 
-import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useState } from "react"
-import { WagmiProvider, http } from "wagmi"
-import { base } from "wagmi/chains"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
-
-const config = getDefaultConfig({
-  appName: "Piggy ID",
-  projectId: "7993ad87-497c-4979-a096-079dab6949fa",
-  chains: [base],
-  transports: {
-    [base.id]: http("https://mainnet.base.org"),
-  },
-  ssr: true,
-})
 
 interface UserIdentity {
   wallet_address: string
@@ -34,7 +19,7 @@ interface UserIdentity {
   farcaster_avatar_url?: string
 }
 
-function ProfilePageInner() {
+export default function ProfilePage() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -681,19 +666,5 @@ function ProfilePageInner() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function ProfilePage() {
-  const [queryClient] = useState(() => new QueryClient())
-
-  return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <ProfilePageInner />
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
   )
 }
