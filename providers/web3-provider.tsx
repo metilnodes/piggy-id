@@ -8,7 +8,7 @@ import { type ReactNode, useState, useEffect } from "react"
 import { WagmiProvider, http } from "wagmi"
 import { base } from "wagmi/chains"
 
-const DISABLE_WALLETCONNECT_IN_PREVIEW = true // Set to false to enable WalletConnect
+const DISABLE_WALLETCONNECT_IN_PREVIEW = true // Set to false to enable WalletConnect in v0 preview
 
 function isV0Preview() {
   if (typeof window === "undefined") return false
@@ -19,7 +19,7 @@ export const wagmiConfig = getDefaultConfig({
   appName: "Piggy ID",
   projectId:
     DISABLE_WALLETCONNECT_IN_PREVIEW && isV0Preview()
-      ? "" // Empty projectId disables WalletConnect
+      ? "0000000000000000000000000000000000000000" // Dummy projectId for preview
       : "7993ad87-497c-4979-a096-079dab6949fa",
   chains: [base],
   transports: {
@@ -45,7 +45,7 @@ function V0PreviewWarning() {
           <div className="flex-1">
             <h3 className="text-blue-400 font-mono font-bold mb-2">V0 Preview Mode</h3>
             <p className="text-blue-200 text-sm font-mono mb-2">
-              WalletConnect временно отключен для корректного отображения preview.
+              WalletConnect временно использует тестовый режим для корректного отображения preview.
             </p>
             <details className="text-blue-200 text-xs font-mono">
               <summary className="cursor-pointer hover:text-blue-100 mb-2">Как включить обратно</summary>
