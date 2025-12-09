@@ -9,7 +9,10 @@
     "start": "next start"
   },
   "dependencies": {
+    "@base-org/account": "latest",
+    "@gemini-wallet/core": "latest",
     "@hookform/resolvers": "^3.9.1",
+    "@metamask/sdk": "latest",
     "@neondatabase/serverless": "latest",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
@@ -55,6 +58,7 @@
     "next-themes": "latest",
     "pinata": "latest",
     "pino-pretty": "^13.0.0",
+    "porto": "latest",
     "react": "^19",
     "react-day-picker": "latest",
     "react-dom": "^19",
