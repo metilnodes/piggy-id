@@ -288,7 +288,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
               type="text"
-              placeholder="SEARCH FOR USER..."
+              placeholder={activeTab === "oinkers" ? "SEARCH FOR OINKER..." : "SEARCH FOR PIGGY MAKER..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-12 py-3 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-pink-500 font-mono uppercase text-sm"
@@ -297,6 +297,10 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
           {activeTab === "oinkers" && (
             <div className="mt-6 space-y-4">
+              <div className="text-gray-500 text-sm font-mono">
+                Showing {filteredOinkers.length} of total {oinkersData.length} oinkers
+              </div>
+
               {/* Table Header */}
               <div className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono border-b border-gray-800">
                 <div>OINKER</div>
@@ -366,7 +370,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             <div className="mt-6 space-y-4">
               {/* Info Text */}
               <div className="text-gray-500 text-sm font-mono">
-                Showing {filteredPiggyMakers.length} of total {piggyMakersData.length} oink creators
+                Showing {filteredPiggyMakers.length} of total {piggyMakersData.length} piggy makers
               </div>
 
               {/* Table Header */}
