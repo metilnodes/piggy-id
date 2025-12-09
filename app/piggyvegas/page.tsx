@@ -1161,12 +1161,12 @@ export default function Page() {
                 <h3 className="text-lg font-bold text-purple-400 font-mono">POKER</h3>
               </div>
               <div className="pt-2">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
+                <a
+                  href="/poker"
+                  className="cyber-button inline-block px-6 py-2 font-mono font-bold group-hover:scale-110 transition-transform text-sm"
                 >
-                  COMING SOON
-                </button>
+                  ENTER ROOM
+                </a>
               </div>
             </div>
           </div>

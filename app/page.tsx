@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download, Upload, Zap, Wallet } from "lucide-react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
+import { useAccount, useContractRead, useWaitForTransactionReceipt, useWriteContract } from "wagmi"
 import { canvasToBlob } from "@/utils/nft-utils"
 
 // Type definitions
@@ -193,7 +193,7 @@ const PiggyIdGenerator = () => {
     data: piggyBalance,
     isError: balanceError,
     error: balanceErrorData,
-  } = useReadContract({
+  } = useContractRead({
     address: PIGGY_TOKEN_ADDRESS as `0x${string}`,
     abi: PIGGY_TOKEN_ABI,
     functionName: "balanceOf",
@@ -215,7 +215,7 @@ const PiggyIdGenerator = () => {
     }
   }, [address, piggyBalance, balanceError, balanceErrorData])
 
-  const { data: piggyAllowance } = useReadContract({
+  const { data: piggyAllowance } = useContractRead({
     address: PIGGY_TOKEN_ADDRESS as `0x${string}`,
     abi: PIGGY_TOKEN_ABI,
     functionName: "allowance",
@@ -226,7 +226,7 @@ const PiggyIdGenerator = () => {
   })
 
   // Check if user already has a Piggy ID
-  const { data: hasPiggyID } = useReadContract({
+  const { data: hasPiggyID } = useContractRead({
     address: PIGGY_ID_CONTRACT as `0x${string}`,
     abi: PIGGY_ID_ABI,
     functionName: "hasPiggyID",

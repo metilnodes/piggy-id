@@ -271,7 +271,7 @@ export default function AdminPage() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-4xl font-bold text-pink-500">PIGGY POKER</h1>
+            <h1 className="text-4xl font-bold text-pink-500">PIGGY SUMMER POKER</h1>
             <Button
               onClick={handleLogout}
               variant="outline"
