@@ -1,26 +1,16 @@
 "use client"
 
-import type React from "react"
-
 import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { type ReactNode, useState, useEffect } from "react"
 import { WagmiProvider, http } from "wagmi"
 import { base } from "wagmi/chains"
 
-const DISABLE_WALLETCONNECT_IN_PREVIEW = true // Set to false to enable WalletConnect in v0 preview
-
-function isV0Preview() {
-  if (typeof window === "undefined") return false
-  return window.location.hostname.includes("vusercontent.net") || window.location.hostname.includes("v0.app")
-}
+const WALLETCONNECT_PROJECT_ID = "7993ad87-497c-4979-a096-079dab6949fa"
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Piggy ID",
-  projectId:
-    DISABLE_WALLETCONNECT_IN_PREVIEW && isV0Preview()
-      ? "0000000000000000000000000000000000000000" // Dummy projectId for preview
-      : "a0a72481-51b1-42ec-9083-58ea5c94db3c",
+  projectId: WALLETCONNECT_PROJECT_ID,
   chains: [base],
   transports: {
     [base.id]: http("https://mainnet.base.org"),
@@ -28,11 +18,16 @@ export const wagmiConfig = getDefaultConfig({
   ssr: true,
 })
 
+function isV0Preview() {
+  if (typeof window === "undefined") return false
+  return window.location.hostname.includes("vusercontent.net") || window.location.hostname.includes("v0.app")
+}
+
 function V0PreviewWarning() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    setShow(DISABLE_WALLETCONNECT_IN_PREVIEW && isV0Preview())
+    setShow(isV0Preview())
   }, [])
 
   if (!show) return null
@@ -45,18 +40,13 @@ function V0PreviewWarning() {
           <div className="flex-1">
             <h3 className="text-blue-400 font-mono font-bold mb-2">V0 Preview Mode</h3>
             <p className="text-blue-200 text-sm font-mono mb-2">
-              WalletConnect временно использует тестовый режим для корректного отображения preview.
+              WalletConnect может показывать CORS предупреждения в v0 preview - это нормально и не влияет на работу
+              приложения.
             </p>
             <details className="text-blue-200 text-xs font-mono">
-              <summary className="cursor-pointer hover:text-blue-100 mb-2">Как включить обратно</summary>
+              <summary className="cursor-pointer hover:text-blue-100 mb-2">Как исправить CORS</summary>
               <div className="ml-2 mt-2 space-y-2">
-                <p>
-                  В файле <code className="bg-blue-950 px-1">providers/web3-provider.tsx</code>:
-                </p>
-                <pre className="bg-blue-950 p-2 rounded text-xs overflow-x-auto">
-                  const DISABLE_WALLETCONNECT_IN_PREVIEW = false
-                </pre>
-                <p className="mt-2">Или добавьте домены в WalletConnect Cloud:</p>
+                <p>Добавьте домены в WalletConnect Cloud:</p>
                 <ul className="list-disc list-inside ml-2">
                   <li>https://*.vusercontent.net</li>
                   <li>http://localhost:*</li>
@@ -76,12 +66,6 @@ function V0PreviewWarning() {
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
 
-  useEffect(() => {
-    console.log("[v0] Web3Provider mounted")
-    console.log("[v0] isV0Preview:", isV0Preview())
-    console.log("[v0] DISABLE_WALLETCONNECT_IN_PREVIEW:", DISABLE_WALLETCONNECT_IN_PREVIEW)
-  }, [])
-
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
@@ -92,22 +76,4 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       </QueryClientProvider>
     </WagmiProvider>
   )
-}
-
-// Use this to wrap page content when testing in v0.app
-export function withWeb3Provider<P extends object>(Component: React.ComponentType<P>): React.ComponentType<P> {
-  return function WrappedComponent(props: P) {
-    const [queryClient] = useState(() => new QueryClient())
-
-    return (
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider modalSize="compact">
-            <V0PreviewWarning />
-            <Component {...props} />
-          </RainbowKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
-    )
-  }
 }
