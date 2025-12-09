@@ -240,7 +240,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       rank: 1,
       user: "0xBb26...7F06",
       avatar: "/creator-avatar.png",
-      totalGigs: 978,
+      totalOinks: 978, // renamed from totalGigs to totalOinks
       totalUsd: 9798.5,
       tokens: [
         { icon: "🔵", color: "text-blue-400" },
@@ -253,7 +253,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       avatar: "/creator-avatar-2.jpg",
       hasFarcaster: true,
       hasX: true,
-      totalGigs: 182,
+      totalOinks: 182, // renamed from totalGigs to totalOinks
       totalUsd: 2608.97,
       tokens: [
         { icon: "🔵", color: "text-blue-400" },
@@ -270,7 +270,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       avatar: "/creator-avatar-3.jpg",
       hasFarcaster: true,
       hasX: true,
-      totalGigs: 100,
+      totalOinks: 100, // renamed from totalGigs to totalOinks
       totalUsd: 1192.07,
       tokens: [
         { icon: "🟣", color: "text-purple-400" },
@@ -314,7 +314,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             onClick={() => setActiveTab("earners")}
             className={`flex-1 px-6 py-4 text-sm font-bold font-mono tracking-wider transition-all ${
               activeTab === "earners"
-                ? "bg-purple-600/30 text-purple-400 border-b-2 border-purple-500"
+                ? "bg-pink-600/30 text-pink-400 border-b-2 border-pink-500"
                 : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
             }`}
           >
@@ -324,7 +324,7 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             onClick={() => setActiveTab("creators")}
             className={`flex-1 px-6 py-4 text-sm font-bold font-mono tracking-wider transition-all ${
               activeTab === "creators"
-                ? "bg-purple-600/30 text-purple-400 border-b-2 border-purple-500"
+                ? "bg-pink-600/30 text-pink-400 border-b-2 border-pink-500"
                 : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
             }`}
           >
@@ -333,137 +333,147 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         </div>
 
         {/* Search */}
-        <div className="p-6 border-b border-gray-900">
+        <div className="p-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
               type="text"
               placeholder="SEARCH FOR USER..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-900/50 border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-gray-400 text-sm font-mono placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 transition-colors"
+              className="w-full px-12 py-3 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-pink-500 font-mono uppercase text-sm"
             />
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="p-6">
+          {/* Earners Tab */}
           {activeTab === "earners" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono">
-                <div className="col-span-4">OINKER</div>
-                <div className="col-span-3 text-center">COMPLETED</div>
-                <div className="col-span-5 text-right">EARNED</div>
+            <div className="mt-6 space-y-4">
+              {/* Table Header */}
+              <div className="grid grid-cols-[2fr,1fr,1fr] gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono border-b border-gray-800">
+                <div>OINKER</div>
+                <div className="text-center">COMPLETED</div>
+                <div className="text-right">EARNED</div>
               </div>
 
-              {/* Table Rows */}
-              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
-                {filteredEarners.map((earner) => (
-                  <div
-                    key={earner.rank}
-                    className="grid grid-cols-12 gap-4 items-center px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
-                  >
-                    {/* User */}
-                    <div className="col-span-4 flex items-center gap-3">
-                      <div className="relative">
-                        <img
-                          src={earner.avatar || "/placeholder.svg"}
-                          alt={earner.user}
-                          className="w-10 h-10 rounded-full border-2 border-purple-500/50"
-                        />
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
-                          {earner.rank}
+              {/* Table Content */}
+              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
+                {filteredEarners.map((earner) => {
+                  const piggyAmount = piggyPrice ? (earner.claimedUsd / piggyPrice).toFixed(2) : "..."
+
+                  return (
+                    <div
+                      key={earner.rank}
+                      className="grid grid-cols-[2fr,1fr,1fr] gap-4 items-center px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
+                    >
+                      {/* Left: User Info */}
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img
+                            src={earner.avatar || "/placeholder.svg"}
+                            alt={earner.user}
+                            className="w-12 h-12 rounded-full border-2 border-pink-500/50"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                            {earner.rank}
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-medium">{earner.user}</span>
+                            {earner.hasFarcaster && (
+                              <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
+                                F
+                              </div>
+                            )}
+                            {earner.hasX && (
+                              <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
+                                <X className="w-3 h-3 text-black" />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-medium">{earner.user}</span>
-                        {earner.hasFarcaster && (
-                          <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
-                            F
-                          </div>
-                        )}
-                        {earner.hasX && (
-                          <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
-                            <X className="w-3 h-3 text-black" />
-                          </div>
-                        )}
+
+                      {/* Center: Completed Tasks */}
+                      <div className="text-center">
+                        <div className="text-white font-bold text-lg">{earner.completedTasks}</div>
+                      </div>
+
+                      {/* Right: Claimed */}
+                      <div className="flex flex-col items-end">
+                        <div className="text-white font-bold text-xl">${earner.claimedUsd.toFixed(2)}</div>
+                        <div className="text-gray-500 text-xs">in {earner.claimedIn}</div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
+                          <span className="text-pink-400 font-mono text-sm">{piggyAmount} $PIGGY</span>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Completed Tasks */}
-                    <div className="col-span-3 text-center">
-                      <span className="text-white font-mono font-medium">{earner.completedTasks}</span>
-                    </div>
-
-                    <div className="col-span-5 flex flex-col items-end gap-1">
-                      <div className="text-white font-bold text-lg">${earner.claimedUsd.toFixed(2)}</div>
-                      <div className="text-gray-500 text-xs">in {earner.claimedIn}</div>
-                      {piggyPrice && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full bg-pink-500"></div>
-                          <span className="text-pink-400 text-sm font-mono">
-                            {(earner.claimedUsd / piggyPrice).toLocaleString(undefined, {
-                              maximumFractionDigits: 2,
-                            })}{" "}
-                            $PIGGY
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
 
+          {/* Creators Tab */}
           {activeTab === "creators" && (
             <div className="space-y-4">
               {/* Info Text */}
-              <div className="text-gray-500 text-sm font-mono">Showing 1305 of total 1305 gig creators</div>
+              <div className="text-gray-500 text-sm font-mono">
+                Showing {filteredCreators.length} of total {creatorsData.length} oink creators
+              </div>
 
-              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
-                {filteredCreators.map((creator) => (
-                  <div
-                    key={creator.rank}
-                    className="flex items-center justify-between px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
-                  >
-                    {/* Left: User Info */}
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <img
-                          src={creator.avatar || "/placeholder.svg"}
-                          alt={creator.user}
-                          className="w-12 h-12 rounded-full border-2 border-purple-500/50"
-                        />
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
-                          {creator.rank}
+              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
+                {filteredCreators.map((creator) => {
+                  const piggyAmount = piggyPrice ? (creator.totalUsd / piggyPrice).toFixed(2) : "..."
+
+                  return (
+                    <div
+                      key={creator.rank}
+                      className="flex items-center justify-between px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
+                    >
+                      {/* Left: User Info */}
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img
+                            src={creator.avatar || "/placeholder.svg"}
+                            alt={creator.user}
+                            className="w-12 h-12 rounded-full border-2 border-pink-500/50"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                            {creator.rank}
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-medium">{creator.user}</span>
+                            {creator.hasFarcaster && (
+                              <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
+                                F
+                              </div>
+                            )}
+                            {creator.hasX && (
+                              <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
+                                <X className="w-3 h-3 text-black" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-gray-500 text-sm font-mono">Total oinks {creator.totalOinks}</div>
                         </div>
                       </div>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">{creator.user}</span>
-                          {creator.hasFarcaster && (
-                            <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
-                              F
-                            </div>
-                          )}
-                          {creator.hasX && (
-                            <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
-                              <X className="w-3 h-3 text-black" />
-                            </div>
-                          )}
+
+                      {/* Right: Total USD with PIGGY conversion */}
+                      <div className="flex flex-col items-end">
+                        <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Total USD</div>
+                        <div className="text-white font-bold text-xl">${creator.totalUsd.toFixed(2)}</div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
+                          <span className="text-pink-400 font-mono text-sm">{piggyAmount} $PIGGY</span>
                         </div>
-                        <div className="text-gray-500 text-sm font-mono">Total Gigs {creator.totalGigs}</div>
                       </div>
                     </div>
-
-                    {/* Right: Total USD only */}
-                    <div className="flex flex-col items-end">
-                      <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Total USD</div>
-                      <div className="text-white font-bold text-xl">${creator.totalUsd.toFixed(2)}</div>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
