@@ -142,6 +142,18 @@ function DailyCountdown() {
 function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<"earners" | "creators">("earners")
   const [searchQuery, setSearchQuery] = useState("")
+  const [piggyPrice, setPiggyPrice] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch("/api/piggy-price")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.usd) {
+          setPiggyPrice(data.usd)
+        }
+      })
+      .catch((err) => console.error("Error fetching PIGGY price:", err))
+  }, [])
 
   // Mock data for Earners
   const earnersData = [
@@ -152,9 +164,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasFarcaster: true,
       hasX: true,
       completedTasks: 3117,
-      pendingClaims: 0,
       claimedUsd: 680.11,
-      claimedIn: "2860 claims",
+      claimedIn: "2860 oinks", // Changed from "claims" to "oinks"
       tokens: [
         { icon: "🔵", amount: "190.80", color: "text-blue-400" },
         { icon: "🟣", amount: "0.07", color: "text-purple-400" },
@@ -168,9 +179,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasFarcaster: true,
       hasX: true,
       completedTasks: 4766,
-      pendingClaims: 0,
       claimedUsd: 516.02,
-      claimedIn: "4325 claims",
+      claimedIn: "4325 oinks", // Changed from "claims" to "oinks"
       tokens: [
         { icon: "🔵", amount: "0.07", color: "text-blue-400" },
         { icon: "🟢", amount: "4692706", color: "text-green-400" },
@@ -184,9 +194,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasFarcaster: true,
       hasX: true,
       completedTasks: 3370,
-      pendingClaims: 0,
       claimedUsd: 461.73,
-      claimedIn: "3195 claims",
+      claimedIn: "3195 oinks", // Changed from "claims" to "oinks"
       tokens: [
         { icon: "🔵", amount: "236.37", color: "text-blue-400" },
         { icon: "🟢", amount: "0.05", color: "text-green-400" },
@@ -200,9 +209,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasFarcaster: true,
       hasX: true,
       completedTasks: 3160,
-      pendingClaims: 2,
       claimedUsd: 346.07,
-      claimedIn: "3076 claims",
+      claimedIn: "3076 oinks", // Changed from "claims" to "oinks"
       tokens: [
         { icon: "🟣", amount: "35710.57", color: "text-purple-400" },
         { icon: "🔵", amount: "0.03", color: "text-blue-400" },
@@ -216,9 +224,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       hasFarcaster: true,
       hasX: true,
       completedTasks: 3657,
-      pendingClaims: 4,
       claimedUsd: 325.16,
-      claimedIn: "3374 claims",
+      claimedIn: "3374 oinks", // Changed from "claims" to "oinks"
       tokens: [
         { icon: "🟡", amount: "227940.04", color: "text-yellow-400" },
         { icon: "🔵", amount: "0.09", color: "text-blue-400" },
@@ -274,6 +281,12 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       moreTokens: 7,
     },
   ]
+
+  const filteredEarners = earnersData.filter((earner) => earner.user.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const filteredCreators = creatorsData.filter((creator) =>
+    creator.user.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   if (!isOpen) return null
 
@@ -337,17 +350,15 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         <div className="p-6">
           {activeTab === "earners" && (
             <div className="space-y-4">
-              {/* Table Header */}
               <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono">
-                <div className="col-span-4">USER</div>
-                <div className="col-span-2 text-center">COMPLETED TASKS</div>
-                <div className="col-span-2 text-center">PENDING CLAIMS</div>
-                <div className="col-span-4 text-right">CLAIMED</div>
+                <div className="col-span-4">OINKER</div>
+                <div className="col-span-3 text-center">COMPLETED</div>
+                <div className="col-span-5 text-right">EARNED</div>
               </div>
 
               {/* Table Rows */}
               <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
-                {earnersData.map((earner) => (
+                {filteredEarners.map((earner) => (
                   <div
                     key={earner.rank}
                     className="grid grid-cols-12 gap-4 items-center px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
@@ -380,29 +391,24 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                     </div>
 
                     {/* Completed Tasks */}
-                    <div className="col-span-2 text-center">
+                    <div className="col-span-3 text-center">
                       <span className="text-white font-mono font-medium">{earner.completedTasks}</span>
                     </div>
 
-                    {/* Pending Claims */}
-                    <div className="col-span-2 text-center">
-                      <span className="text-gray-400 font-mono">
-                        {earner.pendingClaims === 0 ? "0 pending" : `${earner.pendingClaims} pending`}
-                      </span>
-                    </div>
-
-                    {/* Claimed */}
-                    <div className="col-span-4 flex flex-col items-end gap-1">
+                    <div className="col-span-5 flex flex-col items-end gap-1">
                       <div className="text-white font-bold text-lg">${earner.claimedUsd.toFixed(2)}</div>
                       <div className="text-gray-500 text-xs">in {earner.claimedIn}</div>
-                      <div className="flex items-center gap-2 flex-wrap justify-end">
-                        {earner.tokens.map((token, idx) => (
-                          <div key={idx} className="flex items-center gap-1">
-                            <span className={`${token.color} text-xs font-mono`}>{token.amount}</span>
-                            <span className="text-xs">{token.icon}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {piggyPrice && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-pink-500"></div>
+                          <span className="text-pink-400 text-sm font-mono">
+                            {(earner.claimedUsd / piggyPrice).toLocaleString(undefined, {
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            $PIGGY
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -415,9 +421,8 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               {/* Info Text */}
               <div className="text-gray-500 text-sm font-mono">Showing 1305 of total 1305 gig creators</div>
 
-              {/* Creator Rows */}
               <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
-                {creatorsData.map((creator) => (
+                {filteredCreators.map((creator) => (
                   <div
                     key={creator.rank}
                     className="flex items-center justify-between px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
@@ -452,25 +457,10 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                       </div>
                     </div>
 
-                    {/* Center: Total USD */}
-                    <div className="flex flex-col items-center">
+                    {/* Right: Total USD only */}
+                    <div className="flex flex-col items-end">
                       <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Total USD</div>
                       <div className="text-white font-bold text-xl">${creator.totalUsd.toFixed(2)}</div>
-                    </div>
-
-                    {/* Right: Tokens */}
-                    <div className="flex items-center gap-2">
-                      {creator.tokens.map((token, idx) => (
-                        <div
-                          key={idx}
-                          className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-lg"
-                        >
-                          {token.icon}
-                        </div>
-                      ))}
-                      {creator.moreTokens && (
-                        <div className="text-gray-500 text-xs">and {creator.moreTokens} more tokens</div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -1044,7 +1034,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         <div className="p-6 pt-0">
           <button
             onClick={onClose}
-            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
+            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
           >
             ← BACK TO LOBBY
           </button>
