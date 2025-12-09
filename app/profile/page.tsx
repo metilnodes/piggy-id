@@ -1,9 +1,24 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useState } from "react"
+import { WagmiProvider, http } from "wagmi"
+import { base } from "wagmi/chains"
+import { useEffect } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
+
+const config = getDefaultConfig({
+  appName: "Piggy ID",
+  projectId: "7993ad87-497c-4979-a096-079dab6949fa",
+  chains: [base],
+  transports: {
+    [base.id]: http("https://mainnet.base.org"),
+  },
+  ssr: true,
+})
 
 interface UserIdentity {
   wallet_address: string
@@ -19,8 +34,7 @@ interface UserIdentity {
   farcaster_avatar_url?: string
 }
 
-export default function ProfilePage() {
-  const [mounted, setMounted] = useState(false)
+function ProfilePageInner() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -29,10 +43,6 @@ export default function ProfilePage() {
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   // Load Neynar SIWN script on component mount
   useEffect(() => {
@@ -378,14 +388,6 @@ export default function ProfilePage() {
     }
   }
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-black cyber-grid">
       <Header />
@@ -679,5 +681,19 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  const [queryClient] = useState(() => new QueryClient())
+
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          <ProfilePageInner />
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   )
 }
