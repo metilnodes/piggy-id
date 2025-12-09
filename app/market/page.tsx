@@ -1070,105 +1070,96 @@ export default function Page() {
           </h1>
         </header>
 
-        {/* Gaming Locations Grid */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-          {/* Wheel of Fortune */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-orange-500 hover:border-orange-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-orange-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎡</span>
-              </div>
-              <div className="h-12 flex items-center justify-center">
-                <h3 className="text-base font-bold text-orange-400 font-mono">WHEEL OF FORTUNE</h3>
-              </div>
-              <div className="pt-2">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Quests Table */}
+        <div className="max-w-7xl mx-auto mb-12">
+          <div className="cyber-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-pink-500/30">
+                    <th className="text-left p-4 font-mono text-sm text-gray-400 font-normal">OINK MODE</th>
+                    <th className="text-left p-4 font-mono text-sm text-gray-400 font-normal">HOW TO OINK</th>
+                    <th className="text-left p-4 font-mono text-sm text-gray-400 font-normal">PRIZE POOL</th>
+                    <th className="text-left p-4 font-mono text-sm text-gray-400 font-normal">TICK-TOCK</th>
+                    <th className="text-left p-4 font-mono text-sm text-gray-400 font-normal">SQUEAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Row 1 */}
+                  <tr className="border-b border-pink-500/20 hover:bg-pink-500/5 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-xl">🔵</span>
+                        </div>
+                        <span className="font-mono font-semibold text-white">Hold Token</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-300 text-sm">Hold at least 100 GIG tokens in your wallet</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-orange-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-sm">🪙</span>
+                        </div>
+                        <div>
+                          <div className="font-mono font-bold text-white">4000000 $GIG</div>
+                          <div className="text-xs text-gray-400">$20.60</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div>
+                        <div className="font-mono font-bold text-pink-400">2h 28m 1s</div>
+                        <div className="text-xs text-gray-400">12 days left</div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <button className="w-8 h-8 bg-pink-500/20 hover:bg-pink-500/30 rounded-full flex items-center justify-center transition-colors">
+                        <span className="text-pink-400">🔔</span>
+                      </button>
+                    </td>
+                  </tr>
 
-          {/* Slots */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-yellow-500 hover:border-yellow-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎰</span>
-              </div>
-              <div className="h-12 flex items-center justify-center">
-                <h3 className="text-lg font-bold text-yellow-400 font-mono">SLOTS</h3>
-              </div>
-              <div className="pt-2">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Dice */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-green-500 hover:border-green-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎲</span>
-              </div>
-              <div className="h-12 flex items-center justify-center">
-                <h3 className="text-lg font-bold text-green-400 font-mono">DICE</h3>
-              </div>
-              <div className="pt-2">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Blackjack */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-blue-500 hover:border-blue-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🂡</span>
-              </div>
-              <div className="h-12 flex items-center justify-center">
-                <h3 className="text-lg font-bold text-blue-400 font-mono">BLACKJACK</h3>
-              </div>
-              <div className="pt-2">
-                <button
-                  disabled
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold opacity-50 cursor-not-allowed text-sm"
-                >
-                  COMING SOON
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Poker */}
-          <div className="cyber-card p-6 hover:scale-105 transition-transform duration-300 group border-purple-500 hover:border-purple-400">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl">🎮</span>
-              </div>
-              <div className="h-12 flex items-center justify-center">
-                <h3 className="text-lg font-bold text-purple-400 font-mono">POKER</h3>
-              </div>
-              <div className="pt-2">
-                <a
-                  href="/poker"
-                  className="cyber-button inline-block px-6 py-2 font-mono font-bold group-hover:scale-110 transition-transform text-sm"
-                >
-                  ENTER ROOM
-                </a>
-              </div>
+                  {/* Row 2 */}
+                  <tr className="hover:bg-pink-500/5 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-xl">📢</span>
+                        </div>
+                        <span className="font-mono font-semibold text-white">Boost Cast</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-300 text-sm">Like and Recast the token launch announcement</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+                          <span className="text-sm">💎</span>
+                        </div>
+                        <div>
+                          <div className="font-mono font-bold text-white">11.11 $USDC</div>
+                          <div className="text-xs text-gray-400">$11.11</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div>
+                        <div className="font-mono font-bold text-pink-400">5h 6m 1s</div>
+                        <div className="text-xs text-gray-400">2 days left</div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <button className="w-8 h-8 bg-pink-500/20 hover:bg-pink-500/30 rounded-full flex items-center justify-center transition-colors">
+                        <span className="text-pink-400">🔔</span>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
