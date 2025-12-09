@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
     const source = searchParams.get("source") || "poker"
 
     if (!token) {
-      const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+      const redirectPage =
+        source === "piggyvegas" ? "/piggyvegas/profile" : source === "market" ? "/market/profile" : "/poker"
       return NextResponse.redirect(new URL(`${redirectPage}?error=verification_failed`, request.url))
     }
 
@@ -28,7 +29,8 @@ export async function GET(request: NextRequest) {
       LIMIT 1
     `
     if (rows.length === 0) {
-      const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+      const redirectPage =
+        source === "piggyvegas" ? "/piggyvegas/profile" : source === "market" ? "/market/profile" : "/poker"
       return NextResponse.redirect(new URL(`${redirectPage}?error=verification_expired`, request.url))
     }
 
@@ -65,12 +67,14 @@ export async function GET(request: NextRequest) {
         AND expires_at < NOW()
     `
 
-    const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+    const redirectPage =
+      source === "piggyvegas" ? "/piggyvegas/profile" : source === "market" ? "/market/profile" : "/poker"
     return NextResponse.redirect(new URL(`${redirectPage}?success=email_verified`, request.url))
   } catch (e) {
     const { searchParams } = new URL(request.url)
     const source = searchParams.get("source") || "poker"
-    const redirectPage = source === "piggyvegas" ? "/piggyvegas/profile" : "/poker"
+    const redirectPage =
+      source === "piggyvegas" ? "/piggyvegas/profile" : source === "market" ? "/market/profile" : "/poker"
     return NextResponse.redirect(new URL(`${redirectPage}?error=verification_failed`, request.url))
   }
 }
