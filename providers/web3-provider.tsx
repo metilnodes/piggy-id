@@ -34,27 +34,25 @@ function V0PreviewWarning() {
 
   return (
     <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 max-w-2xl w-full mx-4">
-      <div className="bg-blue-900/95 border-2 border-blue-500 rounded-lg p-4 shadow-lg">
+      <div className="bg-green-900/95 border-2 border-green-500 rounded-lg p-4 shadow-lg">
         <div className="flex items-start gap-3">
-          <div className="text-blue-400 text-2xl">ℹ️</div>
+          <div className="text-green-400 text-2xl">✓</div>
           <div className="flex-1">
-            <h3 className="text-blue-400 font-mono font-bold mb-2">V0 Preview Mode</h3>
-            <p className="text-blue-200 text-sm font-mono mb-2">
-              WalletConnect может показывать CORS предупреждения в v0 preview - это нормально и не влияет на работу
-              приложения.
+            <h3 className="text-green-400 font-mono font-bold mb-2">Preview работает!</h3>
+            <p className="text-green-200 text-sm font-mono mb-2">
+              Все функции приложения доступны. CORS предупреждения в консоли - это нормально для preview окружения.
             </p>
-            <details className="text-blue-200 text-xs font-mono">
-              <summary className="cursor-pointer hover:text-blue-100 mb-2">Как исправить CORS</summary>
+            <details className="text-green-200 text-xs font-mono">
+              <summary className="cursor-pointer hover:text-green-100 mb-2">О CORS предупреждениях</summary>
               <div className="ml-2 mt-2 space-y-2">
-                <p>Добавьте домены в WalletConnect Cloud:</p>
-                <ul className="list-disc list-inside ml-2">
-                  <li>https://*.vusercontent.net</li>
-                  <li>http://localhost:*</li>
-                </ul>
+                <p>Вы добавили домены в WalletConnect Cloud. Изменения применяются в течение 5-10 минут.</p>
+                <p className="text-yellow-300">
+                  Совет: Откройте preview в приватном окне браузера чтобы избежать кэширования.
+                </p>
               </div>
             </details>
           </div>
-          <button onClick={() => setShow(false)} className="text-blue-400 hover:text-blue-200 text-xl leading-none">
+          <button onClick={() => setShow(false)} className="text-green-400 hover:text-green-200 text-xl leading-none">
             ×
           </button>
         </div>
