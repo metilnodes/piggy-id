@@ -709,7 +709,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.279-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279-.279.434-.279.681-.093.495-.279.681l-3 3z" />
+                              <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.186 5.062c-3.36 0-6.186 2.494-6.186 5.625 0 1.124.372 2.16 1.003 3.002l-.75 2.249 2.25-.75c.842.631 1.878 1.003 3.002 1.003h.362c3.36 0 6.186-2.494 6.186-5.625s-2.826-5.625-6.186-5.625h-.681zm3.372 7.5c-.186.186-.434.279-.681.279s-.495-.093-.681-.279l-1.5-1.5c-.186-.186-.434-.434-.279-.681s.093-.495.279-.681.434-.279.681-.279.495.093.681.279l.819.819 2.319-2.319c.186-.186.434-.279.681-.279s.495.093.681.279-.279.434-.279.681-.093.495-.279.681l-3 3z" />
                             </svg>
                           </div>
                           <div className="flex-1">
@@ -845,6 +845,43 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           >
             {toast.message}
           </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PrizePool({ amountPiggy }: { amountPiggy: number }) {
+  const [piggyPriceUsd, setPiggyPriceUsd] = useState<number | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/piggy-price")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.usd) setPiggyPriceUsd(data.usd)
+        else setError(true)
+      })
+      .catch((e) => {
+        console.error(e)
+        setError(true)
+      })
+  }, [])
+
+  const usdValue = piggyPriceUsd !== null ? amountPiggy * piggyPriceUsd : null
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 bg-orange-500/20 rounded-full flex items-center justify-center">
+        <span className="text-sm">🪙</span>
+      </div>
+      <div>
+        <div className="font-mono font-bold text-white">{amountPiggy.toLocaleString()} $PIGGY</div>
+        {error && <div className="text-xs text-red-400">Price error</div>}
+        {!error && usdValue !== null ? (
+          <div className="text-xs text-neutral-400">${usdValue.toFixed(2)}</div>
+        ) : (
+          !error && <div className="text-xs text-neutral-500">Loading...</div>
         )}
       </div>
     </div>
@@ -1099,15 +1136,7 @@ export default function Page() {
                       <span className="text-gray-300 text-sm">Hold at least 100 GIG tokens in your wallet</span>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-orange-500/20 rounded-full flex items-center justify-center">
-                          <span className="text-sm">🪙</span>
-                        </div>
-                        <div>
-                          <div className="font-mono font-bold text-white">4000000 $GIG</div>
-                          <div className="text-xs text-gray-400">$20.60</div>
-                        </div>
-                      </div>
+                      <PrizePool amountPiggy={4000000} />
                     </td>
                     <td className="p-4">
                       <div>
@@ -1136,15 +1165,7 @@ export default function Page() {
                       <span className="text-gray-300 text-sm">Like and Recast the token launch announcement</span>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
-                          <span className="text-sm">💎</span>
-                        </div>
-                        <div>
-                          <div className="font-mono font-bold text-white">11.11 $USDC</div>
-                          <div className="text-xs text-gray-400">$11.11</div>
-                        </div>
-                      </div>
+                      <PrizePool amountPiggy={11} />
                     </td>
                     <td className="p-4">
                       <div>
