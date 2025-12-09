@@ -54,6 +54,7 @@
     "next": "15.2.6",
     "next-themes": "latest",
     "pinata": "latest",
+    "pino-pretty": "^13.0.0",
     "react": "^19",
     "react-day-picker": "latest",
     "react-dom": "^19",
