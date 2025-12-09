@@ -97,6 +97,17 @@ const PIGGY_TOKEN_ABI = [
 ]
 
 function PiggyIdGeneratorInner() {
+  const { address, isConnected } = useAccount()
+
+  useEffect(() => {
+    console.log("[v0] PiggyIdGeneratorInner mounted")
+    return () => console.log("[v0] PiggyIdGeneratorInner unmounted")
+  }, [])
+
+  useEffect(() => {
+    console.log("[v0] Connection status changed:", { isConnected, address })
+  }, [isConnected, address])
+
   // Get Pinata gateway URL from environment variable
   const pinataGatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || "https://olive-familiar-gerbil-797.mypinata.cloud"
 
@@ -187,7 +198,6 @@ function PiggyIdGeneratorInner() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { address, isConnected } = useAccount()
 
   // Read contract data for PIGGY token balance and allowance
   const {
@@ -1073,6 +1083,7 @@ function PiggyIdGeneratorInner() {
 }
 
 export default function PiggyIdGenerator() {
+  console.log("[v0] PiggyIdGenerator rendering")
   return (
     <Web3Provider>
       <PiggyIdGeneratorInner />

@@ -76,6 +76,12 @@ function V0PreviewWarning() {
 export function Web3Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
 
+  useEffect(() => {
+    console.log("[v0] Web3Provider mounted")
+    console.log("[v0] isV0Preview:", isV0Preview())
+    console.log("[v0] DISABLE_WALLETCONNECT_IN_PREVIEW:", DISABLE_WALLETCONNECT_IN_PREVIEW)
+  }, [])
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
