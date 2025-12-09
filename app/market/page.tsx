@@ -988,8 +988,8 @@ export default function Page() {
       {showOverlay && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="cyber-card p-8 max-w-md w-full mx-4 text-center">
-            <h2 className="text-2xl font-bold text-primary mb-6 font-mono glitch neon-text" data-text="MARKET">
-              MARKET
+            <h2 className="text-2xl font-bold text-primary mb-6 font-mono glitch neon-text" data-text="PIGGY MARKET">
+              PIGGY MARKET
             </h2>
 
             {authStatus === "disconnected" && (
@@ -1034,7 +1034,7 @@ export default function Page() {
                   href="http://id.piggyworld.xyz"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="cyber-button inline-block px-6 py-3 font-mono font-bold mb-4"
+                  className="cyber-button inline-block px-6 py-2 font-mono font-bold mb-4"
                 >
                   Mint Piggy ID to play
                 </a>
@@ -1065,10 +1065,9 @@ export default function Page() {
       {/* Main Lobby Content */}
       <div className="min-h-screen p-8">
         <header className="text-center mb-12">
-          <h1 className="text-6xl font-bold text-primary glitch neon-text mb-4 font-mono" data-text="MARKET">
-            MARKET
+          <h1 className="text-6xl font-bold text-primary glitch neon-text mb-4 font-mono" data-text="PIGGY MARKET">
+            PIGGY MARKET
           </h1>
-          <DailyCountdown />
         </header>
 
         {/* Gaming Locations Grid */}
@@ -1204,7 +1203,7 @@ export default function Page() {
 
         {/* Footer */}
         <footer className="text-center mt-12 text-muted-foreground font-mono text-sm">
-          <p>Powered by Piggy World • Virtual Currency Only • Play Responsibly • 18+</p>
+          <p>Powered by Piggy World • Complete quests and earn tokens</p>
         </footer>
       </div>
 

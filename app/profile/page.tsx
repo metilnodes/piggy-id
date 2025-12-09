@@ -415,7 +415,7 @@ export default function ProfilePage() {
           {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
-              PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
+              PIGGY PROFILE &gt; INITIALIZE YOUR PIGGY ID
             </h2>
 
             {!isConnected ? (
