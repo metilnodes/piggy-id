@@ -1283,6 +1283,38 @@ export default function Page() {
           </h1>
         </header>
 
+        {/* Navigation Buttons */}
+        <div className="max-w-md mx-auto flex justify-center gap-4 mb-12">
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            className="cyber-card px-6 py-3 border-pink-500 hover:border-pink-400 transition-colors"
+          >
+            <span className="text-pink-400 font-mono font-bold text-sm">LEADERBOARD</span>
+          </button>
+
+          <button className="cyber-card px-6 py-3 border-blue-500 hover:border-blue-400 transition-colors">
+            <span className="text-blue-400 font-mono font-bold text-sm">RULES</span>
+          </button>
+
+          <button
+            onClick={() => setShowPrizes(true)}
+            className="cyber-card px-6 py-3 border-orange-500 hover:border-orange-400 transition-colors"
+          >
+            <span className="text-orange-400 font-mono font-bold text-sm">PRIZES</span>
+          </button>
+
+          <button
+            onClick={handleProfileClick}
+            className="cyber-card px-6 py-3 border-cyan-500 hover:border-cyan-400 transition-colors"
+          >
+            <span className="text-cyan-400 font-mono font-bold text-sm">PROFILE</span>
+          </button>
+
+          <button className="cyber-card px-6 py-3 border-green-500 hover:border-green-400 transition-colors">
+            <span className="text-green-400 font-mono font-bold text-sm">CREATE OINK</span>
+          </button>
+        </div>
+
         {/* Quests Table */}
         <div className="max-w-7xl mx-auto mb-12">
           <div className="cyber-card overflow-hidden">
@@ -1359,34 +1391,6 @@ export default function Page() {
               </table>
             </div>
           </div>
-        </div>
-
-        {/* Bottom Navigation Buttons */}
-        <div className="max-w-md mx-auto flex justify-center gap-4 mt-16">
-          <button
-            onClick={() => setShowLeaderboard(true)}
-            className="cyber-card px-6 py-3 border-pink-500 hover:border-pink-400 transition-colors"
-          >
-            <span className="text-pink-400 font-mono font-bold text-sm">LEADERBOARD</span>
-          </button>
-
-          <button className="cyber-card px-6 py-3 border-blue-500 hover:border-blue-400 transition-colors">
-            <span className="text-blue-400 font-mono font-bold text-sm">RULES</span>
-          </button>
-
-          <button
-            onClick={() => setShowPrizes(true)}
-            className="cyber-card px-6 py-3 border-orange-500 hover:border-orange-400 transition-colors"
-          >
-            <span className="text-orange-400 font-mono font-bold text-sm">PRIZES</span>
-          </button>
-
-          <button
-            onClick={handleProfileClick}
-            className="cyber-card px-6 py-3 border-cyan-500 hover:border-cyan-400 transition-colors"
-          >
-            <span className="text-cyan-400 font-mono font-bold text-sm">PROFILE</span>
-          </button>
         </div>
 
         {/* Footer */}
