@@ -20,7 +20,7 @@ export const wagmiConfig = getDefaultConfig({
   projectId:
     DISABLE_WALLETCONNECT_IN_PREVIEW && isV0Preview()
       ? "0000000000000000000000000000000000000000" // Dummy projectId for preview
-      : "7993ad87-497c-4979-a096-079dab6949fa",
+      : "a0a72481-51b1-42ec-9083-58ea5c94db3c",
   chains: [base],
   transports: {
     [base.id]: http("https://mainnet.base.org"),
