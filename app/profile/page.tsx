@@ -20,6 +20,7 @@ interface UserIdentity {
 }
 
 export default function ProfilePage() {
+  const [mounted, setMounted] = useState(false)
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -28,6 +29,10 @@ export default function ProfilePage() {
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load Neynar SIWN script on component mount
   useEffect(() => {
@@ -371,6 +376,14 @@ export default function ProfilePage() {
     } finally {
       setIdentityLoading(false)
     }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
   }
 
   return (
