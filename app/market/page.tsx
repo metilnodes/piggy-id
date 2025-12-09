@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
-import { X, Trophy, Medal, Star, Crown } from "lucide-react"
+import { X, Trophy, Medal, Star, Crown, Search } from "lucide-react"
 import { PrizesModal } from "./PrizesModal"
 
 type AuthStatus = "disconnected" | "verifying" | "no-nft" | "authorized"
@@ -140,15 +140,139 @@ function DailyCountdown() {
 }
 
 function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState("day1")
+  const [activeTab, setActiveTab] = useState<"earners" | "creators">("earners")
+  const [searchQuery, setSearchQuery] = useState("")
 
-  const tabs = [
-    { id: "day1", label: "Day 1" },
-    { id: "day2", label: "Day 2" },
-    { id: "day3", label: "Day 3" },
-    { id: "day4", label: "Day 4" },
-    { id: "day5", label: "Day 5" },
-    { id: "summary", label: "Summary", isSpecial: true },
+  // Mock data for Earners
+  const earnersData = [
+    {
+      rank: 1,
+      user: "0xmoti.eth",
+      avatar: "/diverse-user-avatars.png",
+      hasFarcaster: true,
+      hasX: true,
+      completedTasks: 3117,
+      pendingClaims: 0,
+      claimedUsd: 680.11,
+      claimedIn: "2860 claims",
+      tokens: [
+        { icon: "🔵", amount: "190.80", color: "text-blue-400" },
+        { icon: "🟣", amount: "0.07", color: "text-purple-400" },
+        { icon: "🟡", amount: "42224.88", color: "text-yellow-400" },
+      ],
+    },
+    {
+      rank: 2,
+      user: "foisai1",
+      avatar: "/diverse-user-avatar-set-2.png",
+      hasFarcaster: true,
+      hasX: true,
+      completedTasks: 4766,
+      pendingClaims: 0,
+      claimedUsd: 516.02,
+      claimedIn: "4325 claims",
+      tokens: [
+        { icon: "🔵", amount: "0.07", color: "text-blue-400" },
+        { icon: "🟢", amount: "4692706", color: "text-green-400" },
+        { icon: "🟣", amount: "38.80", color: "text-purple-400" },
+      ],
+    },
+    {
+      rank: 3,
+      user: "m--",
+      avatar: "/diverse-user-avatars-3.png",
+      hasFarcaster: true,
+      hasX: true,
+      completedTasks: 3370,
+      pendingClaims: 0,
+      claimedUsd: 461.73,
+      claimedIn: "3195 claims",
+      tokens: [
+        { icon: "🔵", amount: "236.37", color: "text-blue-400" },
+        { icon: "🟢", amount: "0.05", color: "text-green-400" },
+        { icon: "🟡", amount: "8706.60", color: "text-yellow-400" },
+      ],
+    },
+    {
+      rank: 4,
+      user: "jumpbox.eth",
+      avatar: "/user-avatar-4.png",
+      hasFarcaster: true,
+      hasX: true,
+      completedTasks: 3160,
+      pendingClaims: 2,
+      claimedUsd: 346.07,
+      claimedIn: "3076 claims",
+      tokens: [
+        { icon: "🟣", amount: "35710.57", color: "text-purple-400" },
+        { icon: "🔵", amount: "0.03", color: "text-blue-400" },
+        { icon: "🟢", amount: "70.07", color: "text-green-400" },
+      ],
+    },
+    {
+      rank: 5,
+      user: "beneto",
+      avatar: "/user-avatar-5.png",
+      hasFarcaster: true,
+      hasX: true,
+      completedTasks: 3657,
+      pendingClaims: 4,
+      claimedUsd: 325.16,
+      claimedIn: "3374 claims",
+      tokens: [
+        { icon: "🟡", amount: "227940.04", color: "text-yellow-400" },
+        { icon: "🔵", amount: "0.09", color: "text-blue-400" },
+        { icon: "🟢", amount: "57.26", color: "text-green-400" },
+      ],
+    },
+  ]
+
+  // Mock data for Creators
+  const creatorsData = [
+    {
+      rank: 1,
+      user: "0xBb26...7F06",
+      avatar: "/creator-avatar.png",
+      totalGigs: 978,
+      totalUsd: 9798.5,
+      tokens: [
+        { icon: "🔵", color: "text-blue-400" },
+        { icon: "🟣", color: "text-purple-400" },
+      ],
+    },
+    {
+      rank: 2,
+      user: "BizarreBeasts",
+      avatar: "/creator-avatar-2.jpg",
+      hasFarcaster: true,
+      hasX: true,
+      totalGigs: 182,
+      totalUsd: 2608.97,
+      tokens: [
+        { icon: "🔵", color: "text-blue-400" },
+        { icon: "🟡", color: "text-yellow-400" },
+        { icon: "🟣", color: "text-purple-400" },
+        { icon: "🟢", color: "text-green-400" },
+        { icon: "🔴", color: "text-red-400" },
+      ],
+      moreTokens: 2,
+    },
+    {
+      rank: 3,
+      user: "jumpbox",
+      avatar: "/creator-avatar-3.jpg",
+      hasFarcaster: true,
+      hasX: true,
+      totalGigs: 100,
+      totalUsd: 1192.07,
+      tokens: [
+        { icon: "🟣", color: "text-purple-400" },
+        { icon: "🔵", color: "text-blue-400" },
+        { icon: "🟢", color: "text-green-400" },
+        { icon: "🔴", color: "text-red-400" },
+      ],
+      moreTokens: 7,
+    },
   ]
 
   if (!isOpen) return null
@@ -159,12 +283,10 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-4xl mx-4 bg-black border-2 border-pink-500 rounded-lg shadow-2xl">
+      <div className="relative w-full max-w-6xl mx-4 bg-black border-2 border-pink-500 rounded-lg shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-pink-500/30">
-          <h1 className="text-3xl font-bold text-pink-500 glitch neon-text font-mono" data-text="LEADERBOARD">
-            LEADERBOARD
-          </h1>
+          <h1 className="text-3xl font-bold text-white font-mono tracking-wider">LEADERBOARD</h1>
           <button
             onClick={onClose}
             className="p-2 text-pink-500 hover:text-pink-400 hover:bg-pink-500/10 rounded-lg transition-colors"
@@ -174,93 +296,187 @@ function LeaderboardModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
         </div>
 
         {/* Tabs */}
-        <div className="p-6 pb-0">
-          <div className="flex space-x-1 overflow-x-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-sm font-medium font-mono rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? tab.isSpecial
-                      ? "bg-yellow-500/20 text-yellow-400 border-yellow-400 shadow-lg shadow-yellow-400/20"
-                      : "bg-pink-500/20 text-pink-400 border-pink-400 shadow-lg shadow-pink-400/20"
-                    : "text-gray-400 border-transparent hover:text-pink-400 hover:border-pink-400/50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        <div className="flex border-b border-gray-800">
+          <button
+            onClick={() => setActiveTab("earners")}
+            className={`flex-1 px-6 py-4 text-sm font-bold font-mono tracking-wider transition-all ${
+              activeTab === "earners"
+                ? "bg-purple-600/30 text-purple-400 border-b-2 border-purple-500"
+                : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
+            }`}
+          >
+            EARNERS
+          </button>
+          <button
+            onClick={() => setActiveTab("creators")}
+            className={`flex-1 px-6 py-4 text-sm font-bold font-mono tracking-wider transition-all ${
+              activeTab === "creators"
+                ? "bg-purple-600/30 text-purple-400 border-b-2 border-purple-500"
+                : "text-gray-500 hover:text-gray-300 hover:bg-gray-900/50"
+            }`}
+          >
+            CREATORS
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="p-6 border-b border-gray-900">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input
+              type="text"
+              placeholder="SEARCH FOR USER..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-gray-900/50 border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-gray-400 text-sm font-mono placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 transition-colors"
+            />
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-pink-500 scrollbar-track-transparent">
-          <div className="space-y-2">
-            {mockData[activeTab]?.map((entry, index) => (
-              <div
-                key={index}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-all hover:shadow-lg ${
-                  entry.rank === 1
-                    ? "bg-yellow-500/10 border-yellow-400/30 hover:shadow-yellow-400/20"
-                    : entry.rank === 2
-                      ? "bg-gray-300/10 border-gray-300/30 hover:shadow-gray-300/20"
-                      : entry.rank === 3
-                        ? "bg-amber-600/10 border-amber-600/30 hover:shadow-amber-600/20"
-                        : "bg-pink-500/5 border-pink-500/20 hover:shadow-pink-500/20"
-                }`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full font-bold font-mono ${
-                      entry.rank === 1
-                        ? "bg-yellow-400 text-black"
-                        : entry.rank === 2
-                          ? "bg-gray-300 text-black"
-                          : entry.rank === 3
-                            ? "bg-amber-600 text-white"
-                            : "bg-pink-500 text-white"
-                    }`}
-                  >
-                    {entry.rank}
-                  </div>
-                  <div>
-                    <div className="font-medium text-white font-mono">{entry.player}</div>
-                    <div className="text-sm text-gray-400 font-mono">{entry.score.toLocaleString()} points</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  {getRewardIcon(entry.rewardType)}
-                  <span
-                    className={`font-medium font-mono ${
-                      entry.rewardType === "gold"
-                        ? "text-yellow-400"
-                        : entry.rewardType === "silver"
-                          ? "text-gray-300"
-                          : entry.rewardType === "bronze"
-                            ? "text-amber-600"
-                            : "text-pink-400"
-                    }`}
-                  >
-                    {entry.reward}
-                  </span>
-                </div>
+        <div className="p-6">
+          {activeTab === "earners" && (
+            <div className="space-y-4">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider font-mono">
+                <div className="col-span-4">USER</div>
+                <div className="col-span-2 text-center">COMPLETED TASKS</div>
+                <div className="col-span-2 text-center">PENDING CLAIMS</div>
+                <div className="col-span-4 text-right">CLAIMED</div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="p-6 pt-0">
-          <div className="text-center mb-4">
-            <p className="text-sm text-gray-400 font-mono">Rankings update every hour • Next update in 23 minutes</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
-          >
-            ← BACK TO LOBBY
-          </button>
+              {/* Table Rows */}
+              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
+                {earnersData.map((earner) => (
+                  <div
+                    key={earner.rank}
+                    className="grid grid-cols-12 gap-4 items-center px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
+                  >
+                    {/* User */}
+                    <div className="col-span-4 flex items-center gap-3">
+                      <div className="relative">
+                        <img
+                          src={earner.avatar || "/placeholder.svg"}
+                          alt={earner.user}
+                          className="w-10 h-10 rounded-full border-2 border-purple-500/50"
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                          {earner.rank}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-medium">{earner.user}</span>
+                        {earner.hasFarcaster && (
+                          <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
+                            F
+                          </div>
+                        )}
+                        {earner.hasX && (
+                          <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
+                            <X className="w-3 h-3 text-black" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Completed Tasks */}
+                    <div className="col-span-2 text-center">
+                      <span className="text-white font-mono font-medium">{earner.completedTasks}</span>
+                    </div>
+
+                    {/* Pending Claims */}
+                    <div className="col-span-2 text-center">
+                      <span className="text-gray-400 font-mono">
+                        {earner.pendingClaims === 0 ? "0 pending" : `${earner.pendingClaims} pending`}
+                      </span>
+                    </div>
+
+                    {/* Claimed */}
+                    <div className="col-span-4 flex flex-col items-end gap-1">
+                      <div className="text-white font-bold text-lg">${earner.claimedUsd.toFixed(2)}</div>
+                      <div className="text-gray-500 text-xs">in {earner.claimedIn}</div>
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {earner.tokens.map((token, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <span className={`${token.color} text-xs font-mono`}>{token.amount}</span>
+                            <span className="text-xs">{token.icon}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "creators" && (
+            <div className="space-y-4">
+              {/* Info Text */}
+              <div className="text-gray-500 text-sm font-mono">Showing 1305 of total 1305 gig creators</div>
+
+              {/* Creator Rows */}
+              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
+                {creatorsData.map((creator) => (
+                  <div
+                    key={creator.rank}
+                    className="flex items-center justify-between px-4 py-4 bg-gray-900/30 hover:bg-gray-900/50 rounded-lg border border-gray-800/50 transition-all"
+                  >
+                    {/* Left: User Info */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img
+                          src={creator.avatar || "/placeholder.svg"}
+                          alt={creator.user}
+                          className="w-12 h-12 rounded-full border-2 border-purple-500/50"
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                          {creator.rank}
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">{creator.user}</span>
+                          {creator.hasFarcaster && (
+                            <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-[10px]">
+                              F
+                            </div>
+                          )}
+                          {creator.hasX && (
+                            <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
+                              <X className="w-3 h-3 text-black" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-gray-500 text-sm font-mono">Total Gigs {creator.totalGigs}</div>
+                      </div>
+                    </div>
+
+                    {/* Center: Total USD */}
+                    <div className="flex flex-col items-center">
+                      <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Total USD</div>
+                      <div className="text-white font-bold text-xl">${creator.totalUsd.toFixed(2)}</div>
+                    </div>
+
+                    {/* Right: Tokens */}
+                    <div className="flex items-center gap-2">
+                      {creator.tokens.map((token, idx) => (
+                        <div
+                          key={idx}
+                          className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-lg"
+                        >
+                          {token.icon}
+                        </div>
+                      ))}
+                      {creator.moreTokens && (
+                        <div className="text-gray-500 text-xs">and {creator.moreTokens} more tokens</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -635,7 +851,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .078.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.041-.106 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .078.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
                             </svg>
                           </div>
                           <div className="flex-1">
@@ -672,7 +888,7 @@ function ProfileModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
                             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                              <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63a9.935 9.935 0 0024 4.59z" />
                             </svg>
                           </div>
                           <div className="flex-1">
@@ -938,7 +1154,7 @@ export default function Page() {
       const sessionData = localStorage.getItem("market_session")
       if (sessionData) {
         try {
-          const session: UserSession = JSON.parse(sessionData)
+          const session: UserSession = JSON.JSON.parse(sessionData)
           if (session.address.toLowerCase() !== address.toLowerCase()) {
             // Wallet changed, re-check NFT ownership
             localStorage.removeItem("market_session")
