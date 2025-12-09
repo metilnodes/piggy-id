@@ -90,6 +90,8 @@ export async function GET(request: NextRequest) {
 
       if (source === "piggyvegas") {
         return NextResponse.redirect(`${origin}/piggyvegas/profile?success=discord_verified`)
+      } else if (source === "market") {
+        return NextResponse.redirect(`${origin}/market/profile?success=discord_verified`)
       } else {
         return NextResponse.redirect(`${origin}/poker?success=discord_verified`)
       }
@@ -101,7 +103,9 @@ export async function GET(request: NextRequest) {
         ? "superpoker"
         : JSON.parse(Buffer.from(state, "base64").toString()).source === "piggyvegas"
           ? "piggyvegas/profile"
-          : "poker"
+          : JSON.parse(Buffer.from(state, "base64").toString()).source === "market"
+            ? "market/profile"
+            : "poker"
       : "poker"
     return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed`)
   }
