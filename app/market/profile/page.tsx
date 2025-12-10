@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
@@ -18,9 +20,12 @@ interface UserIdentity {
   farcaster_display_name?: string
   farcaster_avatar_url?: string
   username?: string
+  avatar_url?: string
+  avatar_cid?: string
+  avatar_updated_at?: string
 }
 
-export default function ProfilePage() {
+export default function MarketProfilePage() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -30,9 +35,10 @@ export default function ProfilePage() {
   const [username, setUsername] = useState<string>("")
   const [usernameEditing, setUsernameEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
-  // Load Neynar SIWN script on component mount
   useEffect(() => {
     const script = document.createElement("script")
     script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
@@ -72,7 +78,6 @@ export default function ProfilePage() {
     const handleUrlParams = async () => {
       const urlParams = new URLSearchParams(window.location.search)
 
-      // Process all parameters first, then batch state updates
       const updates = {
         toast: null as { message: string; type: "success" | "error" } | null,
         shouldReloadIdentity: false,
@@ -137,7 +142,6 @@ export default function ProfilePage() {
         }
       }
 
-      // Apply all state updates in sequence to avoid conflicts
       if (updates.toast) {
         setToast(updates.toast)
       }
@@ -154,7 +158,6 @@ export default function ProfilePage() {
         setEmail(updates.email)
       }
 
-      // Handle identity reload after state updates
       if (updates.shouldReloadIdentity && address && isConnected) {
         try {
           await new Promise((resolve) => setTimeout(resolve, 500))
@@ -166,7 +169,6 @@ export default function ProfilePage() {
         }
       }
 
-      // Clean up URL after processing
       if (urlParams.toString()) {
         setTimeout(() => {
           window.history.replaceState({}, document.title, window.location.pathname)
@@ -175,7 +177,7 @@ export default function ProfilePage() {
     }
 
     handleUrlParams()
-  }, [address, isConnected]) // Removed state dependencies to prevent loops
+  }, [address, isConnected])
 
   useEffect(() => {
     if (toast) {
@@ -185,15 +187,14 @@ export default function ProfilePage() {
   }, [toast])
 
   useEffect(() => {
-    if (identity?.email) {
-      setEmail(identity.email)
-    }
     if (identity?.username) {
       setUsername(identity.username)
     }
+    if (identity?.avatar_url) {
+      setAvatarUrl(identity.avatar_url)
+    }
   }, [identity])
 
-  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -271,7 +272,6 @@ export default function ProfilePage() {
   const connectTwitter = async () => {
     if (!address) return
 
-    // Redirect to Twitter OAuth
     window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
   }
 
@@ -354,7 +354,6 @@ export default function ProfilePage() {
           type: "success",
         })
 
-        // Reload identity data
         const identityResponse = await fetch(`/api/identity?address=${address}`)
         const identityData = await identityResponse.json()
         setIdentity(identityData.identity)
@@ -437,6 +436,74 @@ export default function ProfilePage() {
     setToast({ message, type })
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !address) return
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showToast("Invalid file type. Only JPEG, PNG, and WebP are allowed", "error")
+      return
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      showToast("File too large. Maximum size is 3MB", "error")
+      return
+    }
+
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("avatar", file)
+      formData.append("walletAddress", address)
+
+      const response = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAvatarUrl(data.avatarUrl)
+        showToast("Avatar uploaded successfully!", "success")
+        await fetchIdentity()
+      } else {
+        const error = await response.json()
+        showToast(error.error || "Failed to upload avatar", "error")
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      showToast("Failed to upload avatar", "error")
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    if (!address) return
+
+    setAvatarUploading(true)
+    try {
+      const response = await fetch("/api/profile/avatar", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: address }),
+      })
+
+      if (response.ok) {
+        setAvatarUrl(null)
+        showToast("Avatar removed successfully!", "success")
+        await fetchIdentity()
+      } else {
+        showToast("Failed to remove avatar", "error")
+      }
+    } catch (error) {
+      console.error("Error removing avatar:", error)
+      showToast("Failed to remove avatar", "error")
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black cyber-grid">
       <Header />
@@ -476,7 +543,6 @@ export default function ProfilePage() {
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
               MARKET PROFILE &gt; INITIALIZE YOUR PIGGY ID
@@ -504,7 +570,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Username Section */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">USERNAME</h3>
                   <div className="flex items-center gap-2">
@@ -537,11 +602,66 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
+
+                {isConnected && (
+                  <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                    <h3 className="text-pink-500 font-mono font-bold mb-4">AVATAR</h3>
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        <img
+                          src={
+                            avatarUrl
+                              ? `${avatarUrl}?t=${identity?.avatar_updated_at || Date.now()}`
+                              : "/placeholder.svg?height=80&width=80"
+                          }
+                          alt="User avatar"
+                          className="w-20 h-20 rounded-full border-2 border-pink-500/50 object-cover"
+                        />
+                        {avatarUploading && (
+                          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 space-y-3">
+                        <div className="flex gap-2">
+                          <label
+                            htmlFor="avatar-upload-market"
+                            className={`cyber-button px-4 py-2 text-sm font-mono cursor-pointer ${
+                              avatarUploading ? "opacity-50 pointer-events-none" : ""
+                            }`}
+                          >
+                            {avatarUploading ? "Uploading..." : avatarUrl ? "Change Avatar" : "Upload Avatar"}
+                          </label>
+                          <input
+                            id="avatar-upload-market"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleAvatarUpload}
+                            disabled={avatarUploading}
+                            className="hidden"
+                          />
+
+                          {avatarUrl && (
+                            <button
+                              onClick={handleRemoveAvatar}
+                              disabled={avatarUploading}
+                              className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-2 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 font-mono">Max 3MB • JPG, PNG, or WebP</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Right Column - Connections Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
@@ -551,7 +671,6 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Primary Identity */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">Primary Identity</h3>
                   <div className="text-pink-400 font-mono text-sm">
@@ -560,12 +679,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Secondary Identities */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
 
                   <div className="space-y-4">
-                    {/* Discord */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 rounded flex items-center justify-center overflow-hidden">
@@ -600,7 +717,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Twitter */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -636,7 +752,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Farcaster */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
@@ -672,7 +787,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Email */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>

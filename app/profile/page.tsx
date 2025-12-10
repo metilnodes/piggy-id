@@ -1,11 +1,13 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
 
-interface UserIdentity {
+interface Identity {
   wallet_address: string
   token_id?: number
   discord_id?: string
@@ -18,18 +20,23 @@ interface UserIdentity {
   farcaster_display_name?: string
   farcaster_avatar_url?: string
   username?: string
+  avatar_url?: string
+  avatar_cid?: string
+  avatar_updated_at?: string
 }
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
-  const [identity, setIdentity] = useState<UserIdentity | null>(null)
+  const [identity, setIdentity] = useState<Identity | null>(null)
   const [email, setEmail] = useState<string>("")
   const [emailEditing, setEmailEditing] = useState<boolean>(false)
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
   const [username, setUsername] = useState<string>("")
   const [usernameEditing, setUsernameEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
   // Load Neynar SIWN script on component mount
@@ -191,11 +198,11 @@ export default function ProfilePage() {
   }, [toast])
 
   useEffect(() => {
-    if (identity?.email) {
-      setEmail(identity.email)
-    }
     if (identity?.username) {
       setUsername(identity.username)
+    }
+    if (identity?.avatar_url) {
+      setAvatarUrl(identity.avatar_url)
     }
   }, [identity])
 
@@ -453,6 +460,76 @@ export default function ProfilePage() {
     setToast({ message, type })
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !address) return
+
+    // Validate file type
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showToast("Invalid file type. Only JPEG, PNG, and WebP are allowed", "error")
+      return
+    }
+
+    // Validate file size (max 3MB)
+    if (file.size > 3 * 1024 * 1024) {
+      showToast("File too large. Maximum size is 3MB", "error")
+      return
+    }
+
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("avatar", file)
+      formData.append("walletAddress", address)
+
+      const response = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAvatarUrl(data.avatarUrl)
+        showToast("Avatar uploaded successfully!", "success")
+        await fetchIdentity()
+      } else {
+        const error = await response.json()
+        showToast(error.error || "Failed to upload avatar", "error")
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      showToast("Failed to upload avatar", "error")
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    if (!address) return
+
+    setAvatarUploading(true)
+    try {
+      const response = await fetch("/api/profile/avatar", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: address }),
+      })
+
+      if (response.ok) {
+        setAvatarUrl(null)
+        showToast("Avatar removed successfully!", "success")
+        await fetchIdentity()
+      } else {
+        showToast("Failed to remove avatar", "error")
+      }
+    } catch (error) {
+      console.error("Error removing avatar:", error)
+      showToast("Failed to remove avatar", "error")
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black cyber-grid">
       <Header />
@@ -550,6 +627,62 @@ export default function ProfilePage() {
                         )}
                       </div>
                     )}
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-pink-500/20">
+                  <h3 className="text-pink-500 font-mono font-bold mb-4">AVATAR</h3>
+                  <div className="flex items-start gap-4">
+                    {/* Avatar Preview */}
+                    <div className="relative">
+                      <img
+                        src={
+                          avatarUrl
+                            ? `${avatarUrl}?t=${identity?.avatar_updated_at || Date.now()}`
+                            : "/placeholder.svg?height=80&width=80"
+                        }
+                        alt="User avatar"
+                        className="w-20 h-20 rounded-full border-2 border-pink-500/50 object-cover"
+                      />
+                      {avatarUploading && (
+                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Controls */}
+                    <div className="flex-1 space-y-3">
+                      <div className="flex gap-2">
+                        <label
+                          htmlFor="avatar-upload"
+                          className={`cyber-button px-4 py-2 text-sm font-mono cursor-pointer ${
+                            avatarUploading ? "opacity-50 pointer-events-none" : ""
+                          }`}
+                        >
+                          {avatarUploading ? "Uploading..." : avatarUrl ? "Change Avatar" : "Upload Avatar"}
+                        </label>
+                        <input
+                          id="avatar-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleAvatarUpload}
+                          disabled={avatarUploading}
+                          className="hidden"
+                        />
+
+                        {avatarUrl && (
+                          <button
+                            onClick={handleRemoveAvatar}
+                            disabled={avatarUploading}
+                            className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-2 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 font-mono">Max 3MB • JPG, PNG, or WebP</p>
+                    </div>
                   </div>
                 </div>
               </div>

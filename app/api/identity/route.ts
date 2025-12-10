@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.log("[v0] Querying user_identities table for wallet:", walletAddress.toLowerCase())
 
     let result = await sql`
-      SELECT * FROM user_identities 
+      SELECT *, avatar_url, avatar_cid, avatar_updated_at FROM user_identities 
       WHERE wallet_address = ${walletAddress.toLowerCase()}
     `
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         `
 
         result = await sql`
-          SELECT * FROM user_identities 
+          SELECT *, avatar_url, avatar_cid, avatar_updated_at FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
         `
       }
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         `
 
         result = await sql`
-          SELECT * FROM user_identities 
+          SELECT *, avatar_url, avatar_cid, avatar_updated_at FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
         `
       }
@@ -192,15 +192,17 @@ export async function POST(request: NextRequest) {
     } else if (type === "farcaster") {
       await sql`
         INSERT INTO user_identities 
-          (wallet_address, platform, platform_user_id, username, display_name, avatar_url, token_id, created_at, updated_at)
+          (wallet_address, platform, platform_user_id, username, display_name, avatar_url, avatar_cid, avatar_updated_at, token_id, created_at, updated_at)
         VALUES 
-          (${walletAddress.toLowerCase()}, 'farcaster', ${data.fid}, ${data.username}, ${data.displayName}, ${data.avatarUrl}, ${finalTokenId}, NOW(), NOW())
+          (${walletAddress.toLowerCase()}, 'farcaster', ${data.fid}, ${data.username}, ${data.displayName}, ${data.avatarUrl}, ${data.avatarCid}, NOW(), ${finalTokenId}, NOW(), NOW())
         ON CONFLICT (wallet_address, platform) 
         DO UPDATE SET 
           platform_user_id = ${data.fid},
           username = ${data.username},
           display_name = ${data.displayName},
           avatar_url = ${data.avatarUrl},
+          avatar_cid = ${data.avatarCid},
+          avatar_updated_at = NOW(),
           token_id = COALESCE(${finalTokenId}, user_identities.token_id),
           updated_at = NOW()
       `
