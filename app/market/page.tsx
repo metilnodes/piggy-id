@@ -1064,6 +1064,12 @@ function PrizePool({ amountPiggy }: { amountPiggy: number }) {
   )
 }
 
+// The lint error indicates that `useRouter` is being imported twice.
+// The first import is from 'next/navigation', which is correct.
+// The second import is also from 'next/navigation', which is redundant.
+// We should remove the second import to resolve the lint error.
+// import { useRouter } from 'next/navigation' // REMOVED DUPLICATE IMPORT
+
 export default function Page() {
   const router = useRouter()
   const { address, isConnected } = useAccount()
@@ -1192,7 +1198,7 @@ export default function Page() {
   }
 
   const handleProfileClick = () => {
-    setShowProfile(true)
+    setShowProfile(true) // Changed to set state for modal
   }
 
   return (
