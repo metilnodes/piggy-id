@@ -17,6 +17,7 @@ interface UserIdentity {
   farcaster_username?: string
   farcaster_display_name?: string
   farcaster_avatar_url?: string
+  username?: string
 }
 
 export default function ProfilePage() {
@@ -26,10 +27,11 @@ export default function ProfilePage() {
   const [email, setEmail] = useState<string>("")
   const [emailEditing, setEmailEditing] = useState<boolean>(false)
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
+  const [username, setUsername] = useState<string>("")
+  const [usernameEditing, setUsernameEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
-  // Load Neynar SIWN script on component mount
   useEffect(() => {
     const script = document.createElement("script")
     script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
@@ -75,13 +77,14 @@ export default function ProfilePage() {
     const handleUrlParams = async () => {
       const urlParams = new URLSearchParams(window.location.search)
 
-      // Process all parameters first, then batch state updates
       const updates = {
         toast: null as { message: string; type: "success" | "error" } | null,
         shouldReloadIdentity: false,
         emailVerificationPending: emailVerificationPending,
         emailEditing: emailEditing,
         email: email,
+        username: username,
+        usernameEditing: usernameEditing,
       }
 
       if (urlParams.get("success") === "email_verified") {
@@ -140,7 +143,6 @@ export default function ProfilePage() {
         }
       }
 
-      // Apply all state updates in sequence to avoid conflicts
       if (updates.toast) {
         setToast(updates.toast)
       }
@@ -157,7 +159,14 @@ export default function ProfilePage() {
         setEmail(updates.email)
       }
 
-      // Handle identity reload after state updates
+      if (updates.username !== username) {
+        setUsername(updates.username)
+      }
+
+      if (updates.usernameEditing !== usernameEditing) {
+        setUsernameEditing(updates.usernameEditing)
+      }
+
       if (updates.shouldReloadIdentity && address && isConnected) {
         try {
           await new Promise((resolve) => setTimeout(resolve, 500))
@@ -169,7 +178,6 @@ export default function ProfilePage() {
         }
       }
 
-      // Clean up URL after processing
       if (urlParams.toString()) {
         setTimeout(() => {
           window.history.replaceState({}, document.title, window.location.pathname)
@@ -178,7 +186,16 @@ export default function ProfilePage() {
     }
 
     handleUrlParams()
-  }, [address, isConnected]) // Removed state dependencies to prevent loops
+  }, [address, isConnected])
+
+  useEffect(() => {
+    if (identity?.email) {
+      setEmail(identity.email)
+    }
+    if (identity?.username) {
+      setUsername(identity.username)
+    }
+  }, [identity])
 
   useEffect(() => {
     if (toast) {
@@ -187,7 +204,6 @@ export default function ProfilePage() {
     }
   }, [toast])
 
-  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -269,7 +285,6 @@ export default function ProfilePage() {
   const connectTwitter = async () => {
     if (!address) return
 
-    // Redirect to Twitter OAuth
     window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
   }
 
@@ -352,7 +367,6 @@ export default function ProfilePage() {
           type: "success",
         })
 
-        // Reload identity data
         const identityResponse = await fetch(`/api/identity?address=${address}`)
         const identityData = await identityResponse.json()
         setIdentity(identityData.identity)
@@ -368,6 +382,63 @@ export default function ProfilePage() {
         message: `Failed to disconnect ${platform}. Please try again.`,
         type: "error",
       })
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
+  const saveUsername = async () => {
+    if (!username.trim()) {
+      setToast({ message: "Username cannot be empty", type: "error" })
+      return
+    }
+
+    setIdentityLoading(true)
+    try {
+      const response = await fetch("/api/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          type: "username",
+          data: { username: username.trim() },
+        }),
+      })
+
+      if (response.ok) {
+        setToast({ message: "Username updated successfully!", type: "success" })
+        setUsernameEditing(false)
+        await fetchIdentity()
+      } else {
+        setToast({ message: "Failed to update username", type: "error" })
+      }
+    } catch (error) {
+      console.error("Error updating username:", error)
+      setToast({ message: "Failed to update username", type: "error" })
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
+  const cancelUsernameEdit = () => {
+    setUsername(identity?.username || "")
+    setUsernameEditing(false)
+  }
+
+  const fetchIdentity = async () => {
+    if (!address || !isConnected) {
+      setIdentity(null)
+      return
+    }
+
+    setIdentityLoading(true)
+
+    try {
+      const response = await fetch(`/api/identity?address=${address}`)
+      const data = await response.json()
+      setIdentity(data.identity)
+    } catch (error) {
+      console.error("[v0] Error loading identity:", error)
     } finally {
       setIdentityLoading(false)
     }
@@ -412,7 +483,6 @@ export default function ProfilePage() {
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
               PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
@@ -439,11 +509,43 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
+
+                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                  <h3 className="text-pink-500 font-mono font-bold mb-2">USERNAME</h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      onFocus={() => setUsernameEditing(true)}
+                      placeholder="Enter your username"
+                      className="flex-1 bg-black border border-pink-500/30 text-pink-300 font-mono text-sm px-2 py-1 rounded focus:border-pink-500 focus:outline-none"
+                    />
+                    {(usernameEditing || username !== identity?.username) && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveUsername}
+                          disabled={identityLoading || !username.trim()}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          {identityLoading ? "Saving..." : "Save"}
+                        </button>
+                        {usernameEditing && username !== identity?.username && (
+                          <button
+                            onClick={cancelUsernameEdit}
+                            className="border border-gray-500 text-gray-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Right Column - Connections Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
@@ -453,7 +555,6 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Primary Identity */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">Primary Identity</h3>
                   <div className="text-pink-400 font-mono text-sm">
@@ -462,12 +563,10 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Secondary Identities */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
 
                   <div className="space-y-4">
-                    {/* Discord */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 rounded flex items-center justify-center overflow-hidden">
@@ -502,7 +601,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Twitter */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -538,7 +636,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Farcaster */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
@@ -574,7 +671,6 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Email */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
