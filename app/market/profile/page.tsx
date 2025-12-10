@@ -25,7 +25,7 @@ interface UserIdentity {
   avatar_updated_at?: string
 }
 
-export default function PiggyVegasProfilePage() {
+export default function MarketProfilePage() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const [identity, setIdentity] = useState<UserIdentity | null>(null)
@@ -57,17 +57,11 @@ export default function PiggyVegasProfilePage() {
         return
       }
 
-      console.log("[v0] Loading identity for address:", address)
       setIdentityLoading(true)
 
       try {
         const response = await fetch(`/api/identity?address=${address}`)
         const data = await response.json()
-
-        console.log("[v0] Identity API response:", data)
-        console.log("[v0] Identity data:", data.identity)
-        console.log("[v0] Email field in identity:", data.identity?.email)
-        console.log("[v0] Identity object keys:", data.identity ? Object.keys(data.identity) : "null")
 
         setIdentity(data.identity)
       } catch (error) {
@@ -90,8 +84,6 @@ export default function PiggyVegasProfilePage() {
         emailVerificationPending: emailVerificationPending,
         emailEditing: emailEditing,
         email: email,
-        username: username,
-        usernameEditing: usernameEditing,
       }
 
       if (urlParams.get("success") === "email_verified") {
@@ -166,14 +158,6 @@ export default function PiggyVegasProfilePage() {
         setEmail(updates.email)
       }
 
-      if (updates.username !== username) {
-        setUsername(updates.username)
-      }
-
-      if (updates.usernameEditing !== usernameEditing) {
-        setUsernameEditing(updates.usernameEditing)
-      }
-
       if (updates.shouldReloadIdentity && address && isConnected) {
         try {
           await new Promise((resolve) => setTimeout(resolve, 500))
@@ -196,9 +180,13 @@ export default function PiggyVegasProfilePage() {
   }, [address, isConnected])
 
   useEffect(() => {
-    if (identity?.email) {
-      setEmail(identity.email)
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000)
+      return () => clearTimeout(timer)
     }
+  }, [toast])
+
+  useEffect(() => {
     if (identity?.username) {
       setUsername(identity.username)
     }
@@ -206,13 +194,6 @@ export default function PiggyVegasProfilePage() {
       setAvatarUrl(identity.avatar_url)
     }
   }, [identity])
-
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [toast])
 
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
@@ -285,11 +266,7 @@ export default function PiggyVegasProfilePage() {
   const connectDiscord = async () => {
     if (!address) return
 
-    console.log("[v0] Discord Connect button clicked")
-    console.log("[v0] Wallet address:", address)
-    console.log("[v0] Redirecting to Discord OAuth...")
-
-    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}&source=piggyvegas`
+    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}&source=market`
   }
 
   const connectTwitter = async () => {
@@ -315,7 +292,7 @@ export default function PiggyVegasProfilePage() {
         body: JSON.stringify({
           walletAddress: address,
           email: email.trim(),
-          source: "piggyvegas",
+          source: "market",
         }),
       })
 
@@ -446,6 +423,7 @@ export default function PiggyVegasProfilePage() {
     try {
       const response = await fetch(`/api/identity?address=${address}`)
       const data = await response.json()
+
       setIdentity(data.identity)
     } catch (error) {
       console.error("[v0] Error loading identity:", error)
@@ -559,15 +537,15 @@ export default function PiggyVegasProfilePage() {
 
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="PIGGY PROFILE">
-            PIGGY PROFILE
+          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="MARKET PROFILE">
+            MARKET PROFILE
           </h1>
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
-              PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
+              MARKET PROFILE &gt; INITIALIZE YOUR PIGGY ID
             </h2>
 
             {!isConnected ? (
@@ -625,59 +603,61 @@ export default function PiggyVegasProfilePage() {
                   </div>
                 </div>
 
-                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
-                  <h3 className="text-pink-500 font-mono font-bold mb-4">AVATAR</h3>
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      <img
-                        src={
-                          avatarUrl
-                            ? `${avatarUrl}?t=${identity?.avatar_updated_at || Date.now()}`
-                            : "/placeholder.svg?height=80&width=80"
-                        }
-                        alt="User avatar"
-                        className="w-20 h-20 rounded-full border-2 border-pink-500/50 object-cover"
-                      />
-                      {avatarUploading && (
-                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 space-y-3">
-                      <div className="flex gap-2">
-                        <label
-                          htmlFor="avatar-upload-piggyvegas"
-                          className={`cyber-button px-4 py-2 text-sm font-mono cursor-pointer ${
-                            avatarUploading ? "opacity-50 pointer-events-none" : ""
-                          }`}
-                        >
-                          {avatarUploading ? "Uploading..." : avatarUrl ? "Change Avatar" : "Upload Avatar"}
-                        </label>
-                        <input
-                          id="avatar-upload-piggyvegas"
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handleAvatarUpload}
-                          disabled={avatarUploading}
-                          className="hidden"
+                {isConnected && (
+                  <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                    <h3 className="text-pink-500 font-mono font-bold mb-4">AVATAR</h3>
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        <img
+                          src={
+                            avatarUrl
+                              ? `${avatarUrl}?t=${identity?.avatar_updated_at || Date.now()}`
+                              : "/placeholder.svg?height=80&width=80"
+                          }
+                          alt="User avatar"
+                          className="w-20 h-20 rounded-full border-2 border-pink-500/50 object-cover"
                         />
-
-                        {avatarUrl && (
-                          <button
-                            onClick={handleRemoveAvatar}
-                            disabled={avatarUploading}
-                            className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-2 text-sm font-mono rounded transition-colors disabled:opacity-50"
-                          >
-                            Remove
-                          </button>
+                        {avatarUploading && (
+                          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+                          </div>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 font-mono">Max 3MB • JPG, PNG, or WebP</p>
+
+                      <div className="flex-1 space-y-3">
+                        <div className="flex gap-2">
+                          <label
+                            htmlFor="avatar-upload-market"
+                            className={`cyber-button px-4 py-2 text-sm font-mono cursor-pointer ${
+                              avatarUploading ? "opacity-50 pointer-events-none" : ""
+                            }`}
+                          >
+                            {avatarUploading ? "Uploading..." : avatarUrl ? "Change Avatar" : "Upload Avatar"}
+                          </label>
+                          <input
+                            id="avatar-upload-market"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleAvatarUpload}
+                            disabled={avatarUploading}
+                            className="hidden"
+                          />
+
+                          {avatarUrl && (
+                            <button
+                              onClick={handleRemoveAvatar}
+                              disabled={avatarUploading}
+                              className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-2 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 font-mono">Max 3MB • JPG, PNG, or WebP</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -703,7 +683,6 @@ export default function PiggyVegasProfilePage() {
                   <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
 
                   <div className="space-y-4">
-                    {/* Discord */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 rounded flex items-center justify-center overflow-hidden">
@@ -738,7 +717,6 @@ export default function PiggyVegasProfilePage() {
                       )}
                     </div>
 
-                    {/* Twitter */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -760,7 +738,7 @@ export default function PiggyVegasProfilePage() {
                         <button
                           onClick={() => disconnectPlatform("twitter")}
                           disabled={identityLoading}
-                          className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
                         </button>
@@ -774,7 +752,6 @@ export default function PiggyVegasProfilePage() {
                       )}
                     </div>
 
-                    {/* Farcaster */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
@@ -796,7 +773,7 @@ export default function PiggyVegasProfilePage() {
                         <button
                           onClick={() => disconnectPlatform("farcaster")}
                           disabled={identityLoading}
-                          className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
                         </button>
@@ -848,7 +825,7 @@ export default function PiggyVegasProfilePage() {
                             <button
                               onClick={() => disconnectPlatform("email")}
                               disabled={identityLoading}
-                              className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                              className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                             >
                               Disconnect
                             </button>
@@ -859,7 +836,7 @@ export default function PiggyVegasProfilePage() {
                               setEmailVerificationPending(false)
                               setEmail("")
                             }}
-                            className="border border-yellow-500 text-yellow-400 hover:text-white hover:bg-yellow-500/10 px-4 py-1 text-sm font-mono rounded transition-colors"
+                            className="border border-yellow-500 text-yellow-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
                           >
                             Resend
                           </button>
@@ -875,7 +852,7 @@ export default function PiggyVegasProfilePage() {
                             {emailEditing && (
                               <button
                                 onClick={cancelEmailEdit}
-                                className="border border-gray-500 text-gray-400 hover:text-white hover:bg-gray-500/10 px-4 py-1 text-sm font-mono rounded transition-colors"
+                                className="border border-gray-500 text-gray-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
                               >
                                 Cancel
                               </button>
@@ -893,7 +870,7 @@ export default function PiggyVegasProfilePage() {
 
         <div className="max-w-6xl mx-auto mt-8">
           <button
-            onClick={() => router.push("/piggyvegas")}
+            onClick={() => router.push("/market")}
             className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
           >
             ← BACK TO LOBBY

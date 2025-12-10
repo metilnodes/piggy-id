@@ -7,7 +7,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
 
-interface UserIdentity {
+interface Identity {
   wallet_address: string
   token_id?: number
   discord_id?: string
@@ -25,10 +25,10 @@ interface UserIdentity {
   avatar_updated_at?: string
 }
 
-export default function PiggyVegasProfilePage() {
+export default function ProfilePage() {
   const { address, isConnected } = useAccount()
   const router = useRouter()
-  const [identity, setIdentity] = useState<UserIdentity | null>(null)
+  const [identity, setIdentity] = useState<Identity | null>(null)
   const [email, setEmail] = useState<string>("")
   const [emailEditing, setEmailEditing] = useState<boolean>(false)
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
@@ -39,6 +39,7 @@ export default function PiggyVegasProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
+  // Load Neynar SIWN script on component mount
   useEffect(() => {
     const script = document.createElement("script")
     script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
@@ -84,14 +85,13 @@ export default function PiggyVegasProfilePage() {
     const handleUrlParams = async () => {
       const urlParams = new URLSearchParams(window.location.search)
 
+      // Process all parameters first, then batch state updates
       const updates = {
         toast: null as { message: string; type: "success" | "error" } | null,
         shouldReloadIdentity: false,
         emailVerificationPending: emailVerificationPending,
         emailEditing: emailEditing,
         email: email,
-        username: username,
-        usernameEditing: usernameEditing,
       }
 
       if (urlParams.get("success") === "email_verified") {
@@ -150,6 +150,7 @@ export default function PiggyVegasProfilePage() {
         }
       }
 
+      // Apply all state updates in sequence to avoid conflicts
       if (updates.toast) {
         setToast(updates.toast)
       }
@@ -166,14 +167,7 @@ export default function PiggyVegasProfilePage() {
         setEmail(updates.email)
       }
 
-      if (updates.username !== username) {
-        setUsername(updates.username)
-      }
-
-      if (updates.usernameEditing !== usernameEditing) {
-        setUsernameEditing(updates.usernameEditing)
-      }
-
+      // Handle identity reload after state updates
       if (updates.shouldReloadIdentity && address && isConnected) {
         try {
           await new Promise((resolve) => setTimeout(resolve, 500))
@@ -185,6 +179,7 @@ export default function PiggyVegasProfilePage() {
         }
       }
 
+      // Clean up URL after processing
       if (urlParams.toString()) {
         setTimeout(() => {
           window.history.replaceState({}, document.title, window.location.pathname)
@@ -193,19 +188,7 @@ export default function PiggyVegasProfilePage() {
     }
 
     handleUrlParams()
-  }, [address, isConnected])
-
-  useEffect(() => {
-    if (identity?.email) {
-      setEmail(identity.email)
-    }
-    if (identity?.username) {
-      setUsername(identity.username)
-    }
-    if (identity?.avatar_url) {
-      setAvatarUrl(identity.avatar_url)
-    }
-  }, [identity])
+  }, [address, isConnected]) // Removed state dependencies to prevent loops
 
   useEffect(() => {
     if (toast) {
@@ -214,6 +197,16 @@ export default function PiggyVegasProfilePage() {
     }
   }, [toast])
 
+  useEffect(() => {
+    if (identity?.username) {
+      setUsername(identity.username)
+    }
+    if (identity?.avatar_url) {
+      setAvatarUrl(identity.avatar_url)
+    }
+  }, [identity])
+
+  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -295,6 +288,7 @@ export default function PiggyVegasProfilePage() {
   const connectTwitter = async () => {
     if (!address) return
 
+    // Redirect to Twitter OAuth
     window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
   }
 
@@ -377,6 +371,7 @@ export default function PiggyVegasProfilePage() {
           type: "success",
         })
 
+        // Reload identity data
         const identityResponse = await fetch(`/api/identity?address=${address}`)
         const identityData = await identityResponse.json()
         setIdentity(identityData.identity)
@@ -399,7 +394,7 @@ export default function PiggyVegasProfilePage() {
 
   const saveUsername = async () => {
     if (!username.trim()) {
-      setToast({ message: "Username cannot be empty", type: "error" })
+      showToast("Username cannot be empty", "error")
       return
     }
 
@@ -416,15 +411,15 @@ export default function PiggyVegasProfilePage() {
       })
 
       if (response.ok) {
-        setToast({ message: "Username updated successfully!", type: "success" })
+        showToast("Username updated successfully!", "success")
         setUsernameEditing(false)
         await fetchIdentity()
       } else {
-        setToast({ message: "Failed to update username", type: "error" })
+        showToast("Failed to update username", "error")
       }
     } catch (error) {
       console.error("Error updating username:", error)
-      setToast({ message: "Failed to update username", type: "error" })
+      showToast("Failed to update username", "error")
     } finally {
       setIdentityLoading(false)
     }
@@ -441,11 +436,18 @@ export default function PiggyVegasProfilePage() {
       return
     }
 
+    console.log("[v0] Loading identity for address:", address)
     setIdentityLoading(true)
 
     try {
       const response = await fetch(`/api/identity?address=${address}`)
       const data = await response.json()
+
+      console.log("[v0] Identity API response:", data)
+      console.log("[v0] Identity data:", data.identity)
+      console.log("[v0] Email field in identity:", data.identity?.email)
+      console.log("[v0] Identity object keys:", data.identity ? Object.keys(data.identity) : "null")
+
       setIdentity(data.identity)
     } catch (error) {
       console.error("[v0] Error loading identity:", error)
@@ -462,11 +464,13 @@ export default function PiggyVegasProfilePage() {
     const file = e.target.files?.[0]
     if (!file || !address) return
 
+    // Validate file type
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       showToast("Invalid file type. Only JPEG, PNG, and WebP are allowed", "error")
       return
     }
 
+    // Validate file size (max 3MB)
     if (file.size > 3 * 1024 * 1024) {
       showToast("File too large. Maximum size is 3MB", "error")
       return
@@ -474,6 +478,8 @@ export default function PiggyVegasProfilePage() {
 
     setAvatarUploading(true)
     try {
+      console.log("[v0] Starting avatar upload for address:", address)
+
       const formData = new FormData()
       formData.append("avatar", file)
       formData.append("walletAddress", address)
@@ -483,17 +489,25 @@ export default function PiggyVegasProfilePage() {
         body: formData,
       })
 
+      console.log("[v0] Avatar upload response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Avatar upload success, avatarUrl:", data.avatarUrl)
+
         setAvatarUrl(data.avatarUrl)
         showToast("Avatar uploaded successfully!", "success")
+
+        e.target.value = ""
+
         await fetchIdentity()
       } else {
         const error = await response.json()
+        console.error("[v0] Avatar upload failed:", error)
         showToast(error.error || "Failed to upload avatar", "error")
       }
     } catch (error) {
-      console.error("Error uploading avatar:", error)
+      console.error("[v0] Error uploading avatar:", error)
       showToast("Failed to upload avatar", "error")
     } finally {
       setAvatarUploading(false)
@@ -505,21 +519,28 @@ export default function PiggyVegasProfilePage() {
 
     setAvatarUploading(true)
     try {
+      console.log("[v0] Removing avatar for address:", address)
+
       const response = await fetch("/api/profile/avatar", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ walletAddress: address }),
       })
 
+      console.log("[v0] Avatar remove response status:", response.status)
+
       if (response.ok) {
+        console.log("[v0] Avatar removed successfully")
+
         setAvatarUrl(null)
         showToast("Avatar removed successfully!", "success")
         await fetchIdentity()
       } else {
+        console.error("[v0] Failed to remove avatar")
         showToast("Failed to remove avatar", "error")
       }
     } catch (error) {
-      console.error("Error removing avatar:", error)
+      console.error("[v0] Error removing avatar:", error)
       showToast("Failed to remove avatar", "error")
     } finally {
       setAvatarUploading(false)
@@ -565,9 +586,10 @@ export default function PiggyVegasProfilePage() {
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
-              PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
+              PIGGY PROFILE &gt; INITIALIZE YOUR PIGGY ID
             </h2>
 
             {!isConnected ? (
@@ -625,9 +647,10 @@ export default function PiggyVegasProfilePage() {
                   </div>
                 </div>
 
-                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                <div className="mt-6 pt-6 border-t border-pink-500/20">
                   <h3 className="text-pink-500 font-mono font-bold mb-4">AVATAR</h3>
                   <div className="flex items-start gap-4">
+                    {/* Avatar Preview */}
                     <div className="relative">
                       <img
                         src={
@@ -645,10 +668,11 @@ export default function PiggyVegasProfilePage() {
                       )}
                     </div>
 
+                    {/* Upload Controls */}
                     <div className="flex-1 space-y-3">
                       <div className="flex gap-2">
                         <label
-                          htmlFor="avatar-upload-piggyvegas"
+                          htmlFor="avatar-upload"
                           className={`cyber-button px-4 py-2 text-sm font-mono cursor-pointer ${
                             avatarUploading ? "opacity-50 pointer-events-none" : ""
                           }`}
@@ -656,7 +680,7 @@ export default function PiggyVegasProfilePage() {
                           {avatarUploading ? "Uploading..." : avatarUrl ? "Change Avatar" : "Upload Avatar"}
                         </label>
                         <input
-                          id="avatar-upload-piggyvegas"
+                          id="avatar-upload"
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
                           onChange={handleAvatarUpload}
@@ -682,6 +706,7 @@ export default function PiggyVegasProfilePage() {
             )}
           </div>
 
+          {/* Right Column - Connections Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
@@ -691,6 +716,7 @@ export default function PiggyVegasProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Primary Identity */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">Primary Identity</h3>
                   <div className="text-pink-400 font-mono text-sm">
@@ -699,6 +725,7 @@ export default function PiggyVegasProfilePage() {
                   </div>
                 </div>
 
+                {/* Secondary Identities */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
 
@@ -760,7 +787,7 @@ export default function PiggyVegasProfilePage() {
                         <button
                           onClick={() => disconnectPlatform("twitter")}
                           disabled={identityLoading}
-                          className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
                         </button>
@@ -796,7 +823,7 @@ export default function PiggyVegasProfilePage() {
                         <button
                           onClick={() => disconnectPlatform("farcaster")}
                           disabled={identityLoading}
-                          className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                          className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
                         </button>
@@ -810,6 +837,7 @@ export default function PiggyVegasProfilePage() {
                       )}
                     </div>
 
+                    {/* Email */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
@@ -848,7 +876,7 @@ export default function PiggyVegasProfilePage() {
                             <button
                               onClick={() => disconnectPlatform("email")}
                               disabled={identityLoading}
-                              className="border border-red-500 text-red-400 hover:text-white hover:bg-red-500/10 px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
+                              className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                             >
                               Disconnect
                             </button>
@@ -859,7 +887,7 @@ export default function PiggyVegasProfilePage() {
                               setEmailVerificationPending(false)
                               setEmail("")
                             }}
-                            className="border border-yellow-500 text-yellow-400 hover:text-white hover:bg-yellow-500/10 px-4 py-1 text-sm font-mono rounded transition-colors"
+                            className="border border-yellow-500 text-yellow-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
                           >
                             Resend
                           </button>
@@ -875,7 +903,7 @@ export default function PiggyVegasProfilePage() {
                             {emailEditing && (
                               <button
                                 onClick={cancelEmailEdit}
-                                className="border border-gray-500 text-gray-400 hover:text-white hover:bg-gray-500/10 px-4 py-1 text-sm font-mono rounded transition-colors"
+                                className="border border-gray-500 text-gray-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
                               >
                                 Cancel
                               </button>
