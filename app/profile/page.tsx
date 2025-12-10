@@ -478,6 +478,8 @@ export default function ProfilePage() {
 
     setAvatarUploading(true)
     try {
+      console.log("[v0] Starting avatar upload for address:", address)
+
       const formData = new FormData()
       formData.append("avatar", file)
       formData.append("walletAddress", address)
@@ -487,17 +489,25 @@ export default function ProfilePage() {
         body: formData,
       })
 
+      console.log("[v0] Avatar upload response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Avatar upload success, avatarUrl:", data.avatarUrl)
+
         setAvatarUrl(data.avatarUrl)
         showToast("Avatar uploaded successfully!", "success")
+
+        e.target.value = ""
+
         await fetchIdentity()
       } else {
         const error = await response.json()
+        console.error("[v0] Avatar upload failed:", error)
         showToast(error.error || "Failed to upload avatar", "error")
       }
     } catch (error) {
-      console.error("Error uploading avatar:", error)
+      console.error("[v0] Error uploading avatar:", error)
       showToast("Failed to upload avatar", "error")
     } finally {
       setAvatarUploading(false)
@@ -509,21 +519,28 @@ export default function ProfilePage() {
 
     setAvatarUploading(true)
     try {
+      console.log("[v0] Removing avatar for address:", address)
+
       const response = await fetch("/api/profile/avatar", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ walletAddress: address }),
       })
 
+      console.log("[v0] Avatar remove response status:", response.status)
+
       if (response.ok) {
+        console.log("[v0] Avatar removed successfully")
+
         setAvatarUrl(null)
         showToast("Avatar removed successfully!", "success")
         await fetchIdentity()
       } else {
+        console.error("[v0] Failed to remove avatar")
         showToast("Failed to remove avatar", "error")
       }
     } catch (error) {
-      console.error("Error removing avatar:", error)
+      console.error("[v0] Error removing avatar:", error)
       showToast("Failed to remove avatar", "error")
     } finally {
       setAvatarUploading(false)
