@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import { put, del } from "@vercel/blob"
 
 export const runtime = "nodejs"
 
@@ -25,45 +26,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File too large. Maximum size is 3MB" }, { status: 400 })
     }
 
-    const pinataForm = new FormData()
-    // Field name MUST be "file" for Pinata API
-    pinataForm.append("file", file, file.name)
-
-    const pinataRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PINATA_JWT!}`,
-        // Don't set Content-Type - fetch sets it automatically for FormData
-      },
-      body: pinataForm,
+    // Use .webp extension for consistency, file path includes wallet address
+    const blob = await put(`avatars/${walletAddress}.webp`, file, {
+      access: "public",
     })
 
-    if (!pinataRes.ok) {
-      const text = await pinataRes.text()
-      console.error("[avatar] Pinata error response:", text)
-      return NextResponse.json({ error: "Pinata upload failed" }, { status: 500 })
-    }
-
-    const pinataJson = (await pinataRes.json()) as {
-      IpfsHash: string
-      PinSize: number
-      Timestamp: string
-    }
-
-    const cid = pinataJson.IpfsHash
-    const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL ?? "https://olive-familiar-gerbil-797.mypinata.cloud"
-    const avatarUrl = `${gatewayUrl}/ipfs/${cid}`
+    const avatarUrl = blob.url
 
     await sql`
       UPDATE user_identities
       SET avatar_url = ${avatarUrl},
-          avatar_cid = ${cid},
+          avatar_cid = NULL,
           avatar_updated_at = NOW(),
           updated_at = NOW()
       WHERE wallet_address = ${walletAddress}
     `
 
-    return NextResponse.json({ avatarUrl, cid })
+    return NextResponse.json({ avatarUrl })
   } catch (error) {
     console.error("[avatar] Error:", error)
     return NextResponse.json({ error: "Failed to upload avatar" }, { status: 500 })
@@ -77,6 +56,20 @@ export async function DELETE(req: NextRequest) {
 
     if (!walletAddress) {
       return NextResponse.json({ error: "Missing wallet address" }, { status: 400 })
+    }
+
+    const result = await sql`
+      SELECT avatar_url FROM user_identities
+      WHERE wallet_address = ${walletAddress}
+    `
+
+    // Delete from Vercel Blob if exists
+    if (result[0]?.avatar_url) {
+      try {
+        await del(result[0].avatar_url)
+      } catch (err) {
+        console.warn("[avatar] Failed to delete from Blob storage:", err)
+      }
     }
 
     await sql`
