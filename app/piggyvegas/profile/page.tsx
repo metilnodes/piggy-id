@@ -567,6 +567,7 @@ export default function ProfilePage() {
                   <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
 
                   <div className="space-y-4">
+                    {/* Discord */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 rounded flex items-center justify-center overflow-hidden">
@@ -601,6 +602,7 @@ export default function ProfilePage() {
                       )}
                     </div>
 
+                    {/* Twitter */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
@@ -636,6 +638,7 @@ export default function ProfilePage() {
                       )}
                     </div>
 
+                    {/* Farcaster */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
