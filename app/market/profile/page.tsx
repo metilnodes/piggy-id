@@ -17,6 +17,7 @@ interface UserIdentity {
   farcaster_username?: string
   farcaster_display_name?: string
   farcaster_avatar_url?: string
+  username?: string
 }
 
 export default function ProfilePage() {
@@ -26,6 +27,8 @@ export default function ProfilePage() {
   const [email, setEmail] = useState<string>("")
   const [emailEditing, setEmailEditing] = useState<boolean>(false)
   const [emailVerificationPending, setEmailVerificationPending] = useState<boolean>(false)
+  const [username, setUsername] = useState<string>("")
+  const [usernameEditing, setUsernameEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
@@ -180,6 +183,15 @@ export default function ProfilePage() {
       return () => clearTimeout(timer)
     }
   }, [toast])
+
+  useEffect(() => {
+    if (identity?.email) {
+      setEmail(identity.email)
+    }
+    if (identity?.username) {
+      setUsername(identity.username)
+    }
+  }, [identity])
 
   // Header component with updated text
   const Header = () => (
@@ -363,6 +375,68 @@ export default function ProfilePage() {
     }
   }
 
+  const saveUsername = async () => {
+    if (!username.trim()) {
+      setToast({ message: "Username cannot be empty", type: "error" })
+      return
+    }
+
+    setIdentityLoading(true)
+    try {
+      const response = await fetch("/api/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: address,
+          type: "username",
+          data: { username: username.trim() },
+        }),
+      })
+
+      if (response.ok) {
+        setToast({ message: "Username updated successfully!", type: "success" })
+        setUsernameEditing(false)
+        await fetchIdentity()
+      } else {
+        setToast({ message: "Failed to update username", type: "error" })
+      }
+    } catch (error) {
+      console.error("Error updating username:", error)
+      setToast({ message: "Failed to update username", type: "error" })
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
+  const cancelUsernameEdit = () => {
+    setUsername(identity?.username || "")
+    setUsernameEditing(false)
+  }
+
+  const fetchIdentity = async () => {
+    if (!address || !isConnected) {
+      setIdentity(null)
+      return
+    }
+
+    setIdentityLoading(true)
+
+    try {
+      const response = await fetch(`/api/identity?address=${address}`)
+      const data = await response.json()
+
+      setIdentity(data.identity)
+    } catch (error) {
+      console.error("[v0] Error loading identity:", error)
+    } finally {
+      setIdentityLoading(false)
+    }
+  }
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type })
+  }
+
   return (
     <div className="min-h-screen bg-black cyber-grid">
       <Header />
@@ -426,6 +500,40 @@ export default function ProfilePage() {
                       <span className="text-yellow-400">Loading...</span>
                     ) : (
                       <span className="text-red-400">No Piggy ID found</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Username Section */}
+                <div className="border border-pink-500/30 rounded p-4 bg-black/50">
+                  <h3 className="text-pink-500 font-mono font-bold mb-2">USERNAME</h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      onFocus={() => setUsernameEditing(true)}
+                      placeholder="Enter your username"
+                      className="flex-1 bg-black border border-pink-500/30 text-pink-300 font-mono text-sm px-2 py-1 rounded focus:border-pink-500 focus:outline-none"
+                    />
+                    {(usernameEditing || username !== identity?.username) && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveUsername}
+                          disabled={identityLoading || !username.trim()}
+                          className="cyber-button px-4 py-1 text-sm font-mono disabled:opacity-50"
+                        >
+                          {identityLoading ? "Saving..." : "Save"}
+                        </button>
+                        {usernameEditing && username !== identity?.username && (
+                          <button
+                            onClick={cancelUsernameEdit}
+                            className="border border-gray-500 text-gray-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
