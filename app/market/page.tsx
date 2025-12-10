@@ -7,6 +7,7 @@ import { useAccount } from "wagmi"
 import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 import { X, Trophy, Medal, Star, Crown, Search } from "lucide-react"
 import { PrizesModal } from "./PrizesModal"
+import { RulesModal } from "./RulesModal" // Assuming RulesModal is also in the same directory
 
 type AuthStatus = "disconnected" | "verifying" | "no-nft" | "authorized"
 
@@ -1078,8 +1079,9 @@ export default function Page() {
   const [tokenId, setTokenId] = useState<string | null>(null)
   const [showOverlay, setShowOverlay] = useState<boolean>(true)
   const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false)
+  const [showRules, setShowRules] = useState<boolean>(false) // Added for RulesModal
   const [showPrizes, setShowPrizes] = useState<boolean>(false)
-  const [showProfile, setShowProfile] = useState<boolean>(false)
+  // const [showProfile, setShowProfile] = useState<boolean>(false)
 
   // Check for existing session on mount
   useEffect(() => {
@@ -1198,7 +1200,7 @@ export default function Page() {
   }
 
   const handleProfileClick = () => {
-    setShowProfile(true) // Changed to set state for modal
+    router.push("/market/profile")
   }
 
   return (
@@ -1298,7 +1300,10 @@ export default function Page() {
             <span className="text-pink-400 font-mono font-bold text-sm">LEADERBOARD</span>
           </button>
 
-          <button className="cyber-card px-6 py-2 border-blue-500 hover:border-blue-400 transition-colors">
+          <button
+            onClick={() => setShowRules(true)} // Open Rules Modal
+            className="cyber-card px-6 py-2 border-blue-500 hover:border-blue-400 transition-colors"
+          >
             <span className="text-blue-400 font-mono font-bold text-sm">RULES</span>
           </button>
 
@@ -1472,10 +1477,8 @@ export default function Page() {
 
       {/* Leaderboard Modal */}
       <LeaderboardModal isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
-
-      {/* Profile Modal */}
-      <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
-
+      {/* Rules Modal */}
+      <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
       {/* Prizes Modal */}
       {showPrizes && <PrizesModal onClose={() => setShowPrizes(false)} />}
     </div>
