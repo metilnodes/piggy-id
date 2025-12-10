@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
     let result = await sql`
       SELECT * FROM user_identities 
       WHERE wallet_address = ${walletAddress.toLowerCase()}
-      AND platform IS NULL
+      AND (platform IS NULL OR platform = '')
+      LIMIT 1
     `
 
     console.log("[v0] Main identity result:", result)
@@ -40,13 +41,14 @@ export async function GET(request: NextRequest) {
           UPDATE user_identities 
           SET token_id = ${codeAssignment[0].token_id}, updated_at = NOW()
           WHERE wallet_address = ${walletAddress.toLowerCase()}
-          AND platform IS NULL
+          AND (platform IS NULL OR platform = '')
         `
 
         result = await sql`
           SELECT * FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
-          AND platform IS NULL
+          AND (platform IS NULL OR platform = '')
+          LIMIT 1
         `
       }
     }
@@ -71,7 +73,8 @@ export async function GET(request: NextRequest) {
         result = await sql`
           SELECT * FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
-          AND platform IS NULL
+          AND (platform IS NULL OR platform = '')
+          LIMIT 1
         `
       }
     }
@@ -82,10 +85,6 @@ export async function GET(request: NextRequest) {
       console.log("[v0] Identity token_id:", result[0].token_id)
       console.log("[v0] Identity avatar_url:", result[0].avatar_url)
       console.log("[v0] Identity avatar_updated_at:", result[0].avatar_updated_at)
-      console.log("[v0] Identity email field:", result[0].email)
-      console.log("[v0] Identity discord fields:", result[0].discord_id, result[0].discord_username)
-      console.log("[v0] Identity twitter fields:", result[0].twitter_id, result[0].twitter_username)
-      console.log("[v0] Identity username:", result[0].username)
     }
 
     if (result[0]) {
