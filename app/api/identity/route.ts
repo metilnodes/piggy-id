@@ -151,7 +151,18 @@ export async function POST(request: NextRequest) {
         updated_at = NOW()
     `
 
-    if (type === "discord") {
+    if (type === "username") {
+      if (!data.username || data.username.trim().length === 0) {
+        return NextResponse.json({ error: "Username cannot be empty" }, { status: 400 })
+      }
+
+      await sql`
+        UPDATE user_identities 
+        SET username = ${data.username.trim()},
+            updated_at = NOW()
+        WHERE wallet_address = ${walletAddress.toLowerCase()}
+      `
+    } else if (type === "discord") {
       await sql`
         UPDATE user_identities 
         SET discord_id = ${data.id}, 

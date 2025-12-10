@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
+  // Load Neynar SIWN script on component mount
   useEffect(() => {
     const script = document.createElement("script")
     script.src = "https://neynarxyz.github.io/siwn/raw/1.2.0/index.js"
@@ -50,17 +51,11 @@ export default function ProfilePage() {
         return
       }
 
-      console.log("[v0] Loading identity for address:", address)
       setIdentityLoading(true)
 
       try {
         const response = await fetch(`/api/identity?address=${address}`)
         const data = await response.json()
-
-        console.log("[v0] Identity API response:", data)
-        console.log("[v0] Identity data:", data.identity)
-        console.log("[v0] Email field in identity:", data.identity?.email)
-        console.log("[v0] Identity object keys:", data.identity ? Object.keys(data.identity) : "null")
 
         setIdentity(data.identity)
       } catch (error) {
@@ -77,14 +72,13 @@ export default function ProfilePage() {
     const handleUrlParams = async () => {
       const urlParams = new URLSearchParams(window.location.search)
 
+      // Process all parameters first, then batch state updates
       const updates = {
         toast: null as { message: string; type: "success" | "error" } | null,
         shouldReloadIdentity: false,
         emailVerificationPending: emailVerificationPending,
         emailEditing: emailEditing,
         email: email,
-        username: username,
-        usernameEditing: usernameEditing,
       }
 
       if (urlParams.get("success") === "email_verified") {
@@ -143,6 +137,7 @@ export default function ProfilePage() {
         }
       }
 
+      // Apply all state updates in sequence to avoid conflicts
       if (updates.toast) {
         setToast(updates.toast)
       }
@@ -159,14 +154,7 @@ export default function ProfilePage() {
         setEmail(updates.email)
       }
 
-      if (updates.username !== username) {
-        setUsername(updates.username)
-      }
-
-      if (updates.usernameEditing !== usernameEditing) {
-        setUsernameEditing(updates.usernameEditing)
-      }
-
+      // Handle identity reload after state updates
       if (updates.shouldReloadIdentity && address && isConnected) {
         try {
           await new Promise((resolve) => setTimeout(resolve, 500))
@@ -178,6 +166,7 @@ export default function ProfilePage() {
         }
       }
 
+      // Clean up URL after processing
       if (urlParams.toString()) {
         setTimeout(() => {
           window.history.replaceState({}, document.title, window.location.pathname)
@@ -186,7 +175,14 @@ export default function ProfilePage() {
     }
 
     handleUrlParams()
-  }, [address, isConnected])
+  }, [address, isConnected]) // Removed state dependencies to prevent loops
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   useEffect(() => {
     if (identity?.email) {
@@ -197,13 +193,7 @@ export default function ProfilePage() {
     }
   }, [identity])
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [toast])
-
+  // Header component with updated text
   const Header = () => (
     <header className="fixed top-0 right-0 p-4 z-50">
       <div className="cyber-button">
@@ -275,16 +265,13 @@ export default function ProfilePage() {
   const connectDiscord = async () => {
     if (!address) return
 
-    console.log("[v0] Discord Connect button clicked")
-    console.log("[v0] Wallet address:", address)
-    console.log("[v0] Redirecting to Discord OAuth...")
-
-    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}&source=piggyvegas`
+    window.location.href = `/api/auth/discord?wallet=${encodeURIComponent(address)}&source=market`
   }
 
   const connectTwitter = async () => {
     if (!address) return
 
+    // Redirect to Twitter OAuth
     window.location.href = `/api/auth/twitter?wallet=${encodeURIComponent(address)}`
   }
 
@@ -305,7 +292,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           walletAddress: address,
           email: email.trim(),
-          source: "piggyvegas",
+          source: "market",
         }),
       })
 
@@ -367,6 +354,7 @@ export default function ProfilePage() {
           type: "success",
         })
 
+        // Reload identity data
         const identityResponse = await fetch(`/api/identity?address=${address}`)
         const identityData = await identityResponse.json()
         setIdentity(identityData.identity)
@@ -436,12 +424,17 @@ export default function ProfilePage() {
     try {
       const response = await fetch(`/api/identity?address=${address}`)
       const data = await response.json()
+
       setIdentity(data.identity)
     } catch (error) {
       console.error("[v0] Error loading identity:", error)
     } finally {
       setIdentityLoading(false)
     }
+  }
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type })
   }
 
   return (
@@ -477,15 +470,16 @@ export default function ProfilePage() {
 
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="PIGGY PROFILE">
-            PIGGY PROFILE
+          <h1 className="text-4xl md:text-6xl font-bold text-pink-500 glitch neon-text mb-4" data-text="MARKET PROFILE">
+            MARKET PROFILE
           </h1>
         </div>
 
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Piggy ID Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">
-              PIGGY VEGAS PROFILE &gt; INITIALIZE YOUR PIGGY ID
+              MARKET PROFILE &gt; INITIALIZE YOUR PIGGY ID
             </h2>
 
             {!isConnected ? (
@@ -510,6 +504,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {/* Username Section */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">USERNAME</h3>
                   <div className="flex items-center gap-2">
@@ -546,6 +541,7 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {/* Right Column - Connections Section */}
           <div className="cyber-card rounded-lg p-6">
             <h2 className="text-xl font-bold text-pink-500 mb-6 font-mono">CONNECTIONS</h2>
 
@@ -555,6 +551,7 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Primary Identity */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-2">Primary Identity</h3>
                   <div className="text-pink-400 font-mono text-sm">
@@ -563,6 +560,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {/* Secondary Identities */}
                 <div className="border border-pink-500/30 rounded p-4 bg-black/50">
                   <h3 className="text-pink-500 font-mono font-bold mb-4">Secondary Identities</h3>
 
@@ -674,6 +672,7 @@ export default function ProfilePage() {
                       )}
                     </div>
 
+                    {/* Email */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="text-pink-400 font-mono text-sm mb-1">Email</div>
@@ -757,7 +756,7 @@ export default function ProfilePage() {
 
         <div className="max-w-6xl mx-auto mt-8">
           <button
-            onClick={() => router.push("/piggyvegas")}
+            onClick={() => router.push("/market")}
             className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
           >
             ← BACK TO LOBBY
