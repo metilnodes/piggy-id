@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -43,6 +44,32 @@ export async function GET(request: NextRequest) {
           SELECT * FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
         `
+      } else {
+        console.log("[v0] Not found in code_assignments, checking blockchain...")
+        try {
+          const ownedTokens = await getOwnedTokenIds(walletAddress)
+
+          if (ownedTokens.length > 0) {
+            const firstTokenId = Number(ownedTokens[0])
+            console.log("[v0] Found NFT on-chain! Token ID:", firstTokenId)
+
+            await sql`
+              UPDATE user_identities 
+              SET token_id = ${firstTokenId}, updated_at = NOW()
+              WHERE wallet_address = ${walletAddress.toLowerCase()}
+            `
+
+            result = await sql`
+              SELECT * FROM user_identities 
+              WHERE wallet_address = ${walletAddress.toLowerCase()}
+            `
+          } else {
+            console.log("[v0] No NFTs found on-chain for this wallet")
+          }
+        } catch (blockchainError) {
+          console.error("[v0] Error checking blockchain:", blockchainError)
+          // Continue without blockchain data if check fails
+        }
       }
     }
 
@@ -67,6 +94,30 @@ export async function GET(request: NextRequest) {
           SELECT * FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
         `
+      } else {
+        console.log("[v0] Wallet not in DB, checking blockchain...")
+        try {
+          const ownedTokens = await getOwnedTokenIds(walletAddress)
+
+          if (ownedTokens.length > 0) {
+            const firstTokenId = Number(ownedTokens[0])
+            console.log("[v0] Found NFT on-chain for new wallet! Token ID:", firstTokenId)
+
+            await sql`
+              INSERT INTO user_identities (wallet_address, token_id, created_at, updated_at)
+              VALUES (${walletAddress.toLowerCase()}, ${firstTokenId}, NOW(), NOW())
+            `
+
+            result = await sql`
+              SELECT * FROM user_identities 
+              WHERE wallet_address = ${walletAddress.toLowerCase()}
+            `
+          } else {
+            console.log("[v0] No NFTs found on-chain for new wallet")
+          }
+        } catch (blockchainError) {
+          console.error("[v0] Error checking blockchain for new wallet:", blockchainError)
+        }
       }
     }
 
