@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
+import { TipsWalletCard } from "@/components/tips-wallet-card"
 
 interface UserIdentity {
   wallet_address: string
@@ -18,6 +19,7 @@ interface UserIdentity {
   farcaster_display_name?: string
   farcaster_avatar_url?: string
   username?: string
+  tips_wallet_address?: string
 }
 
 export default function ProfilePage() {
@@ -552,6 +554,8 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
+
+                <TipsWalletCard tipsWalletAddress={identity?.tips_wallet_address} />
               </div>
             )}
           </div>
