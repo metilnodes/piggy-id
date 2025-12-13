@@ -6,9 +6,11 @@ import { ExternalLink, Copy, Check } from "lucide-react"
 
 interface TipsWalletCardProps {
   tipsWalletAddress: string | null | undefined
+  tipsGasFundedAt?: string | null
+  tipsGasFundingTx?: string | null
 }
 
-export function TipsWalletCard({ tipsWalletAddress }: TipsWalletCardProps) {
+export function TipsWalletCard({ tipsWalletAddress, tipsGasFundedAt, tipsGasFundingTx }: TipsWalletCardProps) {
   const [piggyBalance, setPiggyBalance] = useState<string | null>(null)
   const [ethBalance, setEthBalance] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -46,6 +48,21 @@ export function TipsWalletCard({ tipsWalletAddress }: TipsWalletCardProps) {
       navigator.clipboard.writeText(tipsWalletAddress)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const formatFundingDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch {
+      return dateString
     }
   }
 
@@ -89,6 +106,32 @@ export function TipsWalletCard({ tipsWalletAddress }: TipsWalletCardProps) {
             <ExternalLink className="w-4 h-4 text-pink-400" />
           </a>
         </div>
+      </div>
+
+      <div className="mb-3 pb-3 border-b border-pink-500/20">
+        <div className="text-pink-400 font-mono text-xs mb-1">Gas Status</div>
+        {tipsGasFundedAt ? (
+          <div className="flex items-start gap-2">
+            <div className="text-green-400 font-mono text-sm flex items-center gap-1">
+              <Check className="w-4 h-4" />
+              <span>Gas funded</span>
+            </div>
+            <div className="text-gray-400 font-mono text-xs">{formatFundingDate(tipsGasFundedAt)}</div>
+          </div>
+        ) : (
+          <div className="text-yellow-400 font-mono text-sm">Gas not funded yet</div>
+        )}
+        {tipsGasFundingTx && (
+          <a
+            href={`https://basescan.org/tx/${tipsGasFundingTx}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-pink-400 font-mono text-xs hover:text-pink-300 flex items-center gap-1 mt-1"
+          >
+            View funding tx
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
 
       {/* Balances */}

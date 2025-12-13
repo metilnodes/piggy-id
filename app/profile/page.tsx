@@ -20,6 +20,8 @@ interface UserIdentity {
   farcaster_avatar_url?: string
   username?: string
   tips_wallet_address?: string
+  tips_gas_funded_at?: string
+  tips_gas_funding_tx?: string
 }
 
 export default function ProfilePage() {
@@ -555,7 +557,11 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <TipsWalletCard tipsWalletAddress={identity?.tips_wallet_address} />
+                <TipsWalletCard
+                  tipsWalletAddress={identity?.tips_wallet_address}
+                  tipsGasFundedAt={identity?.tips_gas_funded_at}
+                  tipsGasFundingTx={identity?.tips_gas_funding_tx}
+                />
               </div>
             )}
           </div>

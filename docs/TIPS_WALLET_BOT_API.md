@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Tips Wallet Bot API allows your Discord bot to manage and retrieve Tips Wallet information for users. All endpoints are protected with API key authentication.
+The Tips Wallet Bot API allows your Discord bot to manage and retrieve Tips Wallet information for users, including tracking one-time gas funding. All endpoints are protected with API key authentication.
 
 ## Authentication
 
@@ -35,7 +35,7 @@ Responses are cached for 60 seconds to reduce database load. The cache is automa
 
 ### GET /api/bot/tips-wallet
 
-Retrieves the tips wallet address for a Discord user.
+Retrieves the tips wallet address and gas funding status for a Discord user.
 
 **Query Parameters:**
 - `discord_id` (required): Discord user ID (digits only, minimum 10 characters)
@@ -44,9 +44,17 @@ Retrieves the tips wallet address for a Discord user.
 \`\`\`json
 {
   "discord_id": "541066012305653760",
-  "tips_wallet_address": "0x1234567890abcdef1234567890abcdef12345678"
+  "tips_wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+  "tips_gas_funded_at": "2025-12-14T20:00:00.000Z",
+  "tips_gas_funding_tx": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 }
 \`\`\`
+
+**Response Fields:**
+- `discord_id`: Discord user ID
+- `tips_wallet_address`: EVM address of tips wallet
+- `tips_gas_funded_at`: ISO 8601 timestamp when welcome gas was sent (null if not funded)
+- `tips_gas_funding_tx`: Transaction hash of gas funding (null if not funded)
 
 **Error Responses:**
 
@@ -99,7 +107,14 @@ response = requests.get(
 if response.status_code == 200:
     data = response.json()
     tips_wallet = data["tips_wallet_address"]
+    gas_funded = data.get("tips_gas_funded_at") is not None
+    
     print(f"Tips wallet: {tips_wallet}")
+    print(f"Gas funded: {gas_funded}")
+    
+    if gas_funded:
+        print(f"Funded at: {data['tips_gas_funded_at']}")
+        print(f"Funding tx: {data['tips_gas_funding_tx']}")
 elif response.status_code == 404:
     print("Tips wallet not created yet")
 else:
@@ -110,25 +125,42 @@ else:
 
 ### POST /api/bot/tips-wallet
 
-Creates or updates a tips wallet address for a Discord user.
+Creates or updates a tips wallet address and/or gas funding metadata for a Discord user.
 
 **Request Body:**
 \`\`\`json
 {
   "discord_id": "541066012305653760",
-  "tips_wallet_address": "0x1234567890abcdef1234567890abcdef12345678"
+  "tips_wallet_address": "0xabc...",
+  "tips_gas_funded_at": "2025-12-14T20:00:00Z",
+  "tips_gas_funding_tx": "0xdeadbeef..."
 }
 \`\`\`
 
+**Request Fields:**
+- `discord_id` (required): Discord user ID
+- `tips_wallet_address` (optional): EVM address to set/update
+- `tips_gas_funded_at` (optional): ISO 8601 timestamp of gas funding
+- `tips_gas_funding_tx` (optional): Transaction hash (0x + 64 hex chars)
+
 **Query Parameters (optional):**
-- `force=true`: Overwrite existing tips wallet address
+- `force=true`: Overwrite existing tips wallet address or gas funding data
+
+**Behavior:**
+- All fields except `discord_id` are optional in each request
+- You can update wallet address, gas funding, or both in one request
+- If `tips_wallet_address` exists, POST returns 409 unless `force=true`
+- If `tips_gas_funded_at` exists, POST returns 409 unless `force=true`
+- This prevents accidental overwrites and duplicate gas funding
 
 **Success Response (200):**
 \`\`\`json
 {
   "ok": true,
   "discord_id": "541066012305653760",
-  "tips_wallet_address": "0x1234567890abcdef1234567890abcdef12345678"
+  "tips_wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+  "tips_gas_funded_at": "2025-12-14T20:00:00.000Z",
+  "tips_gas_funding_tx": "0xabcdef..."
 }
 \`\`\`
 
@@ -171,59 +203,126 @@ Creates or updates a tips wallet address for a Discord user.
   "existing_tips_wallet_address": "0xabcdef..."
 }
 
+// 409 Conflict - Gas funding already recorded (without force=true)
+{
+  "error": "Gas funding already recorded. Use ?force=true to overwrite.",
+  "existing_tips_gas_funding_tx": "0xabcdef..."
+}
+
 // 429 Too Many Requests - Rate limit exceeded
 {
   "error": "Rate limit exceeded. Try again later."
 }
 \`\`\`
 
-**Example (curl):**
+**Example - Create wallet (curl):**
 \`\`\`bash
 curl -X POST \
   -H "x-bot-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"discord_id":"541066012305653760","tips_wallet_address":"0x1234567890abcdef1234567890abcdef12345678"}' \
+  -d '{"discord_id":"541066012305653760","tips_wallet_address":"0xabc..."}' \
   "https://your-domain.vercel.app/api/bot/tips-wallet"
 \`\`\`
 
-**Example with force (curl):**
+**Example - Record gas funding (curl):**
 \`\`\`bash
 curl -X POST \
   -H "x-bot-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"discord_id":"541066012305653760","tips_wallet_address":"0x1234567890abcdef1234567890abcdef12345678"}' \
-  "https://your-domain.vercel.app/api/bot/tips-wallet?force=true"
+  -d '{"discord_id":"541066012305653760","tips_gas_funded_at":"2025-12-14T20:00:00Z","tips_gas_funding_tx":"0xdeadbeef..."}' \
+  "https://your-domain.vercel.app/api/bot/tips-wallet"
 \`\`\`
 
-**Example (Python):**
+**Example - Complete workflow (Python):**
 \`\`\`python
 import requests
+from datetime import datetime
 
 BOT_API_KEY = "your_bot_api_key_here"
+BASE_URL = "https://your-domain.vercel.app"
 DISCORD_ID = "541066012305653760"
-TIPS_WALLET_ADDRESS = "0x1234567890abcdef1234567890abcdef12345678"
 
-response = requests.post(
-    "https://your-domain.vercel.app/api/bot/tips-wallet",
-    headers={
-        "x-bot-api-key": BOT_API_KEY,
-        "Content-Type": "application/json"
-    },
-    json={
-        "discord_id": DISCORD_ID,
-        "tips_wallet_address": TIPS_WALLET_ADDRESS
-    }
-)
+# Step 1: Check if tips wallet exists
+def get_tips_wallet(discord_id):
+    response = requests.get(
+        f"{BASE_URL}/api/bot/tips-wallet",
+        params={"discord_id": discord_id},
+        headers={"x-bot-api-key": BOT_API_KEY}
+    )
+    
+    if response.status_code == 200:
+        return response.json()
+    elif response.status_code == 404:
+        return None
+    else:
+        raise Exception(f"Error: {response.json()}")
 
-if response.status_code == 200:
-    data = response.json()
-    print(f"Success! Tips wallet created: {data['tips_wallet_address']}")
-elif response.status_code == 409:
-    print("Tips wallet already exists. Use ?force=true to overwrite.")
-elif response.status_code == 404:
-    print("User not found. Make sure Discord is connected first.")
+# Step 2: Create tips wallet if needed
+def create_tips_wallet(discord_id, wallet_address):
+    response = requests.post(
+        f"{BASE_URL}/api/bot/tips-wallet",
+        headers={
+            "x-bot-api-key": BOT_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "discord_id": discord_id,
+            "tips_wallet_address": wallet_address
+        }
+    )
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Error creating wallet: {response.json()}")
+
+# Step 3: Check if gas funding needed
+def should_fund_gas(wallet_data):
+    """Returns True if welcome gas should be sent"""
+    if not wallet_data:
+        return False  # Wallet doesn't exist yet
+    
+    # Check if gas was already funded
+    return wallet_data.get("tips_gas_funded_at") is None
+
+# Step 4: Record gas funding
+def record_gas_funding(discord_id, tx_hash):
+    """Record that welcome gas was sent"""
+    response = requests.post(
+        f"{BASE_URL}/api/bot/tips-wallet",
+        headers={
+            "x-bot-api-key": BOT_API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "discord_id": discord_id,
+            "tips_gas_funded_at": datetime.utcnow().isoformat() + "Z",
+            "tips_gas_funding_tx": tx_hash
+        }
+    )
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Error recording funding: {response.json()}")
+
+# Example usage
+wallet_data = get_tips_wallet(DISCORD_ID)
+
+if not wallet_data:
+    # Create new tips wallet
+    new_wallet_address = "0x..."  # Generated by bot
+    wallet_data = create_tips_wallet(DISCORD_ID, new_wallet_address)
+    print(f"Created tips wallet: {wallet_data['tips_wallet_address']}")
+
+# Check if we need to send welcome gas
+if should_fund_gas(wallet_data):
+    # Send gas on Base network
+    tx_hash = "0xdeadbeef..."  # From your gas funding transaction
+    result = record_gas_funding(DISCORD_ID, tx_hash)
+    print(f"Gas funding recorded: {result['tips_gas_funding_tx']}")
 else:
-    print(f"Error: {response.json()}")
+    print("Gas already funded, skipping")
 \`\`\`
 
 ---
@@ -251,16 +350,23 @@ else:
 The tips wallet data is stored in the existing `user_identities` table:
 
 \`\`\`sql
+-- Added gas funding tracking fields
 ALTER TABLE user_identities 
-ADD COLUMN tips_wallet_address VARCHAR(255);
+ADD COLUMN IF NOT EXISTS tips_wallet_address VARCHAR(255),
+ADD COLUMN IF NOT EXISTS tips_gas_funded_at TIMESTAMPTZ NULL,
+ADD COLUMN IF NOT EXISTS tips_gas_funding_tx VARCHAR(66) NULL;
 
-CREATE INDEX idx_user_identities_tips_wallet 
+CREATE INDEX IF NOT EXISTS idx_user_identities_tips_wallet 
 ON user_identities(tips_wallet_address);
+
+CREATE INDEX IF NOT EXISTS idx_tips_gas_funded_at 
+ON user_identities(tips_gas_funded_at);
 \`\`\`
 
 **Important Notes:**
 - Only the **public address** is stored, never private keys
 - One tips wallet per Discord user
+- Gas funding is recorded once per wallet to prevent repeated funding after bot restarts
 - The bot must ensure Discord is connected before creating a tips wallet
 
 ---
@@ -278,22 +384,46 @@ ON user_identities(tips_wallet_address);
 
 ## Workflow Example
 
-**Discord Bot Creates Tips Wallet:**
+**Discord Bot Creates Tips Wallet with Gas Funding:**
 
 1. User runs `/tip` command in Discord
 2. Bot checks if user has tips wallet (GET request)
-3. If not found (404), bot generates new EOA wallet
-4. Bot stores private key securely on bot server (never sent to API)
-5. Bot sends public address to API (POST request)
+3. If not found (404):
+   - Bot generates new EOA wallet
+   - Bot stores private key securely on bot server (never sent to API)
+   - Bot sends public address to API (POST request)
+4. Bot checks if gas funding needed (check `tips_gas_funded_at`)
+5. If not funded yet:
+   - Bot sends small ETH amount for gas on Base network
+   - Bot records funding timestamp and tx hash (POST request)
 6. User can now send/receive tips via Discord
+
+**Bot Restart Protection:**
+
+The gas funding fields prevent repeated funding after bot restarts:
+
+\`\`\`python
+# On bot startup or when processing tips
+wallet_data = get_tips_wallet(discord_id)
+
+if wallet_data and wallet_data.get("tips_gas_funded_at"):
+    print(f"Gas already funded at {wallet_data['tips_gas_funded_at']}")
+    print(f"Funding tx: {wallet_data['tips_gas_funding_tx']}")
+    # Skip gas funding
+else:
+    # Send welcome gas and record it
+    tx_hash = send_welcome_gas(wallet_data["tips_wallet_address"])
+    record_gas_funding(discord_id, tx_hash)
+\`\`\`
 
 **User Views Tips Wallet on Website:**
 
 1. User connects wallet on PiggyWorld
 2. User connects Discord account
 3. Website displays tips wallet address (if created by bot)
-4. Website shows PIGGY and ETH balances
-5. User can copy address or view on Basescan
+4. Website shows gas funding status with checkmark if funded
+5. Website shows PIGGY and ETH balances
+6. User can view funding transaction on Basescan
 
 ---
 
@@ -319,6 +449,27 @@ ON user_identities(tips_wallet_address);
 **400 Invalid discord_id:**
 - Ensure discord_id contains only digits
 - Discord IDs are typically 17-20 characters long
+
+**409 Conflict (Tips wallet already exists):**
+- Tips wallet address is already set for this user
+- Use `?force=true` query parameter to overwrite
+- Typical when migrating wallets or fixing issues
+
+**409 Conflict (Gas funding already recorded):**
+- Gas funding timestamp is already set
+- Indicates welcome gas was already sent
+- Use `?force=true` only if you need to update incorrect data
+- This prevents accidental duplicate funding
+
+**400 Invalid transaction hash:**
+- Transaction hash must be 0x followed by 64 hex characters
+- Example: `0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890`
+- Verify the tx hash from your Base network transaction
+
+**400 Invalid ISO date:**
+- Use ISO 8601 format: `2025-12-14T20:00:00Z`
+- Include timezone (Z for UTC or +00:00)
+- Example: `datetime.utcnow().isoformat() + "Z"` in Python
 
 ---
 
