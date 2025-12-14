@@ -148,54 +148,75 @@ export async function GET(request: NextRequest) {
     `
 
     if (existingDiscordUser.length > 0) {
-      console.log("[Discord Callback] Found existing Discord user, updating...")
-      let tokenId = existingDiscordUser[0].token_id
-      if (!tokenId) {
-        const tokenIdRows = await sql`
-          SELECT token_id FROM user_identities 
-          WHERE wallet_address = ${normalizedWallet}
-          LIMIT 1
-        `
-        tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
-      }
+      console.log("[Discord Callback] Found existing Discord user, merging with wallet record...")
 
+      // Get the old tips_wallet if it exists
+      const oldTipsWallet = existingDiscordUser[0].tips_wallet_address
+
+      // Delete the old Discord record
       await sql`
-        UPDATE user_identities SET
-          wallet_address   = ${normalizedWallet},
-          discord_username = ${me.username},
-          token_id         = COALESCE(${tokenId}, token_id),
-          updated_at       = NOW()
+        DELETE FROM user_identities 
         WHERE discord_id = ${me.id}
       `
-      console.log("[Discord Callback] Updated existing user")
+
+      // Update the wallet record with Discord info
+      await sql`
+        UPDATE user_identities SET
+          discord_id       = ${me.id},
+          discord_username = ${me.username},
+          tips_wallet_address = COALESCE(tips_wallet_address, ${oldTipsWallet}),
+          updated_at       = NOW()
+        WHERE wallet_address = ${normalizedWallet}
+      `
+      console.log("[Discord Callback] Merged records successfully")
     } else {
-      console.log("[Discord Callback] Creating new user identity...")
-      const tokenIdRows = await sql`
-        SELECT token_id FROM code_assignments 
+      console.log("[Discord Callback] No existing Discord user, checking wallet record...")
+      const existingWallet = await sql`
+        SELECT id, token_id FROM user_identities 
         WHERE wallet_address = ${normalizedWallet}
         LIMIT 1
       `
-      const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
 
-      await sql`
-        INSERT INTO user_identities (
-          discord_id, 
-          wallet_address, 
-          discord_username, 
-          token_id, 
-          created_at, 
-          updated_at
-        )
-        VALUES (
-          ${me.id}, 
-          ${normalizedWallet},
-          ${me.username}, 
-          ${tokenId}, 
-          NOW(), 
-          NOW()
-        )
-      `
-      console.log("[Discord Callback] Created new user identity")
+      if (existingWallet.length > 0) {
+        // Update existing wallet record
+        await sql`
+          UPDATE user_identities SET
+            discord_id       = ${me.id},
+            discord_username = ${me.username},
+            updated_at       = NOW()
+          WHERE wallet_address = ${normalizedWallet}
+        `
+        console.log("[Discord Callback] Updated existing wallet record")
+      } else {
+        // Create new record
+        console.log("[Discord Callback] Creating new user identity...")
+        const tokenIdRows = await sql`
+          SELECT token_id FROM code_assignments 
+          WHERE wallet_address = ${normalizedWallet}
+          LIMIT 1
+        `
+        const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
+
+        await sql`
+          INSERT INTO user_identities (
+            discord_id, 
+            wallet_address, 
+            discord_username, 
+            token_id, 
+            created_at, 
+            updated_at
+          )
+          VALUES (
+            ${me.id}, 
+            ${normalizedWallet},
+            ${me.username}, 
+            ${tokenId}, 
+            NOW(), 
+            NOW()
+          )
+        `
+        console.log("[Discord Callback] Created new user identity")
+      }
     }
 
     const redirectPath = source === "market" ? "market/profile" : "profile"
