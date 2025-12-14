@@ -5,6 +5,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
 import { TipsWalletCard } from "@/components/tips-wallet-card"
+import { mutate } from "swr"
 
 interface UserIdentity {
   wallet_address: string
@@ -34,7 +35,12 @@ export default function ProfilePage() {
   const [username, setUsername] = useState<string>("")
   const [usernameEditing, setUsernameEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error"; title?: string } | null>(null)
+  const [isDisconnecting, setIsDisconnecting] = useState<{ discord: boolean; twitter: boolean; farcaster: boolean }>({
+    discord: false,
+    twitter: false,
+    farcaster: false,
+  })
 
   // Load Neynar SIWN script on component mount
   useEffect(() => {
@@ -84,7 +90,7 @@ export default function ProfilePage() {
 
       // Process all parameters first, then batch state updates
       const updates = {
-        toast: null as { message: string; type: "success" | "error" } | null,
+        toast: null as { message: string; type: "success" | "error"; title?: string } | null,
         shouldReloadIdentity: false,
         emailVerificationPending: emailVerificationPending,
         emailEditing: emailEditing,
@@ -98,24 +104,28 @@ export default function ProfilePage() {
         updates.toast = {
           message: "Email successfully verified and connected to your account!",
           type: "success" as const,
+          title: "Successfully signed in!",
         }
         updates.shouldReloadIdentity = true
       } else if (urlParams.get("success") === "discord_verified") {
         updates.toast = {
           message: "Discord successfully connected to your account!",
           type: "success" as const,
+          title: "Successfully signed in!",
         }
         updates.shouldReloadIdentity = true
       } else if (urlParams.get("success") === "twitter_verified") {
         updates.toast = {
           message: "Twitter successfully connected to your account!",
           type: "success" as const,
+          title: "Successfully signed in!",
         }
         updates.shouldReloadIdentity = true
       } else if (urlParams.get("farcaster_connected") === "true") {
         updates.toast = {
           message: "Farcaster successfully connected to your account!",
           type: "success" as const,
+          title: "Successfully signed in!",
         }
         updates.shouldReloadIdentity = true
       } else if (urlParams.get("error")) {
@@ -346,46 +356,34 @@ export default function ProfilePage() {
     setEmail("")
   }
 
-  const disconnectPlatform = async (platform: string) => {
-    if (!address) return
+  const handleDisconnect = async (platform: "discord" | "twitter" | "farcaster") => {
+    setIsDisconnecting((prev) => ({ ...prev, [platform]: true }))
 
-    setIdentityLoading(true)
     try {
-      const response = await fetch("/api/disconnect", {
+      const response = await fetch(`/api/disconnect?platform=${platform}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: address,
-          platform: platform,
-        }),
       })
-
-      const data = await response.json()
 
       if (response.ok) {
+        const platformName = platform.charAt(0).toUpperCase() + platform.slice(1)
         setToast({
-          message: `${platform.charAt(0).toUpperCase() + platform.slice(1)} successfully disconnected!`,
+          message: `${platformName} successfully disconnected!`,
           type: "success",
+          title: "Successfully signed out!",
         })
+        setTimeout(() => setToast(null), 3000)
 
-        // Reload identity data
-        const identityResponse = await fetch(`/api/identity?address=${address}`)
-        const identityData = await identityResponse.json()
-        setIdentity(identityData.identity)
+        mutate()
       } else {
-        setToast({
-          message: data.error || `Failed to disconnect ${platform}. Please try again.`,
-          type: "error",
-        })
+        const error = await response.json()
+        setToast({ message: error.error || "Failed to disconnect account", type: "error" })
+        setTimeout(() => setToast(null), 3000)
       }
     } catch (error) {
-      console.error(`Error disconnecting ${platform}:`, error)
-      setToast({
-        message: `Failed to disconnect ${platform}. Please try again.`,
-        type: "error",
-      })
+      setToast({ message: "An unexpected error occurred", type: "error" })
+      setTimeout(() => setToast(null), 3000)
     } finally {
-      setIdentityLoading(false)
+      setIsDisconnecting((prev) => ({ ...prev, [platform]: false }))
     }
   }
 
@@ -453,8 +451,8 @@ export default function ProfilePage() {
     }
   }
 
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type })
+  const showToast = (message: string, type: "success" | "error", title?: string) => {
+    setToast({ message, type, title })
   }
 
   return (
@@ -478,7 +476,9 @@ export default function ProfilePage() {
               {toast.type === "success" ? "✓" : "✕"}
             </div>
             <div className="flex-1">
-              {toast.type === "success" && <div className="font-bold mb-1">Successfully signed in!</div>}
+              {toast.type === "success" && (
+                <div className="font-bold mb-1">{toast.title || "Successfully signed in!"}</div>
+              )}
               <div>{toast.message}</div>
             </div>
             <button onClick={() => setToast(null)} className="text-gray-400 hover:text-white">
@@ -608,8 +608,8 @@ export default function ProfilePage() {
                       </div>
                       {identity?.discord_username ? (
                         <button
-                          onClick={() => disconnectPlatform("discord")}
-                          disabled={identityLoading}
+                          onClick={() => handleDisconnect("discord")}
+                          disabled={identityLoading || isDisconnecting.discord}
                           className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
@@ -645,8 +645,8 @@ export default function ProfilePage() {
                       </div>
                       {identity?.twitter_id ? (
                         <button
-                          onClick={() => disconnectPlatform("twitter")}
-                          disabled={identityLoading}
+                          onClick={() => handleDisconnect("twitter")}
+                          disabled={identityLoading || isDisconnecting.twitter}
                           className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
@@ -681,8 +681,8 @@ export default function ProfilePage() {
                       </div>
                       {identity?.farcaster_id ? (
                         <button
-                          onClick={() => disconnectPlatform("farcaster")}
-                          disabled={identityLoading}
+                          onClick={() => handleDisconnect("farcaster")}
+                          disabled={identityLoading || isDisconnecting.farcaster}
                           className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                         >
                           Disconnect
@@ -734,8 +734,8 @@ export default function ProfilePage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => disconnectPlatform("email")}
-                              disabled={identityLoading}
+                              onClick={() => handleDisconnect("email")}
+                              disabled={identityLoading || isDisconnecting.email}
                               className="border border-red-500 text-red-400 hover:text-white hover:border-white px-4 py-1 text-sm font-mono rounded transition-colors disabled:opacity-50"
                             >
                               Disconnect
