@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || url.origin
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host") || "localhost:3000"}`
   const redirectUri = `${baseUrl}/api/auth/discord/callback`
 
   if (!code || !state) {
