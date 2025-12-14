@@ -73,7 +73,8 @@ export function TipsWalletCard({ tipsWalletAddress, tipsGasFundedAt, tipsGasFund
         <div className="text-pink-400 font-mono text-sm">
           <div className="text-gray-400 mb-2">Not created yet</div>
           <div className="text-xs text-gray-500">
-            Will be created automatically when you receive or send tips in Discord.
+            Will be created automatically when you receive or send tips in Discord. If you can't see your tips wallet,
+            type !balance in Discord and refresh this page.
           </div>
         </div>
       </div>
