@@ -72,20 +72,59 @@ export async function GET(request: NextRequest) {
       })
       return response
     } else {
-      // Original poker logic
+      // 1) Check if wallet_address is already linked to a DIFFERENT discord_id
+      const walletConflict = await sql`
+        SELECT discord_id FROM user_identities 
+        WHERE wallet_address = ${walletAddress.toLowerCase()} 
+          AND discord_id IS NOT NULL 
+          AND discord_id != ${me.id}
+        LIMIT 1
+      `
+
+      if (walletConflict.length > 0) {
+        console.error(
+          `[discord callback] Wallet ${walletAddress} already linked to discord_id ${walletConflict[0].discord_id}`,
+        )
+        const errorParam = `wallet_already_linked_to_discord_${walletConflict[0].discord_id}`
+        if (source === "piggyvegas") {
+          return NextResponse.redirect(`${origin}/piggyvegas/profile?error=${errorParam}`)
+        } else if (source === "market") {
+          return NextResponse.redirect(`${origin}/market/profile?error=${errorParam}`)
+        } else {
+          return NextResponse.redirect(`${origin}/poker?error=${errorParam}`)
+        }
+      }
+
+      // 2) Get token_id from existing record or code_assignments
       const tokenIdRows = await sql`
         SELECT token_id FROM user_identities WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
       `
       const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
 
-      await sql /* sql */`
-        INSERT INTO user_identities (wallet_address, discord_id, discord_username, token_id, created_at, updated_at)
-        VALUES (${walletAddress.toLowerCase()}, ${me.id}, ${me.username}, ${tokenId}, NOW(), NOW())
-        ON CONFLICT (wallet_address) DO UPDATE SET
-          discord_id       = EXCLUDED.discord_id,
+      // 3) UPSERT by discord_id (preserves tips_wallet_address if exists)
+      await sql`
+        INSERT INTO user_identities (
+          discord_id, 
+          wallet_address, 
+          discord_username, 
+          token_id, 
+          created_at, 
+          updated_at
+        )
+        VALUES (
+          ${me.id}, 
+          ${walletAddress.toLowerCase()}, 
+          ${me.username}, 
+          ${tokenId}, 
+          NOW(), 
+          NOW()
+        )
+        ON CONFLICT (discord_id) DO UPDATE SET
+          wallet_address   = EXCLUDED.wallet_address,
           discord_username = EXCLUDED.discord_username,
           token_id         = COALESCE(EXCLUDED.token_id, user_identities.token_id),
           updated_at       = NOW()
+          -- tips_wallet_address is NOT updated - it stays as is
       `
 
       if (source === "piggyvegas") {
