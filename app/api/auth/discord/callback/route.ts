@@ -7,15 +7,24 @@ import { neon } from "@neondatabase/serverless"
 const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(request: NextRequest) {
+  console.log("[Discord Callback] Request received")
+
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
+
+  console.log("[Discord Callback] Code exists:", !!code)
+  console.log("[Discord Callback] State exists:", !!state)
 
   const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host") || "localhost:3000"}`
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl
   const redirectUri = `${baseUrl}/api/auth/discord/callback`
 
+  console.log("[Discord Callback] Base URL:", baseUrl)
+  console.log("[Discord Callback] Redirect URI:", redirectUri)
+
   if (!code || !state) {
+    console.error("[Discord Callback] Missing code or state")
     return NextResponse.redirect(`${baseUrl}/profile?error=discord_auth_failed&details=missing_code_or_state`)
   }
 
@@ -27,10 +36,14 @@ export async function GET(request: NextRequest) {
       const decoded = JSON.parse(Buffer.from(state, "base64").toString())
       walletAddress = decoded.walletAddress
       source = decoded.source || "poker"
+      console.log("[Discord Callback] Decoded wallet:", walletAddress)
+      console.log("[Discord Callback] Source:", source)
     } catch (stateError) {
+      console.error("[Discord Callback] Invalid state:", stateError)
       return NextResponse.redirect(`${baseUrl}/profile?error=discord_auth_failed&details=invalid_state`)
     }
 
+    console.log("[Discord Callback] Fetching token from Discord...")
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
@@ -43,8 +56,11 @@ export async function GET(request: NextRequest) {
       }),
     })
 
+    console.log("[Discord Callback] Token response status:", tokenRes.status)
+
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text()
+      console.error("[Discord Callback] Token error:", errorText)
       const errorDetails = `token_${tokenRes.status}_${encodeURIComponent(errorText.substring(0, 50))}`
       return NextResponse.redirect(`${baseUrl}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
@@ -52,21 +68,29 @@ export async function GET(request: NextRequest) {
     const token = await tokenRes.json()
 
     if (!token.access_token) {
+      console.error("[Discord Callback] No access token in response")
       return NextResponse.redirect(`${baseUrl}/profile?error=discord_connection_failed&details=no_access_token`)
     }
 
+    console.log("[Discord Callback] Got access token, fetching user...")
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     })
 
+    console.log("[Discord Callback] User response status:", meRes.status)
+
     if (!meRes.ok) {
+      console.error("[Discord Callback] Failed to fetch user")
       const errorDetails = `user_${meRes.status}`
       return NextResponse.redirect(`${baseUrl}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const me = await meRes.json()
+    console.log("[Discord Callback] Discord user ID:", me.id)
+    console.log("[Discord Callback] Discord username:", me.username)
 
     if (source === "superpoker") {
+      console.log("[Discord Callback] Processing superpoker user...")
       const existingUser = await sql`
         SELECT * FROM superpoker_users WHERE discord_id = ${me.id} LIMIT 1
       `
@@ -76,12 +100,14 @@ export async function GET(request: NextRequest) {
           INSERT INTO superpoker_users (discord_id, discord_username, created_at, updated_at)
           VALUES (${me.id}, ${me.username}, NOW(), NOW())
         `
+        console.log("[Discord Callback] Created new superpoker user")
       } else {
         await sql`
           UPDATE superpoker_users 
           SET discord_username = ${me.username}, updated_at = NOW()
           WHERE discord_id = ${me.id}
         `
+        console.log("[Discord Callback] Updated superpoker user")
       }
 
       const response = NextResponse.redirect(`${baseUrl}/superpoker?success=discord_verified`)
@@ -95,7 +121,9 @@ export async function GET(request: NextRequest) {
     }
 
     const normalizedWallet = walletAddress.toLowerCase()
+    console.log("[Discord Callback] Normalized wallet:", normalizedWallet)
 
+    console.log("[Discord Callback] Checking for wallet conflicts...")
     const walletConflict = await sql`
       SELECT discord_id FROM user_identities 
       WHERE wallet_address = ${normalizedWallet}
@@ -105,12 +133,14 @@ export async function GET(request: NextRequest) {
     `
 
     if (walletConflict.length > 0) {
+      console.error("[Discord Callback] Wallet already linked to different Discord")
       const redirectPath = source === "market" ? "market/profile" : "profile"
       return NextResponse.redirect(
         `${baseUrl}/${redirectPath}?error=wallet_already_linked&details=discord_${walletConflict[0].discord_id}`,
       )
     }
 
+    console.log("[Discord Callback] Checking for existing Discord user...")
     const existingDiscordUser = await sql`
       SELECT wallet_address, tips_wallet_address, token_id FROM user_identities 
       WHERE discord_id = ${me.id} 
@@ -118,6 +148,7 @@ export async function GET(request: NextRequest) {
     `
 
     if (existingDiscordUser.length > 0) {
+      console.log("[Discord Callback] Found existing Discord user, updating...")
       let tokenId = existingDiscordUser[0].token_id
       if (!tokenId) {
         const tokenIdRows = await sql`
@@ -136,7 +167,9 @@ export async function GET(request: NextRequest) {
           updated_at       = NOW()
         WHERE discord_id = ${me.id}
       `
+      console.log("[Discord Callback] Updated existing user")
     } else {
+      console.log("[Discord Callback] Creating new user identity...")
       const tokenIdRows = await sql`
         SELECT token_id FROM code_assignments 
         WHERE wallet_address = ${normalizedWallet}
@@ -162,11 +195,15 @@ export async function GET(request: NextRequest) {
           NOW()
         )
       `
+      console.log("[Discord Callback] Created new user identity")
     }
 
     const redirectPath = source === "market" ? "market/profile" : "profile"
+    console.log("[Discord Callback] Success! Redirecting to:", `${baseUrl}/${redirectPath}`)
     return NextResponse.redirect(`${baseUrl}/${redirectPath}?success=discord_verified`)
   } catch (e) {
+    console.error("[Discord Callback] Caught error:", e)
+
     let redirectPage = "profile"
     try {
       if (state) {
@@ -182,6 +219,7 @@ export async function GET(request: NextRequest) {
 
     const errorMessage = e instanceof Error ? e.message : String(e)
     const errorDetails = encodeURIComponent(errorMessage.substring(0, 100))
+    console.error("[Discord Callback] Redirecting with error:", errorDetails)
     return NextResponse.redirect(`${baseUrl}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`)
   }
 }
