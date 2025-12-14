@@ -14,12 +14,19 @@ export async function GET(request: NextRequest) {
   const origin = url.origin
   const redirectUri = `${origin}/api/auth/discord/callback`
 
+  console.log("[v0] Discord callback - code:", code ? "present" : "missing")
+  console.log("[v0] Discord callback - state:", state ? "present" : "missing")
+
   if (!code || !state) {
-    return NextResponse.redirect(`${origin}/poker?error=discord_auth_failed`)
+    console.log("[v0] Discord callback - missing code or state, redirecting with error")
+    return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed`)
   }
 
   try {
     const { walletAddress, source = "poker" } = JSON.parse(Buffer.from(state, "base64").toString())
+
+    console.log("[v0] Discord callback - wallet:", walletAddress)
+    console.log("[v0] Discord callback - source:", source)
 
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
@@ -32,7 +39,10 @@ export async function GET(request: NextRequest) {
         redirect_uri: redirectUri,
       }),
     })
-    if (!tokenRes.ok) throw new Error(await tokenRes.text())
+    if (!tokenRes.ok) {
+      console.log("[v0] Discord callback - token fetch failed:", await tokenRes.text())
+      throw new Error(await tokenRes.text())
+    }
     const token = await tokenRes.json()
     if (!token.access_token) throw new Error("No access_token")
 
@@ -41,6 +51,9 @@ export async function GET(request: NextRequest) {
     })
     if (!meRes.ok) throw new Error(await meRes.text())
     const me = await meRes.json() // { id, username, global_name, avatar, ... }
+
+    console.log("[v0] Discord callback - Discord user ID:", me.id)
+    console.log("[v0] Discord callback - Discord username:", me.username)
 
     if (source === "superpoker") {
       // Check if Discord user already exists in superpoker_users
@@ -87,11 +100,11 @@ export async function GET(request: NextRequest) {
         )
         const errorParam = `wallet_already_linked_to_discord_${walletConflict[0].discord_id}`
         if (source === "piggyvegas") {
-          return NextResponse.redirect(`${origin}/piggyvegas/profile?error=${errorParam}`)
+          return NextResponse.redirect(`${origin}/profile?error=${errorParam}`)
         } else if (source === "market") {
           return NextResponse.redirect(`${origin}/market/profile?error=${errorParam}`)
         } else {
-          return NextResponse.redirect(`${origin}/poker?error=${errorParam}`)
+          return NextResponse.redirect(`${origin}/profile?error=${errorParam}`)
         }
       }
 
@@ -100,6 +113,8 @@ export async function GET(request: NextRequest) {
         SELECT token_id FROM user_identities WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
       `
       const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
+
+      console.log("[v0] Discord callback - Inserting into DB, token_id:", tokenId)
 
       // 3) UPSERT by discord_id (preserves tips_wallet_address if exists)
       await sql`
@@ -127,25 +142,35 @@ export async function GET(request: NextRequest) {
           -- tips_wallet_address is NOT updated - it stays as is
       `
 
+      console.log("[v0] Discord callback - DB insert successful")
+
       if (source === "piggyvegas") {
-        return NextResponse.redirect(`${origin}/piggyvegas/profile?success=discord_verified`)
+        console.log("[v0] Discord callback - Redirecting to /profile with success")
+        return NextResponse.redirect(`${origin}/profile?success=discord_verified`)
       } else if (source === "market") {
         return NextResponse.redirect(`${origin}/market/profile?success=discord_verified`)
       } else {
-        return NextResponse.redirect(`${origin}/poker?success=discord_verified`)
+        return NextResponse.redirect(`${origin}/profile?success=discord_verified`)
       }
     }
   } catch (e) {
     console.error("[discord callback] error:", e)
-    const redirectPage = state
-      ? JSON.parse(Buffer.from(state, "base64").toString()).source === "superpoker"
-        ? "superpoker"
-        : JSON.parse(Buffer.from(state, "base64").toString()).source === "piggyvegas"
-          ? "piggyvegas/profile"
-          : JSON.parse(Buffer.from(state, "base64").toString()).source === "market"
-            ? "market/profile"
-            : "poker"
-      : "poker"
+    let redirectPage = "profile"
+    try {
+      if (state) {
+        const parsed = JSON.parse(Buffer.from(state, "base64").toString())
+        const source = parsed.source
+        if (source === "superpoker") {
+          redirectPage = "superpoker"
+        } else if (source === "piggyvegas") {
+          redirectPage = "profile"
+        } else if (source === "market") {
+          redirectPage = "market/profile"
+        }
+      }
+    } catch (parseError) {
+      console.error("[discord callback] Failed to parse state for error redirect:", parseError)
+    }
     return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed`)
   }
 }
