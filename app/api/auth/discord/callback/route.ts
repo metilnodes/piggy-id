@@ -40,16 +40,24 @@ export async function GET(request: NextRequest) {
       }),
     })
     if (!tokenRes.ok) {
-      console.log("[v0] Discord callback - token fetch failed:", await tokenRes.text())
-      throw new Error(await tokenRes.text())
+      const errorText = await tokenRes.text()
+      console.error("[v0] Discord callback - token fetch failed:", tokenRes.status, errorText)
+      throw new Error(`Token fetch failed: ${tokenRes.status} ${errorText}`)
     }
     const token = await tokenRes.json()
-    if (!token.access_token) throw new Error("No access_token")
+    if (!token.access_token) {
+      console.error("[v0] Discord callback - no access_token in response:", JSON.stringify(token))
+      throw new Error("No access_token")
+    }
 
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     })
-    if (!meRes.ok) throw new Error(await meRes.text())
+    if (!meRes.ok) {
+      const errorText = await meRes.text()
+      console.error("[v0] Discord callback - user fetch failed:", meRes.status, errorText)
+      throw new Error(`User fetch failed: ${meRes.status} ${errorText}`)
+    }
     const me = await meRes.json() // { id, username, global_name, avatar, ... }
 
     console.log("[v0] Discord callback - Discord user ID:", me.id)
@@ -96,7 +104,7 @@ export async function GET(request: NextRequest) {
 
       if (walletConflict.length > 0) {
         console.error(
-          `[discord callback] Wallet ${walletAddress} already linked to discord_id ${walletConflict[0].discord_id}`,
+          `[v0] Discord callback - Wallet ${walletAddress} already linked to discord_id ${walletConflict[0].discord_id}`,
         )
         const errorParam = `wallet_already_linked_to_discord_${walletConflict[0].discord_id}`
         if (source === "piggyvegas") {
@@ -108,41 +116,69 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // 2) Get token_id from existing record or code_assignments
-      const tokenIdRows = await sql`
-        SELECT token_id FROM user_identities WHERE wallet_address = ${walletAddress.toLowerCase()} LIMIT 1
-      `
-      const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
-
-      console.log("[v0] Discord callback - Inserting into DB, token_id:", tokenId)
-
-      // 3) UPSERT by discord_id (preserves tips_wallet_address if exists)
-      await sql`
-        INSERT INTO user_identities (
-          discord_id, 
-          wallet_address, 
-          discord_username, 
-          token_id, 
-          created_at, 
-          updated_at
-        )
-        VALUES (
-          ${me.id}, 
-          ${walletAddress.toLowerCase()}, 
-          ${me.username}, 
-          ${tokenId}, 
-          NOW(), 
-          NOW()
-        )
-        ON CONFLICT (discord_id) DO UPDATE SET
-          wallet_address   = EXCLUDED.wallet_address,
-          discord_username = EXCLUDED.discord_username,
-          token_id         = COALESCE(EXCLUDED.token_id, user_identities.token_id),
-          updated_at       = NOW()
-          -- tips_wallet_address is NOT updated - it stays as is
+      // 2) Check if discord_id already exists (stub or full record)
+      const existingDiscordUser = await sql`
+        SELECT wallet_address, tips_wallet_address, token_id FROM user_identities 
+        WHERE discord_id = ${me.id} 
+        LIMIT 1
       `
 
-      console.log("[v0] Discord callback - DB insert successful")
+      console.log("[v0] Discord callback - Existing discord user:", existingDiscordUser.length > 0)
+
+      if (existingDiscordUser.length > 0) {
+        console.log("[v0] Discord callback - Updating existing discord user")
+
+        // Get token_id if not already set
+        let tokenId = existingDiscordUser[0].token_id
+        if (!tokenId) {
+          const tokenIdRows = await sql`
+            SELECT token_id FROM user_identities 
+            WHERE wallet_address = ${walletAddress.toLowerCase()} 
+            LIMIT 1
+          `
+          tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
+        }
+
+        await sql`
+          UPDATE user_identities SET
+            wallet_address   = ${walletAddress.toLowerCase()},
+            discord_username = ${me.username},
+            token_id         = COALESCE(${tokenId}, token_id),
+            updated_at       = NOW()
+          WHERE discord_id = ${me.id}
+        `
+        console.log("[v0] Discord callback - Update successful")
+      } else {
+        console.log("[v0] Discord callback - Inserting new discord user")
+
+        // Get token_id from code_assignments if exists
+        const tokenIdRows = await sql`
+          SELECT token_id FROM code_assignments 
+          WHERE wallet_address = ${walletAddress.toLowerCase()} 
+          LIMIT 1
+        `
+        const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
+
+        await sql`
+          INSERT INTO user_identities (
+            discord_id, 
+            wallet_address, 
+            discord_username, 
+            token_id, 
+            created_at, 
+            updated_at
+          )
+          VALUES (
+            ${me.id}, 
+            ${walletAddress.toLowerCase()}, 
+            ${me.username}, 
+            ${tokenId}, 
+            NOW(), 
+            NOW()
+          )
+        `
+        console.log("[v0] Discord callback - Insert successful")
+      }
 
       if (source === "piggyvegas") {
         console.log("[v0] Discord callback - Redirecting to /profile with success")
@@ -154,7 +190,12 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (e) {
-    console.error("[discord callback] error:", e)
+    console.error("[v0] Discord callback - error:", e)
+    if (e instanceof Error) {
+      console.error("[v0] Discord callback - error message:", e.message)
+      console.error("[v0] Discord callback - error stack:", e.stack)
+    }
+
     let redirectPage = "profile"
     try {
       if (state) {
@@ -169,7 +210,7 @@ export async function GET(request: NextRequest) {
         }
       }
     } catch (parseError) {
-      console.error("[discord callback] Failed to parse state for error redirect:", parseError)
+      console.error("[v0] Discord callback - Failed to parse state for error redirect:", parseError)
     }
     return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed`)
   }
