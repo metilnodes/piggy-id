@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   if (!code || !state) {
     console.log("[v0] ERROR: Missing code or state parameter")
-    return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed`)
+    return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed&details=missing_code_or_state`)
   }
 
   try {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       console.log("[v0] Decoded state - source:", source)
     } catch (stateError) {
       console.error("[v0] ERROR: Failed to decode state:", stateError)
-      throw new Error("Invalid state parameter")
+      return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed&details=invalid_state`)
     }
 
     console.log("[v0] Fetching Discord token...")
@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
       console.error("[v0] ERROR: Discord token fetch failed")
       console.error("[v0] Status:", tokenRes.status)
       console.error("[v0] Response:", errorText)
-      throw new Error(`Token fetch failed: ${tokenRes.status}`)
+      const errorDetails = `token_fetch_${tokenRes.status}`
+      return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const token = await tokenRes.json()
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     if (!token.access_token) {
       console.error("[v0] ERROR: No access_token in response:", JSON.stringify(token))
-      throw new Error("No access_token in Discord response")
+      return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=no_access_token`)
     }
 
     console.log("[v0] Fetching Discord user info...")
@@ -86,7 +87,8 @@ export async function GET(request: NextRequest) {
       console.error("[v0] ERROR: Discord user fetch failed")
       console.error("[v0] Status:", meRes.status)
       console.error("[v0] Response:", errorText)
-      throw new Error(`User fetch failed: ${meRes.status}`)
+      const errorDetails = `user_fetch_${meRes.status}`
+      return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const me = await meRes.json()
@@ -236,7 +238,12 @@ export async function GET(request: NextRequest) {
       console.error("[v0] Failed to parse state for error redirect:", parseError)
     }
 
-    console.log("[v0] Redirecting to error page:", `${origin}/${redirectPage}?error=discord_connection_failed`)
-    return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed`)
+    const errorMessage = e instanceof Error ? e.message : String(e)
+    const errorDetails = encodeURIComponent(errorMessage.substring(0, 100))
+    console.log(
+      "[v0] Redirecting to error page:",
+      `${origin}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`,
+    )
+    return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`)
   }
 }
