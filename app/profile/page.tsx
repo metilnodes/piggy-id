@@ -780,12 +780,14 @@ export default function ProfilePage() {
         </div>
 
         <div className="max-w-6xl mx-auto mt-8">
-          <button
-            onClick={() => router.push("/piggyvegas")}
-            className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20"
+          <a
+            href="http://id.piggyworld.xyz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 border-2 border-pink-500 text-pink-400 font-mono text-lg py-4 rounded-lg hover:bg-pink-500/30 hover:text-pink-300 transition-all duration-300 shadow-lg shadow-pink-500/20 text-center"
           >
-            ← BACK TO LOBBY
-          </button>
+            MINT PIGGY ID
+          </a>
         </div>
       </div>
     </div>
