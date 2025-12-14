@@ -150,25 +150,47 @@ export async function GET(request: NextRequest) {
     if (existingDiscordUser.length > 0) {
       console.log("[Discord Callback] Found existing Discord user, merging with wallet record...")
 
-      // Get the old tips_wallet if it exists
       const oldTipsWallet = existingDiscordUser[0].tips_wallet_address
+      const oldTokenId = existingDiscordUser[0].token_id
 
-      // Delete the old Discord record
-      await sql`
-        DELETE FROM user_identities 
-        WHERE discord_id = ${me.id}
-      `
-
-      // Update the wallet record with Discord info
-      await sql`
-        UPDATE user_identities SET
-          discord_id       = ${me.id},
-          discord_username = ${me.username},
-          tips_wallet_address = COALESCE(tips_wallet_address, ${oldTipsWallet}),
-          updated_at       = NOW()
+      const walletRecord = await sql`
+        SELECT id, tips_wallet_address FROM user_identities 
         WHERE wallet_address = ${normalizedWallet}
+        LIMIT 1
       `
-      console.log("[Discord Callback] Merged records successfully")
+
+      if (walletRecord.length > 0) {
+        console.log("[Discord Callback] Wallet record exists, merging...")
+
+        // Delete the old Discord-only record
+        await sql`
+          DELETE FROM user_identities 
+          WHERE discord_id = ${me.id}
+        `
+
+        // Update wallet record with Discord info, preserve existing tips_wallet if present
+        await sql`
+          UPDATE user_identities SET
+            discord_id       = ${me.id},
+            discord_username = ${me.username},
+            tips_wallet_address = COALESCE(tips_wallet_address, ${oldTipsWallet}),
+            token_id = COALESCE(token_id, ${oldTokenId}),
+            updated_at       = NOW()
+          WHERE wallet_address = ${normalizedWallet}
+        `
+        console.log("[Discord Callback] Merged records successfully")
+      } else {
+        console.log("[Discord Callback] No wallet record, updating Discord record with wallet...")
+
+        await sql`
+          UPDATE user_identities SET
+            wallet_address = ${normalizedWallet},
+            discord_username = ${me.username},
+            updated_at = NOW()
+          WHERE discord_id = ${me.id}
+        `
+        console.log("[Discord Callback] Updated Discord record with wallet address")
+      }
     } else {
       console.log("[Discord Callback] No existing Discord user, checking wallet record...")
       const existingWallet = await sql`
