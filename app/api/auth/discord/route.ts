@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   console.log("[v0] Discord OAuth route called")
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host") || "localhost:3000"}`
+  const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host") || "localhost:3000"}`
+  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl
   const redirectUri = `${baseUrl}/api/auth/discord/callback`
 
   const searchParams = request.nextUrl.searchParams
