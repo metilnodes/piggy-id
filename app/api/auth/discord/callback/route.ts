@@ -10,21 +10,10 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
-
   const origin = url.origin
   const redirectUri = `${origin}/api/auth/discord/callback`
 
-  console.log("[v0] ===== DISCORD CALLBACK START =====")
-  console.log("[v0] Full URL:", request.url)
-  console.log("[v0] Origin:", origin)
-  console.log("[v0] Redirect URI:", redirectUri)
-  console.log("[v0] Code:", code ? "present" : "missing")
-  console.log("[v0] State:", state ? "present" : "missing")
-  console.log("[v0] CLIENT_ID:", process.env.DISCORD_CLIENT_ID ? "set" : "MISSING")
-  console.log("[v0] CLIENT_SECRET:", process.env.DISCORD_CLIENT_SECRET ? "set" : "MISSING")
-
   if (!code || !state) {
-    console.log("[v0] ERROR: Missing code or state parameter")
     return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed&details=missing_code_or_state`)
   }
 
@@ -36,14 +25,10 @@ export async function GET(request: NextRequest) {
       const decoded = JSON.parse(Buffer.from(state, "base64").toString())
       walletAddress = decoded.walletAddress
       source = decoded.source || "poker"
-      console.log("[v0] Decoded state - wallet:", walletAddress)
-      console.log("[v0] Decoded state - source:", source)
     } catch (stateError) {
-      console.error("[v0] ERROR: Failed to decode state:", stateError)
       return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed&details=invalid_state`)
     }
 
-    console.log("[v0] Fetching Discord token...")
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
@@ -56,47 +41,30 @@ export async function GET(request: NextRequest) {
       }),
     })
 
-    console.log("[v0] Token response status:", tokenRes.status)
-
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text()
-      console.error("[v0] ERROR: Discord token fetch failed")
-      console.error("[v0] Status:", tokenRes.status)
-      console.error("[v0] Response:", errorText)
-      const errorDetails = `token_fetch_${tokenRes.status}`
+      const errorDetails = `token_${tokenRes.status}_${encodeURIComponent(errorText.substring(0, 50))}`
       return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const token = await tokenRes.json()
-    console.log("[v0] Token received:", token.access_token ? "yes" : "no")
 
     if (!token.access_token) {
-      console.error("[v0] ERROR: No access_token in response:", JSON.stringify(token))
       return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=no_access_token`)
     }
 
-    console.log("[v0] Fetching Discord user info...")
     const meRes = await fetch("https://discord.com/api/users/@me", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     })
 
-    console.log("[v0] User info response status:", meRes.status)
-
     if (!meRes.ok) {
-      const errorText = await meRes.text()
-      console.error("[v0] ERROR: Discord user fetch failed")
-      console.error("[v0] Status:", meRes.status)
-      console.error("[v0] Response:", errorText)
-      const errorDetails = `user_fetch_${meRes.status}`
+      const errorDetails = `user_${meRes.status}`
       return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const me = await meRes.json()
-    console.log("[v0] Discord user fetched - ID:", me.id, "Username:", me.username)
 
     if (source === "superpoker") {
-      console.log("[v0] Processing superpoker connection...")
-      // Check if Discord user already exists in superpoker_users
       const existingUser = await sql`
         SELECT * FROM superpoker_users WHERE discord_id = ${me.id} LIMIT 1
       `
@@ -106,14 +74,12 @@ export async function GET(request: NextRequest) {
           INSERT INTO superpoker_users (discord_id, discord_username, created_at, updated_at)
           VALUES (${me.id}, ${me.username}, NOW(), NOW())
         `
-        console.log("[v0] Superpoker user created")
       } else {
         await sql`
           UPDATE superpoker_users 
           SET discord_username = ${me.username}, updated_at = NOW()
           WHERE discord_id = ${me.id}
         `
-        console.log("[v0] Superpoker user updated")
       }
 
       const response = NextResponse.redirect(`${origin}/superpoker?success=discord_verified`)
@@ -123,106 +89,82 @@ export async function GET(request: NextRequest) {
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 30,
       })
-      console.log("[v0] Redirecting to superpoker with success")
       return response
-    } else {
-      console.log("[v0] Processing regular profile connection...")
+    }
 
-      console.log("[v0] Checking for wallet conflicts...")
-      const walletConflict = await sql`
-        SELECT discord_id FROM user_identities 
-        WHERE wallet_address = ${walletAddress.toLowerCase()} 
-          AND discord_id IS NOT NULL 
-          AND discord_id != ${me.id}
-        LIMIT 1
-      `
+    const normalizedWallet = walletAddress.toLowerCase()
 
-      if (walletConflict.length > 0) {
-        console.error(
-          `[v0] ERROR: Wallet ${walletAddress} already linked to discord_id ${walletConflict[0].discord_id}`,
-        )
-        const errorParam = `wallet_already_linked_to_discord_${walletConflict[0].discord_id}`
-        const redirectPath = source === "market" ? "market/profile" : "profile"
-        return NextResponse.redirect(`${origin}/${redirectPath}?error=${errorParam}`)
-      }
+    const walletConflict = await sql`
+      SELECT discord_id FROM user_identities 
+      WHERE wallet_address = ${normalizedWallet}
+        AND discord_id IS NOT NULL 
+        AND discord_id != ${me.id}
+      LIMIT 1
+    `
 
-      console.log("[v0] No wallet conflict found")
+    if (walletConflict.length > 0) {
+      const redirectPath = source === "market" ? "market/profile" : "profile"
+      return NextResponse.redirect(
+        `${origin}/${redirectPath}?error=wallet_already_linked&details=discord_${walletConflict[0].discord_id}`,
+      )
+    }
 
-      console.log("[v0] Checking if discord_id exists in database...")
-      const existingDiscordUser = await sql`
-        SELECT wallet_address, tips_wallet_address, token_id FROM user_identities 
-        WHERE discord_id = ${me.id} 
-        LIMIT 1
-      `
+    const existingDiscordUser = await sql`
+      SELECT wallet_address, tips_wallet_address, token_id FROM user_identities 
+      WHERE discord_id = ${me.id} 
+      LIMIT 1
+    `
 
-      if (existingDiscordUser.length > 0) {
-        console.log("[v0] Discord user exists - updating record")
-        console.log("[v0] Existing wallet:", existingDiscordUser[0].wallet_address)
-        console.log("[v0] Existing tips_wallet:", existingDiscordUser[0].tips_wallet_address)
-
-        let tokenId = existingDiscordUser[0].token_id
-        if (!tokenId) {
-          const tokenIdRows = await sql`
-            SELECT token_id FROM user_identities 
-            WHERE wallet_address = ${walletAddress.toLowerCase()} 
-            LIMIT 1
-          `
-          tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
-          console.log("[v0] Token ID from wallet lookup:", tokenId)
-        }
-
-        await sql`
-          UPDATE user_identities SET
-            wallet_address   = ${walletAddress.toLowerCase()},
-            discord_username = ${me.username},
-            token_id         = COALESCE(${tokenId}, token_id),
-            updated_at       = NOW()
-          WHERE discord_id = ${me.id}
-        `
-        console.log("[v0] Database UPDATE successful")
-      } else {
-        console.log("[v0] Discord user does not exist - inserting new record")
-
+    if (existingDiscordUser.length > 0) {
+      let tokenId = existingDiscordUser[0].token_id
+      if (!tokenId) {
         const tokenIdRows = await sql`
-          SELECT token_id FROM code_assignments 
-          WHERE wallet_address = ${walletAddress.toLowerCase()} 
+          SELECT token_id FROM user_identities 
+          WHERE wallet_address = ${normalizedWallet}
           LIMIT 1
         `
-        const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
-        console.log("[v0] Token ID from code_assignments:", tokenId)
-
-        await sql`
-          INSERT INTO user_identities (
-            discord_id, 
-            wallet_address, 
-            discord_username, 
-            token_id, 
-            created_at, 
-            updated_at
-          )
-          VALUES (
-            ${me.id}, 
-            ${walletAddress.toLowerCase()}, 
-            ${me.username}, 
-            ${tokenId}, 
-            NOW(), 
-            NOW()
-          )
-        `
-        console.log("[v0] Database INSERT successful")
+        tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
       }
 
-      const redirectPath = source === "market" ? "market/profile" : "profile"
-      console.log("[v0] Redirecting to:", `${origin}/${redirectPath}?success=discord_verified`)
-      console.log("[v0] ===== DISCORD CALLBACK SUCCESS =====")
-      return NextResponse.redirect(`${origin}/${redirectPath}?success=discord_verified`)
-    }
-  } catch (e) {
-    console.error("[v0] ===== DISCORD CALLBACK ERROR =====")
-    console.error("[v0] Error type:", e instanceof Error ? e.constructor.name : typeof e)
-    console.error("[v0] Error message:", e instanceof Error ? e.message : String(e))
-    console.error("[v0] Error stack:", e instanceof Error ? e.stack : "No stack trace")
+      await sql`
+        UPDATE user_identities SET
+          wallet_address   = ${normalizedWallet},
+          discord_username = ${me.username},
+          token_id         = COALESCE(${tokenId}, token_id),
+          updated_at       = NOW()
+        WHERE discord_id = ${me.id}
+      `
+    } else {
+      const tokenIdRows = await sql`
+        SELECT token_id FROM code_assignments 
+        WHERE wallet_address = ${normalizedWallet}
+        LIMIT 1
+      `
+      const tokenId = tokenIdRows.length ? tokenIdRows[0].token_id : null
 
+      await sql`
+        INSERT INTO user_identities (
+          discord_id, 
+          wallet_address, 
+          discord_username, 
+          token_id, 
+          created_at, 
+          updated_at
+        )
+        VALUES (
+          ${me.id}, 
+          ${normalizedWallet},
+          ${me.username}, 
+          ${tokenId}, 
+          NOW(), 
+          NOW()
+        )
+      `
+    }
+
+    const redirectPath = source === "market" ? "market/profile" : "profile"
+    return NextResponse.redirect(`${origin}/${redirectPath}?success=discord_verified`)
+  } catch (e) {
     let redirectPage = "profile"
     try {
       if (state) {
@@ -234,16 +176,10 @@ export async function GET(request: NextRequest) {
           redirectPage = "market/profile"
         }
       }
-    } catch (parseError) {
-      console.error("[v0] Failed to parse state for error redirect:", parseError)
-    }
+    } catch {}
 
     const errorMessage = e instanceof Error ? e.message : String(e)
     const errorDetails = encodeURIComponent(errorMessage.substring(0, 100))
-    console.log(
-      "[v0] Redirecting to error page:",
-      `${origin}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`,
-    )
     return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`)
   }
 }
