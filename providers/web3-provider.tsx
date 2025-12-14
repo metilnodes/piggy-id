@@ -10,7 +10,7 @@ import { mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains'
 // Configure supported chains
 const config = getDefaultConfig({
   appName: 'Piggy ID',
-  projectId: '7993ad87-497c-4979-a096-079dab6949fa', // Get one from https://cloud.walletconnect.com
+  projectId: 'a70f18f3eb3b2c6e5991ce68555bc23d', // Get one from https://cloud.walletconnect.com
   chains: [base],
   transports: {
     [base.id]: http('https://mainnet.base.org'),
