@@ -6,6 +6,9 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   console.log("[v0] Discord OAuth route called")
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(request.url).origin
+  const redirectUri = `${baseUrl}/api/auth/discord/callback`
+
   const searchParams = request.nextUrl.searchParams
   const walletAddress = searchParams.get("wallet")
   const source = searchParams.get("source") || "poker"
@@ -18,10 +21,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Wallet address required" }, { status: 400 })
   }
 
-  const origin = new URL(request.url).origin
-  const redirectUri = `${origin}/api/auth/discord/callback`
-
-  console.log("[v0] Origin:", origin)
+  console.log("[v0] Origin:", baseUrl)
   console.log("[v0] Redirect URI:", redirectUri)
 
   const state = Buffer.from(JSON.stringify({ walletAddress, source })).toString("base64")

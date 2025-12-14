@@ -10,11 +10,12 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
-  const origin = url.origin
-  const redirectUri = `${origin}/api/auth/discord/callback`
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || url.origin
+  const redirectUri = `${baseUrl}/api/auth/discord/callback`
 
   if (!code || !state) {
-    return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed&details=missing_code_or_state`)
+    return NextResponse.redirect(`${baseUrl}/profile?error=discord_auth_failed&details=missing_code_or_state`)
   }
 
   try {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       walletAddress = decoded.walletAddress
       source = decoded.source || "poker"
     } catch (stateError) {
-      return NextResponse.redirect(`${origin}/profile?error=discord_auth_failed&details=invalid_state`)
+      return NextResponse.redirect(`${baseUrl}/profile?error=discord_auth_failed&details=invalid_state`)
     }
 
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
@@ -44,13 +45,13 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text()
       const errorDetails = `token_${tokenRes.status}_${encodeURIComponent(errorText.substring(0, 50))}`
-      return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=${errorDetails}`)
+      return NextResponse.redirect(`${baseUrl}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const token = await tokenRes.json()
 
     if (!token.access_token) {
-      return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=no_access_token`)
+      return NextResponse.redirect(`${baseUrl}/profile?error=discord_connection_failed&details=no_access_token`)
     }
 
     const meRes = await fetch("https://discord.com/api/users/@me", {
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     if (!meRes.ok) {
       const errorDetails = `user_${meRes.status}`
-      return NextResponse.redirect(`${origin}/profile?error=discord_connection_failed&details=${errorDetails}`)
+      return NextResponse.redirect(`${baseUrl}/profile?error=discord_connection_failed&details=${errorDetails}`)
     }
 
     const me = await meRes.json()
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
         `
       }
 
-      const response = NextResponse.redirect(`${origin}/superpoker?success=discord_verified`)
+      const response = NextResponse.redirect(`${baseUrl}/superpoker?success=discord_verified`)
       response.cookies.set("superpoker_discord_id", me.id, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
     if (walletConflict.length > 0) {
       const redirectPath = source === "market" ? "market/profile" : "profile"
       return NextResponse.redirect(
-        `${origin}/${redirectPath}?error=wallet_already_linked&details=discord_${walletConflict[0].discord_id}`,
+        `${baseUrl}/${redirectPath}?error=wallet_already_linked&details=discord_${walletConflict[0].discord_id}`,
       )
     }
 
@@ -163,7 +164,7 @@ export async function GET(request: NextRequest) {
     }
 
     const redirectPath = source === "market" ? "market/profile" : "profile"
-    return NextResponse.redirect(`${origin}/${redirectPath}?success=discord_verified`)
+    return NextResponse.redirect(`${baseUrl}/${redirectPath}?success=discord_verified`)
   } catch (e) {
     let redirectPage = "profile"
     try {
@@ -180,6 +181,6 @@ export async function GET(request: NextRequest) {
 
     const errorMessage = e instanceof Error ? e.message : String(e)
     const errorDetails = encodeURIComponent(errorMessage.substring(0, 100))
-    return NextResponse.redirect(`${origin}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`)
+    return NextResponse.redirect(`${baseUrl}/${redirectPage}?error=discord_connection_failed&details=${errorDetails}`)
   }
 }
