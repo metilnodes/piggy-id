@@ -13,11 +13,41 @@ export async function POST(request: NextRequest) {
     const { email, walletAddress, source = "poker" } = await request.json()
 
     if (!email || !walletAddress) {
-      return NextResponse.json({ error: "Email and wallet address required" }, { status: 400 })
+      return NextResponse.json({ error: "EMAIL_REQUIRED" }, { status: 400 })
     }
 
     const emailLc = email.toLowerCase().trim()
     const walletLc = walletAddress.toLowerCase()
+
+    const existingIdentity = await sql /* sql */`
+      SELECT id, wallet_address, email
+      FROM user_identities
+      WHERE email = ${emailLc}
+      LIMIT 1
+    `
+
+    if (existingIdentity.length > 0) {
+      const existingWallet = existingIdentity[0].wallet_address?.toLowerCase()
+      if (existingWallet === walletLc) {
+        // Email already connected to this wallet
+        return NextResponse.json(
+          {
+            error: "EMAIL_ALREADY_CONNECTED",
+            message: "Email already connected to this account",
+          },
+          { status: 200 },
+        )
+      } else {
+        // Email connected to different wallet
+        return NextResponse.json(
+          {
+            error: "EMAIL_ALREADY_USED",
+          },
+          { status: 409 },
+        )
+      }
+    }
+    // </CHANGE>
 
     const existingVerified = await sql /* sql */`
       SELECT email, wallet_address
@@ -41,7 +71,7 @@ export async function POST(request: NextRequest) {
         // Email verified for different wallet
         return NextResponse.json(
           {
-            error: "Email already connected to another account",
+            error: "EMAIL_ALREADY_USED",
           },
           { status: 409 },
         )
@@ -97,7 +127,7 @@ export async function POST(request: NextRequest) {
     console.error("[v0] Send verification error:", error)
     return NextResponse.json(
       {
-        error: "Failed to send verification email",
+        error: "UNKNOWN_ERROR",
       },
       { status: 500 },
     )

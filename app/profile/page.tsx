@@ -323,15 +323,23 @@ export default function ProfilePage() {
       const data = await response.json()
 
       if (response.ok) {
-        setEmailVerificationPending(true)
-        setEmail("")
-        setToast({
-          message: "Verification email sent! Please check your inbox and click the verification link.",
-          type: "success",
-        })
+        if (data.error === "EMAIL_ALREADY_CONNECTED") {
+          setToast({
+            message: "Email already connected to this account",
+            type: "success",
+          })
+        } else {
+          setEmailVerificationPending(true)
+          setEmail("")
+          setToast({
+            message: "Verification email sent! Please check your inbox and click the verification link.",
+            type: "success",
+          })
+        }
       } else {
+        const errorMessage = getErrorMessage(data.error)
         setToast({
-          message: data.error || "Failed to send verification email. Please try again.",
+          message: errorMessage,
           type: "error",
         })
       }
@@ -464,6 +472,7 @@ export default function ProfilePage() {
       SOCIAL_ALREADY_LINKED: "This social account is already connected to another user",
       INVALID_FORMAT: "Invalid format. Please check your input.",
       UNKNOWN_ERROR: "Failed to update. Please try again later.",
+      EMAIL_ALREADY_CONNECTED: "Email already connected to this account",
     }
 
     return errorMessages[errorCode] || errorMessages.UNKNOWN_ERROR
