@@ -66,6 +66,14 @@ export function TipsWalletCard({ tipsWalletAddress, tipsGasFundedAt, tipsGasFund
     }
   }
 
+  const isExistingBalance = tipsGasFundingTx?.toLowerCase() === "existing_balance"
+
+  const formatTxHash = (hash: string) => {
+    if (!hash || hash.toLowerCase() === "existing_balance") return null
+    // Add 0x prefix if missing
+    return hash.startsWith("0x") ? hash : `0x${hash}`
+  }
+
   if (!tipsWalletAddress) {
     return (
       <div className="border border-pink-500/30 rounded p-4 bg-black/50">
@@ -115,16 +123,16 @@ export function TipsWalletCard({ tipsWalletAddress, tipsGasFundedAt, tipsGasFund
           <div className="flex items-start gap-2">
             <div className="text-green-400 font-mono text-sm flex items-center gap-1">
               <Check className="w-4 h-4" />
-              <span>Gas funded</span>
+              <span>{isExistingBalance ? "Existing balance" : "Gas funded"}</span>
             </div>
             <div className="text-gray-400 font-mono text-xs">{formatFundingDate(tipsGasFundedAt)}</div>
           </div>
         ) : (
           <div className="text-yellow-400 font-mono text-sm">Gas not funded yet</div>
         )}
-        {tipsGasFundingTx && (
+        {tipsGasFundingTx && !isExistingBalance && (
           <a
-            href={`https://basescan.org/tx/${tipsGasFundingTx}`}
+            href={`https://basescan.org/tx/${formatTxHash(tipsGasFundingTx)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-pink-400 font-mono text-xs hover:text-pink-300 flex items-center gap-1 mt-1"
