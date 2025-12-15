@@ -334,6 +334,7 @@ export default function ProfilePage() {
           setToast({
             message: "Verification email sent! Please check your inbox and click the verification link.",
             type: "success",
+            title: "Verification email sent!",
           })
         }
       } else {
