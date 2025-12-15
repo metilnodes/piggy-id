@@ -207,6 +207,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Username cannot be empty" }, { status: 400 })
       }
 
+      const existingUsername = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE LOWER(username) = LOWER(${data.username.trim()})
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingUsername.length > 0) {
+        return NextResponse.json({ error: "Username is already taken" }, { status: 409 })
+      }
+
       await sql`
         UPDATE user_identities 
         SET username = ${data.username.trim()},
@@ -214,6 +225,20 @@ export async function POST(request: NextRequest) {
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `
     } else if (type === "discord") {
+      const existingDiscord = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE discord_id = ${data.id}
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingDiscord.length > 0) {
+        return NextResponse.json(
+          { error: "This Discord account is already connected to another user" },
+          { status: 409 },
+        )
+      }
+
       await sql`
         UPDATE user_identities 
         SET discord_id = ${data.id}, 
@@ -222,6 +247,20 @@ export async function POST(request: NextRequest) {
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `
     } else if (type === "twitter") {
+      const existingTwitter = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE twitter_id = ${data.id}
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingTwitter.length > 0) {
+        return NextResponse.json(
+          { error: "This Twitter account is already connected to another user" },
+          { status: 409 },
+        )
+      }
+
       await sql`
         UPDATE user_identities 
         SET twitter_id = ${data.id}, 
@@ -234,6 +273,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
       }
 
+      const existingEmail = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE LOWER(email) = LOWER(${data.email})
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingEmail.length > 0) {
+        return NextResponse.json({ error: "Email is already taken" }, { status: 409 })
+      }
+
       await sql`
         UPDATE user_identities 
         SET email = ${data.email},
@@ -241,6 +291,21 @@ export async function POST(request: NextRequest) {
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `
     } else if (type === "farcaster") {
+      const existingFarcaster = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE platform = 'farcaster' 
+        AND platform_user_id = ${data.fid}
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingFarcaster.length > 0) {
+        return NextResponse.json(
+          { error: "This Farcaster account is already connected to another user" },
+          { status: 409 },
+        )
+      }
+
       await sql`
         INSERT INTO user_identities 
           (wallet_address, platform, platform_user_id, username, display_name, avatar_url, token_id, created_at, updated_at)
@@ -260,6 +325,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error updating identity:", error)
+
+    if (error.message?.includes("duplicate key") || error.code === "23505") {
+      if (error.message?.includes("username")) {
+        return NextResponse.json({ error: "Username is already taken" }, { status: 409 })
+      }
+      if (error.message?.includes("email")) {
+        return NextResponse.json({ error: "Email is already taken" }, { status: 409 })
+      }
+      if (error.message?.includes("discord")) {
+        return NextResponse.json(
+          { error: "This Discord account is already connected to another user" },
+          { status: 409 },
+        )
+      }
+      if (error.message?.includes("twitter")) {
+        return NextResponse.json(
+          { error: "This Twitter account is already connected to another user" },
+          { status: 409 },
+        )
+      }
+      if (error.message?.includes("platform")) {
+        return NextResponse.json({ error: "This social account is already connected to another user" }, { status: 409 })
+      }
+      return NextResponse.json({ error: "This value is already in use" }, { status: 409 })
+    }
+
     return NextResponse.json({ error: "Failed to update identity" }, { status: 500 })
   }
 }
