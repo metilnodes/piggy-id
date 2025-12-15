@@ -410,11 +410,13 @@ export default function ProfilePage() {
         setUsernameEditing(false)
         await fetchIdentity()
       } else {
-        showToast("Failed to update username", "error")
+        const data = await response.json()
+        const errorMessage = getErrorMessage(data.error || "UNKNOWN_ERROR")
+        showToast(errorMessage, "error")
       }
     } catch (error) {
       console.error("Error updating username:", error)
-      showToast("Failed to update username", "error")
+      showToast(getErrorMessage("UNKNOWN_ERROR"), "error")
     } finally {
       setIdentityLoading(false)
     }
@@ -453,6 +455,18 @@ export default function ProfilePage() {
 
   const showToast = (message: string, type: "success" | "error", title?: string) => {
     setToast({ message, type, title })
+  }
+
+  const getErrorMessage = (errorCode: string, context = ""): string => {
+    const errorMessages: Record<string, string> = {
+      USERNAME_ALREADY_USED: "This username is already in use",
+      EMAIL_ALREADY_USED: "This email is already linked to another account",
+      SOCIAL_ALREADY_LINKED: "This social account is already connected to another user",
+      INVALID_FORMAT: "Invalid format. Please check your input.",
+      UNKNOWN_ERROR: "Failed to update. Please try again later.",
+    }
+
+    return errorMessages[errorCode] || errorMessages.UNKNOWN_ERROR
   }
 
   return (

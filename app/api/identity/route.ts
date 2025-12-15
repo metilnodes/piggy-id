@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     const { walletAddress, tokenId, type, data } = body
 
     if (!walletAddress || !type || !data) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ error: "INVALID_FORMAT" }, { status: 400 })
     }
 
     let finalTokenId = tokenId
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "username") {
       if (!data.username || data.username.trim().length === 0) {
-        return NextResponse.json({ error: "Username cannot be empty" }, { status: 400 })
+        return NextResponse.json({ error: "INVALID_FORMAT" }, { status: 400 })
       }
 
       const existingUsername = await sql`
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
       `
 
       if (existingUsername.length > 0) {
-        return NextResponse.json({ error: "Username is already taken" }, { status: 409 })
+        return NextResponse.json({ error: "USERNAME_ALREADY_USED" }, { status: 409 })
       }
 
       await sql`
@@ -233,10 +233,7 @@ export async function POST(request: NextRequest) {
       `
 
       if (existingDiscord.length > 0) {
-        return NextResponse.json(
-          { error: "This Discord account is already connected to another user" },
-          { status: 409 },
-        )
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
       }
 
       await sql`
@@ -255,10 +252,7 @@ export async function POST(request: NextRequest) {
       `
 
       if (existingTwitter.length > 0) {
-        return NextResponse.json(
-          { error: "This Twitter account is already connected to another user" },
-          { status: 409 },
-        )
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
       }
 
       await sql`
@@ -270,7 +264,7 @@ export async function POST(request: NextRequest) {
       `
     } else if (type === "email") {
       if (!data.email || !data.email.includes("@")) {
-        return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+        return NextResponse.json({ error: "INVALID_FORMAT" }, { status: 400 })
       }
 
       const existingEmail = await sql`
@@ -281,7 +275,7 @@ export async function POST(request: NextRequest) {
       `
 
       if (existingEmail.length > 0) {
-        return NextResponse.json({ error: "Email is already taken" }, { status: 409 })
+        return NextResponse.json({ error: "EMAIL_ALREADY_USED" }, { status: 409 })
       }
 
       await sql`
@@ -300,10 +294,7 @@ export async function POST(request: NextRequest) {
       `
 
       if (existingFarcaster.length > 0) {
-        return NextResponse.json(
-          { error: "This Farcaster account is already connected to another user" },
-          { status: 409 },
-        )
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
       }
 
       await sql`
@@ -328,29 +319,21 @@ export async function POST(request: NextRequest) {
 
     if (error.message?.includes("duplicate key") || error.code === "23505") {
       if (error.message?.includes("username")) {
-        return NextResponse.json({ error: "Username is already taken" }, { status: 409 })
+        return NextResponse.json({ error: "USERNAME_ALREADY_USED" }, { status: 409 })
       }
       if (error.message?.includes("email")) {
-        return NextResponse.json({ error: "Email is already taken" }, { status: 409 })
+        return NextResponse.json({ error: "EMAIL_ALREADY_USED" }, { status: 409 })
       }
-      if (error.message?.includes("discord")) {
-        return NextResponse.json(
-          { error: "This Discord account is already connected to another user" },
-          { status: 409 },
-        )
+      if (
+        error.message?.includes("discord") ||
+        error.message?.includes("twitter") ||
+        error.message?.includes("platform")
+      ) {
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
       }
-      if (error.message?.includes("twitter")) {
-        return NextResponse.json(
-          { error: "This Twitter account is already connected to another user" },
-          { status: 409 },
-        )
-      }
-      if (error.message?.includes("platform")) {
-        return NextResponse.json({ error: "This social account is already connected to another user" }, { status: 409 })
-      }
-      return NextResponse.json({ error: "This value is already in use" }, { status: 409 })
+      return NextResponse.json({ error: "UNKNOWN_ERROR" }, { status: 409 })
     }
 
-    return NextResponse.json({ error: "Failed to update identity" }, { status: 500 })
+    return NextResponse.json({ error: "UNKNOWN_ERROR" }, { status: 500 })
   }
 }
