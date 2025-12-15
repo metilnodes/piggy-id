@@ -157,7 +157,7 @@ export function TipsWalletCard({ tipsWalletAddress, tipsGasFundedAt, tipsGasFund
           <div className="flex justify-between items-center">
             <div className="text-pink-400 font-mono text-xs">ETH Balance</div>
             <div className="text-pink-300 font-mono text-sm">
-              {ethBalance ? Number.parseFloat(ethBalance).toFixed(4) : "0.0000"}
+              {ethBalance ? Number.parseFloat(ethBalance).toFixed(6) : "0.000000"}
             </div>
           </div>
         </div>
