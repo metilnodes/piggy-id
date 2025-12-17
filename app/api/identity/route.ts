@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import { getOwnedTokenIds } from "@/lib/piggy/checkHolder"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -43,6 +44,32 @@ export async function GET(request: NextRequest) {
           SELECT * FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
         `
+      } else {
+        console.log("[v0] Not found in code_assignments, checking blockchain...")
+        try {
+          const ownedTokens = await getOwnedTokenIds(walletAddress)
+
+          if (ownedTokens.length > 0) {
+            const firstTokenId = Number(ownedTokens[0])
+            console.log("[v0] Found NFT on-chain! Token ID:", firstTokenId)
+
+            await sql`
+              UPDATE user_identities 
+              SET token_id = ${firstTokenId}, updated_at = NOW()
+              WHERE wallet_address = ${walletAddress.toLowerCase()}
+            `
+
+            result = await sql`
+              SELECT * FROM user_identities 
+              WHERE wallet_address = ${walletAddress.toLowerCase()}
+            `
+          } else {
+            console.log("[v0] No NFTs found on-chain for this wallet")
+          }
+        } catch (blockchainError) {
+          console.error("[v0] Error checking blockchain:", blockchainError)
+          // Continue without blockchain data if check fails
+        }
       }
     }
 
@@ -67,6 +94,30 @@ export async function GET(request: NextRequest) {
           SELECT * FROM user_identities 
           WHERE wallet_address = ${walletAddress.toLowerCase()}
         `
+      } else {
+        console.log("[v0] Wallet not in DB, checking blockchain...")
+        try {
+          const ownedTokens = await getOwnedTokenIds(walletAddress)
+
+          if (ownedTokens.length > 0) {
+            const firstTokenId = Number(ownedTokens[0])
+            console.log("[v0] Found NFT on-chain for new wallet! Token ID:", firstTokenId)
+
+            await sql`
+              INSERT INTO user_identities (wallet_address, token_id, created_at, updated_at)
+              VALUES (${walletAddress.toLowerCase()}, ${firstTokenId}, NOW(), NOW())
+            `
+
+            result = await sql`
+              SELECT * FROM user_identities 
+              WHERE wallet_address = ${walletAddress.toLowerCase()}
+            `
+          } else {
+            console.log("[v0] No NFTs found on-chain for new wallet")
+          }
+        } catch (blockchainError) {
+          console.error("[v0] Error checking blockchain for new wallet:", blockchainError)
+        }
       }
     }
 
@@ -128,7 +179,7 @@ export async function POST(request: NextRequest) {
     const { walletAddress, tokenId, type, data } = body
 
     if (!walletAddress || !type || !data) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ error: "INVALID_FORMAT" }, { status: 400 })
     }
 
     let finalTokenId = tokenId
@@ -151,7 +202,40 @@ export async function POST(request: NextRequest) {
         updated_at = NOW()
     `
 
-    if (type === "discord") {
+    if (type === "username") {
+      if (!data.username || data.username.trim().length === 0) {
+        return NextResponse.json({ error: "INVALID_FORMAT" }, { status: 400 })
+      }
+
+      const existingUsername = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE LOWER(username) = LOWER(${data.username.trim()})
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingUsername.length > 0) {
+        return NextResponse.json({ error: "USERNAME_ALREADY_USED" }, { status: 409 })
+      }
+
+      await sql`
+        UPDATE user_identities 
+        SET username = ${data.username.trim()},
+            updated_at = NOW()
+        WHERE wallet_address = ${walletAddress.toLowerCase()}
+      `
+    } else if (type === "discord") {
+      const existingDiscord = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE discord_id = ${data.id}
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingDiscord.length > 0) {
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
+      }
+
       await sql`
         UPDATE user_identities 
         SET discord_id = ${data.id}, 
@@ -160,6 +244,17 @@ export async function POST(request: NextRequest) {
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `
     } else if (type === "twitter") {
+      const existingTwitter = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE twitter_id = ${data.id}
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingTwitter.length > 0) {
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
+      }
+
       await sql`
         UPDATE user_identities 
         SET twitter_id = ${data.id}, 
@@ -169,7 +264,18 @@ export async function POST(request: NextRequest) {
       `
     } else if (type === "email") {
       if (!data.email || !data.email.includes("@")) {
-        return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+        return NextResponse.json({ error: "INVALID_FORMAT" }, { status: 400 })
+      }
+
+      const existingEmail = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE LOWER(email) = LOWER(${data.email})
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingEmail.length > 0) {
+        return NextResponse.json({ error: "EMAIL_ALREADY_USED" }, { status: 409 })
       }
 
       await sql`
@@ -179,6 +285,18 @@ export async function POST(request: NextRequest) {
         WHERE wallet_address = ${walletAddress.toLowerCase()}
       `
     } else if (type === "farcaster") {
+      const existingFarcaster = await sql`
+        SELECT wallet_address FROM user_identities 
+        WHERE platform = 'farcaster' 
+        AND platform_user_id = ${data.fid}
+        AND wallet_address != ${walletAddress.toLowerCase()}
+        LIMIT 1
+      `
+
+      if (existingFarcaster.length > 0) {
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
+      }
+
       await sql`
         INSERT INTO user_identities 
           (wallet_address, platform, platform_user_id, username, display_name, avatar_url, token_id, created_at, updated_at)
@@ -198,6 +316,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error updating identity:", error)
-    return NextResponse.json({ error: "Failed to update identity" }, { status: 500 })
+
+    if (error.message?.includes("duplicate key") || error.code === "23505") {
+      if (error.message?.includes("username")) {
+        return NextResponse.json({ error: "USERNAME_ALREADY_USED" }, { status: 409 })
+      }
+      if (error.message?.includes("email")) {
+        return NextResponse.json({ error: "EMAIL_ALREADY_USED" }, { status: 409 })
+      }
+      if (
+        error.message?.includes("discord") ||
+        error.message?.includes("twitter") ||
+        error.message?.includes("platform")
+      ) {
+        return NextResponse.json({ error: "SOCIAL_ALREADY_LINKED" }, { status: 409 })
+      }
+      return NextResponse.json({ error: "UNKNOWN_ERROR" }, { status: 409 })
+    }
+
+    return NextResponse.json({ error: "UNKNOWN_ERROR" }, { status: 500 })
   }
 }
