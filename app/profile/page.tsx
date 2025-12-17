@@ -387,6 +387,21 @@ export default function ProfilePage() {
       })
 
       if (response.ok) {
+        if (identity) {
+          const updatedIdentity = { ...identity }
+          if (platform === "discord") {
+            updatedIdentity.discord_id = null
+            updatedIdentity.discord_username = null
+          } else if (platform === "twitter") {
+            updatedIdentity.twitter_id = null
+            updatedIdentity.twitter_username = null
+          } else if (platform === "farcaster") {
+            updatedIdentity.farcaster_id = null
+            updatedIdentity.farcaster_username = null
+          }
+          setIdentity(updatedIdentity)
+        }
+
         const platformName = platform.charAt(0).toUpperCase() + platform.slice(1)
         setToast({
           message: `${platformName} successfully disconnected!`,
