@@ -25,7 +25,7 @@ When a user connects Discord + main EVM wallet on PiggyWorld, the system automat
 
 ### Database Logic
 
-\`\`\`sql
+```sql
 -- UPSERT by discord_id (NOT wallet_address)
 INSERT INTO user_identities (
   discord_id, 
@@ -42,7 +42,7 @@ ON CONFLICT (discord_id) DO UPDATE SET
   token_id         = COALESCE(EXCLUDED.token_id, user_identities.token_id),
   updated_at       = NOW()
   -- tips_wallet_address is NOT in UPDATE - stays unchanged
-\`\`\`
+```
 
 ### Conflict Protection
 
@@ -57,7 +57,7 @@ If wallet is already linked to a different Discord account:
 
 ### Migration: 021_add_discord_id_unique_constraint.sql
 
-\`\`\`sql
+```sql
 -- Ensures discord_id is unique
 ALTER TABLE user_identities
 ADD CONSTRAINT user_identities_discord_id_unique UNIQUE (discord_id);
@@ -65,31 +65,31 @@ ADD CONSTRAINT user_identities_discord_id_unique UNIQUE (discord_id);
 -- Indexes for performance
 CREATE INDEX idx_user_identities_discord_id ON user_identities(discord_id);
 CREATE INDEX idx_user_identities_wallet_address ON user_identities(wallet_address);
-\`\`\`
+```
 
 ## Test Scenarios
 
 ### Scenario 1: Stub Record (Tips Wallet Pre-Created by Bot)
 
 **Setup:**
-\`\`\`sql
+```sql
 -- Bot created this record earlier
 INSERT INTO user_identities (discord_id, tips_wallet_address)
 VALUES ('1143184018813222972', '0x5fab...a634');
-\`\`\`
+```
 
 **Action:**
 User connects Discord + wallet `0x382FC...5c1` on website
 
 **Result:**
-\`\`\`sql
+```sql
 SELECT * FROM user_identities WHERE discord_id = '1143184018813222972';
 -- Returns:
 -- discord_id: 1143184018813222972
 -- wallet_address: 0x382fc...5c1
 -- tips_wallet_address: 0x5fab...a634  ← PRESERVED
 -- token_id: 11
-\`\`\`
+```
 
 ### Scenario 2: New User (No Existing Record)
 
@@ -105,11 +105,11 @@ New record created with all fields, `tips_wallet_address` is NULL (bot will crea
 ### Scenario 3: Wallet Conflict
 
 **Setup:**
-\`\`\`sql
+```sql
 -- Wallet already linked to another Discord
 INSERT INTO user_identities (discord_id, wallet_address)
 VALUES ('999999', '0x382FC...5c1');
-\`\`\`
+```
 
 **Action:**
 Different user (discord_id: 1143184...) tries to connect same wallet `0x382FC...5c1`

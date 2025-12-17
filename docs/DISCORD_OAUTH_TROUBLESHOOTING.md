@@ -8,9 +8,9 @@
 ## Quick Diagnostics
 
 Visit this URL to check your setup:
-\`\`\`
+```
 https://your-domain.vercel.app/api/auth/discord/debug
-\`\`\`
+```
 
 This will show:
 - Environment variables status
@@ -58,27 +58,27 @@ This will show:
 ## Database Schema Requirements
 
 Your `user_identities` table must have:
-\`\`\`sql
+```sql
 - wallet_address (varchar, nullable for stub users)
 - discord_id (varchar, should be unique)
 - discord_username (varchar)
 - tips_wallet_address (varchar, nullable, protected from overwrites)
 - token_id (integer, nullable)
-\`\`\`
+```
 
 ## Redirect URI Configuration
 
 **Discord Developer Portal must have ALL these URLs:**
 
 Production:
-\`\`\`
+```
 https://id.piggyworld.xyz/api/auth/discord/callback
-\`\`\`
+```
 
 Preview/Testing:
-\`\`\`
+```
 https://v0-piggy-id-git-profile-testing-rgtscorp-yarus-projects.vercel.app/api/auth/discord/callback
-\`\`\`
+```
 
 **Important:** Discord requires EXACT match including protocol (https://) and trailing paths
 

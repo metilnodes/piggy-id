@@ -369,8 +369,21 @@ export default function ProfilePage() {
     setIsDisconnecting((prev) => ({ ...prev, [platform]: true }))
 
     try {
-      const response = await fetch(`/api/disconnect?platform=${platform}`, {
+      if (!address) {
+        setToast({ message: "Wallet not connected", type: "error" })
+        setTimeout(() => setToast(null), 3000)
+        return
+      }
+
+      const response = await fetch(`/api/disconnect`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          walletAddress: address,
+          platform,
+        }),
       })
 
       if (response.ok) {
@@ -389,6 +402,7 @@ export default function ProfilePage() {
         setTimeout(() => setToast(null), 3000)
       }
     } catch (error) {
+      console.error("[v0] Disconnect error:", error)
       setToast({ message: "An unexpected error occurred", type: "error" })
       setTimeout(() => setToast(null), 3000)
     } finally {

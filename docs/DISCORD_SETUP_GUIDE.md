@@ -21,14 +21,14 @@ Navigate to **OAuth2** → **General** in the left sidebar
 You MUST add the **EXACT** redirect URI for each environment:
 
 **For v0 Preview:**
-\`\`\`
+```
 https://v0-piggy-id-git-profile-testing-rgtscorp-yarus-projects.vercel.app/api/auth/discord/callback
-\`\`\`
+```
 
 **For Production:**
-\`\`\`
+```
 https://your-production-domain.com/api/auth/discord/callback
-\`\`\`
+```
 
 **Important:**
 - URLs are case-sensitive
@@ -63,10 +63,10 @@ Optional scopes:
 
 In v0, go to **Vars** section (left sidebar) and verify:
 
-\`\`\`
+```
 DISCORD_CLIENT_ID=your_client_id_here
 DISCORD_CLIENT_SECRET=your_client_secret_here
-\`\`\`
+```
 
 Make sure there are no extra spaces or quotes around the values.
 

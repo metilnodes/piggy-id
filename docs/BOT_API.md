@@ -8,16 +8,16 @@ This API allows the Python Discord bot to fetch user identity information by Dis
 
 Add these environment variables to your Vercel project:
 
-\`\`\`bash
+```bash
 BOT_API_KEY=your-secret-key-here
 NEXT_PUBLIC_BASE_RPC=https://mainnet.base.org  # Optional, defaults to Base mainnet
-\`\`\`
+```
 
 ### Generating BOT_API_KEY
 
 Generate a secure API key using one of these methods:
 
-\`\`\`bash
+```bash
 # Option 1: Using openssl
 openssl rand -hex 32
 
@@ -26,7 +26,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # Option 3: Using Python
 python -c "import secrets; print(secrets.token_hex(32))"
-\`\`\`
+```
 
 ## Endpoint
 
@@ -43,9 +43,9 @@ Fetch user's connected wallet and Piggy ID status by Discord ID.
 #### Request
 
 **Headers:**
-\`\`\`
+```
 x-bot-api-key: <your-bot-api-key>
-\`\`\`
+```
 
 **Query Parameters:**
 - `discord_id` (required): Discord user ID (must be digits only, minimum 10 characters)
@@ -53,13 +53,13 @@ x-bot-api-key: <your-bot-api-key>
 #### Response
 
 **Success (200):**
-\`\`\`json
+```json
 {
   "discord_id": "123456789012345678",
   "primary_wallet": "0xabc123...",
   "has_piggy_id": true
 }
-\`\`\`
+```
 
 **Fields:**
 - `discord_id`: The Discord user ID
@@ -68,7 +68,7 @@ x-bot-api-key: <your-bot-api-key>
 
 **Error Responses:**
 
-\`\`\`json
+```json
 // 400 - Missing discord_id
 {
   "error": "discord_id is required"
@@ -98,13 +98,13 @@ x-bot-api-key: <your-bot-api-key>
 {
   "error": "Internal server error"
 }
-\`\`\`
+```
 
 ## Usage Examples
 
 ### cURL
 
-\`\`\`bash
+```bash
 # Basic request
 curl -H "x-bot-api-key: $BOT_API_KEY" \
   "https://id.piggyworld.xyz/api/bot/identity?discord_id=123456789012345678"
@@ -112,11 +112,11 @@ curl -H "x-bot-api-key: $BOT_API_KEY" \
 # With response formatting
 curl -H "x-bot-api-key: $BOT_API_KEY" \
   "https://id.piggyworld.xyz/api/bot/identity?discord_id=123456789012345678" | jq
-\`\`\`
+```
 
 ### Python (requests)
 
-\`\`\`python
+```python
 import requests
 import os
 
@@ -151,11 +151,11 @@ user_data = get_user_wallet("123456789012345678")
 if user_data:
     print(f"Wallet: {user_data['primary_wallet']}")
     print(f"Has Piggy ID: {user_data['has_piggy_id']}")
-\`\`\`
+```
 
 ### Python (aiohttp - async)
 
-\`\`\`python
+```python
 import aiohttp
 import os
 
@@ -187,7 +187,7 @@ async def get_user_wallet_async(discord_id: str) -> dict | None:
 
 # Usage in Discord bot
 # user_data = await get_user_wallet_async(str(ctx.author.id))
-\`\`\`
+```
 
 ## Security Notes
 

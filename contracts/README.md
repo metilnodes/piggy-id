@@ -17,50 +17,50 @@ https://book.getfoundry.sh/
 
 ### Build
 
-\`\`\`shell
+```shell
 $ forge build
-\`\`\`
+```
 
 ### Test
 
-\`\`\`shell
+```shell
 $ forge test
-\`\`\`
+```
 
 ### Format
 
-\`\`\`shell
+```shell
 $ forge fmt
-\`\`\`
+```
 
 ### Gas Snapshots
 
-\`\`\`shell
+```shell
 $ forge snapshot
-\`\`\`
+```
 
 ### Anvil
 
-\`\`\`shell
+```shell
 $ anvil
-\`\`\`
+```
 
 ### Deploy
 
-\`\`\`shell
+```shell
 $ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-\`\`\`
+```
 
 ### Cast
 
-\`\`\`shell
+```shell
 $ cast <subcommand>
-\`\`\`
+```
 
 ### Help
 
-\`\`\`shell
+```shell
 $ forge --help
 $ anvil --help
 $ cast --help
-\`\`\`
+```

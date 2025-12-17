@@ -8,18 +8,18 @@ The Tips Wallet Bot API allows your Discord bot to manage and retrieve Tips Wall
 
 All API requests must include the `x-bot-api-key` header:
 
-\`\`\`bash
+```bash
 x-bot-api-key: YOUR_BOT_API_KEY
-\`\`\`
+```
 
 **Setup:**
 1. Set the `BOT_API_KEY` environment variable in your Vercel project
 2. Use the same key in your Discord bot configuration
 
 **Generate a secure API key:**
-\`\`\`bash
+```bash
 openssl rand -hex 32
-\`\`\`
+```
 
 ## Rate Limiting
 
@@ -41,14 +41,14 @@ Retrieves the tips wallet address and gas funding status for a Discord user.
 - `discord_id` (required): Discord user ID (digits only, minimum 10 characters)
 
 **Success Response (200):**
-\`\`\`json
+```json
 {
   "discord_id": "541066012305653760",
   "tips_wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
   "tips_gas_funded_at": "2025-12-14T20:00:00.000Z",
   "tips_gas_funding_tx": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 }
-\`\`\`
+```
 
 **Response Fields:**
 - `discord_id`: Discord user ID
@@ -58,7 +58,7 @@ Retrieves the tips wallet address and gas funding status for a Discord user.
 
 **Error Responses:**
 
-\`\`\`json
+```json
 // 400 Bad Request - Missing discord_id
 {
   "error": "discord_id is required"
@@ -83,16 +83,16 @@ Retrieves the tips wallet address and gas funding status for a Discord user.
 {
   "error": "Rate limit exceeded. Try again later."
 }
-\`\`\`
+```
 
 **Example (curl):**
-\`\`\`bash
+```bash
 curl -H "x-bot-api-key: YOUR_API_KEY" \
   "https://your-domain.vercel.app/api/bot/tips-wallet?discord_id=541066012305653760"
-\`\`\`
+```
 
 **Example (Python):**
-\`\`\`python
+```python
 import requests
 
 BOT_API_KEY = "your_bot_api_key_here"
@@ -119,7 +119,7 @@ elif response.status_code == 404:
     print("Tips wallet not created yet")
 else:
     print(f"Error: {response.json()}")
-\`\`\`
+```
 
 ---
 
@@ -132,7 +132,7 @@ Creates or updates a tips wallet address and/or gas funding metadata for a Disco
 - `force=true`: Overwrite existing tips wallet address or gas funding data
 
 **Request Body:**
-\`\`\`json
+```json
 {
   "discord_id": "541066012305653760",
   "discord_username": "metilnodes",
@@ -140,7 +140,7 @@ Creates or updates a tips wallet address and/or gas funding metadata for a Disco
   "tips_gas_funded_at": "2025-12-14T20:00:00Z",
   "tips_gas_funding_tx": "0xdeadbeef..."
 }
-\`\`\`
+```
 
 **Request Fields:**
 - `discord_id` (required): Discord user ID
@@ -168,7 +168,7 @@ Creates or updates a tips wallet address and/or gas funding metadata for a Disco
 - If user already exists, behaves same as without flag (updates existing record)
 
 **Success Response (200):**
-\`\`\`json
+```json
 {
   "ok": true,
   "discord_id": "541066012305653760",
@@ -177,10 +177,10 @@ Creates or updates a tips wallet address and/or gas funding metadata for a Disco
   "tips_gas_funded_at": "2025-12-14T20:00:00.000Z",
   "tips_gas_funding_tx": "0xabcdef..."
 }
-\`\`\`
+```
 
 **Success Response with Stub Creation (200):**
-\`\`\`json
+```json
 {
   "ok": true,
   "stub_created": true,
@@ -190,11 +190,11 @@ Creates or updates a tips wallet address and/or gas funding metadata for a Disco
   "tips_gas_funded_at": null,
   "tips_gas_funding_tx": null
 }
-\`\`\`
+```
 
 **Error Responses:**
 
-\`\`\`json
+```json
 // 400 Bad Request - Missing discord_id
 {
   "error": "discord_id is required"
@@ -241,37 +241,37 @@ Creates or updates a tips wallet address and/or gas funding metadata for a Disco
 {
   "error": "Rate limit exceeded. Try again later."
 }
-\`\`\`
+```
 
 **Example - Create stub for new user (curl):**
-\`\`\`bash
+```bash
 curl -i -X POST \
   -H "x-bot-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"discord_id":"999999999999999999","discord_username":"newuser","tips_wallet_address":"0x5FAbE2a8873A8056Aa0f874110Ba0c63fAb6a634"}' \
   "https://your-domain.vercel.app/api/bot/tips-wallet?create_stub=true"
-\`\`\`
+```
 
 **Example - Create wallet (curl):**
-\`\`\`bash
+```bash
 curl -X POST \
   -H "x-bot-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"discord_id":"541066012305653760","tips_wallet_address":"0xabc..."}' \
   "https://your-domain.vercel.app/api/bot/tips-wallet"
-\`\`\`
+```
 
 **Example - Record gas funding (curl):**
-\`\`\`bash
+```bash
 curl -X POST \
   -H "x-bot-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"discord_id":"541066012305653760","tips_gas_funded_at":"2025-12-14T20:00:00Z","tips_gas_funding_tx":"0xdeadbeef..."}' \
   "https://your-domain.vercel.app/api/bot/tips-wallet"
-\`\`\`
+```
 
 **Example - Complete workflow with stub creation (Python):**
-\`\`\`python
+```python
 import requests
 from datetime import datetime
 
@@ -390,7 +390,7 @@ def send_welcome_gas(to_address):
     """Send small ETH for gas on Base network"""
     # Implementation depends on your bot's wallet setup
     pass
-\`\`\`
+```
 
 ## Environment Variables
 
@@ -412,7 +412,7 @@ def send_welcome_gas(to_address):
 
 The tips wallet data is stored in the existing `user_identities` table:
 
-\`\`\`sql
+```sql
 -- Added gas funding tracking fields
 ALTER TABLE user_identities 
 ADD COLUMN IF NOT EXISTS tips_wallet_address VARCHAR(255),
@@ -424,7 +424,7 @@ ON user_identities(tips_wallet_address);
 
 CREATE INDEX IF NOT EXISTS idx_tips_gas_funded_at 
 ON user_identities(tips_gas_funded_at);
-\`\`\`
+```
 
 **Important Notes:**
 - Only the **public address** is stored, never private keys
@@ -464,7 +464,7 @@ ON user_identities(tips_gas_funded_at);
 
 The gas funding fields prevent repeated funding after bot restarts:
 
-\`\`\`python
+```python
 # On bot startup or when processing tips
 wallet_data = get_tips_wallet(discord_id)
 
@@ -476,7 +476,7 @@ else:
     # Send welcome gas and record it
     tx_hash = send_welcome_gas(wallet_data["tips_wallet_address"])
     record_gas_funding(discord_id, tx_hash)
-\`\`\`
+```
 
 **User Views Tips Wallet on Website:**
 
