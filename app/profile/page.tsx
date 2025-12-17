@@ -36,10 +36,16 @@ export default function ProfilePage() {
   const [usernameEditing, setUsernameEditing] = useState<boolean>(false)
   const [identityLoading, setIdentityLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error"; title?: string } | null>(null)
-  const [isDisconnecting, setIsDisconnecting] = useState<{ discord: boolean; twitter: boolean; farcaster: boolean }>({
+  const [isDisconnecting, setIsDisconnecting] = useState<{
+    discord: boolean
+    twitter: boolean
+    farcaster: boolean
+    email: boolean
+  }>({
     discord: false,
     twitter: false,
     farcaster: false,
+    email: false,
   })
 
   // Load Neynar SIWN script on component mount
@@ -365,7 +371,7 @@ export default function ProfilePage() {
     setEmail("")
   }
 
-  const handleDisconnect = async (platform: "discord" | "twitter" | "farcaster") => {
+  const handleDisconnect = async (platform: "discord" | "twitter" | "farcaster" | "email") => {
     setIsDisconnecting((prev) => ({ ...prev, [platform]: true }))
 
     try {
@@ -398,6 +404,8 @@ export default function ProfilePage() {
           } else if (platform === "farcaster") {
             updatedIdentity.farcaster_id = null
             updatedIdentity.farcaster_username = null
+          } else if (platform === "email") {
+            updatedIdentity.email = null
           }
           setIdentity(updatedIdentity)
         }
@@ -406,7 +414,7 @@ export default function ProfilePage() {
         setToast({
           message: `${platformName} successfully disconnected!`,
           type: "success",
-          title: "Successfully signed out!",
+          title: "Successfully disconnected!",
         })
         setTimeout(() => setToast(null), 3000)
 
@@ -444,7 +452,7 @@ export default function ProfilePage() {
       })
 
       if (response.ok) {
-        showToast("Username updated successfully!", "success")
+        showToast("Username updated successfully!", "success", "Successfully updated!")
         setUsernameEditing(false)
         await fetchIdentity()
       } else {
