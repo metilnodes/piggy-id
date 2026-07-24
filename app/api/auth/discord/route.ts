@@ -6,8 +6,12 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   console.log("[v0] Discord OAuth route called")
 
-  const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host") || "localhost:3000"}`
-  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl
+  // Build redirect_uri from the current request host so it always matches the
+  // domain the user is actually on. Do NOT rely on NEXT_PUBLIC_BASE_URL, which
+  // may point to a stale/dead domain (e.g. id.piggyworld.xyz).
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000"
+  const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https")
+  const baseUrl = `${proto}://${host}`
   const redirectUri = `${baseUrl}/api/auth/discord/callback`
 
   const searchParams = request.nextUrl.searchParams
