@@ -16,8 +16,12 @@ export async function GET(request: NextRequest) {
   console.log("[Discord Callback] Code exists:", !!code)
   console.log("[Discord Callback] State exists:", !!state)
 
-  const rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host") || "localhost:3000"}`
-  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl
+  // Must match exactly the redirect_uri used in /api/auth/discord (the authorize step).
+  // Build it from the current request host instead of NEXT_PUBLIC_BASE_URL, which
+  // may point to a stale/dead domain (e.g. id.piggyworld.xyz).
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000"
+  const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https")
+  const baseUrl = `${proto}://${host}`
   const redirectUri = `${baseUrl}/api/auth/discord/callback`
 
   console.log("[Discord Callback] Base URL:", baseUrl)
